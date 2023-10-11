@@ -1,0 +1,11 @@
+# Import serializers from folder
+from .variant_serializer import VariantSerializer
+from .snv_serializer import SNVSerializer
+from .gene_serializer import GeneSerializer
+from .severity_serializer import SeveritySerializer
+from .transcript_serializer import TranscriptSerializer
+from .variant_transcript_serializer import VariantTranscriptSerializer
+from .variant_annotation_serializer import VariantAnnotationSerializer
+from .variant_consequence_serializer import VariantConsequenceSerializer
+from .genomic_gnomad_serializer import GenomicGnomadFrequencySerializer
+from .genomic_ibvl_serializer import GenomicIBVLFrequencySerializer
