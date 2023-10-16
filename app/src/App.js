@@ -1,14 +1,21 @@
 import './App.css';
+
+import {BrowserRouter, Routes, Route} from 'react-router-dom'
+
+import Home from './pages/home'
 import Dashboard from './pages/dashboard'
 
-function App() {
+
+function AppRouter () {
   return (
-    <div className="App">
-      <header className="App-header">
-          <Dashboard/>
-      </header>
-    </div>
-  );
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" exact element={<Home/>}/>
+        <Route path="/snv" exact element={<Dashboard/>}/>
+      </Routes>
+      
+    </BrowserRouter>
+  )
 }
 
-export default App;
+export default AppRouter;
