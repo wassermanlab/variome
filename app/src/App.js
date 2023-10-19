@@ -1,21 +1,27 @@
 import './App.css';
+import theme from './styles/theme';
 
-import {BrowserRouter, Routes, Route} from 'react-router-dom'
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
 
-import Home from './pages/home'
-import Dashboard from './pages/dashboard'
+
+import NavBar from './layouts/navbar';
 
 
 function AppRouter () {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" exact element={<Home/>}/>
-        <Route path="/snv" exact element={<Dashboard/>}/>
-      </Routes>
-      
-    </BrowserRouter>
-  )
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+            <Routes>
+                {/* TODO: Pages that do not use navbar (like login/signup) go below*/}
+                {/*<Route path="/login" exact element={<Login/>}/>*/}
+                <Route path="/*" element={<NavBar/>}/>
+            </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
+    )
 }
 
 export default AppRouter;

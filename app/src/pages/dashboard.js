@@ -4,7 +4,7 @@ import Annotations from '../components/Annotations'
 import References from '../components/References'
 import Overview from '../components/Overview'
 
-const Dashboard = () => {
+export default function Dashboard() {
   return (
       <Grid container spacing={6}>
         <Grid item xs={12} md={8}>
@@ -27,4 +27,3 @@ const Dashboard = () => {
   )
 }
 
-export default Dashboard
