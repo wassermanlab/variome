@@ -146,11 +146,11 @@ export default function Home() {
                                         
                                     </Grid>
                                     <Grid item xs={6}>
-                                        {/* SQ TODO: Make this work with the image */}
                                         <Box
                                             component="img"
                                             alt="Temporary Logo"
-                                            src="/assets/temp-logo.svg"
+                                            src="/temp-logo.svg"
+                                            style={{ width: '200px', marginLeft: '80px', marginTop: '20px'  }}
                                         />
                                     </Grid>
                                 </Grid>
