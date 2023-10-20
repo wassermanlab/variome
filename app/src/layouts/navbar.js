@@ -7,7 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
-import Link from '@mui/material/Link';
+import { Link } from 'react-router-dom';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -26,6 +26,7 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 import { Select, MenuItem } from '@mui/material';
 import { useState } from 'react';
+import Button from '@material-ui/core/Button';
 
 import Home from '../pages/home';
 import SNV from '../pages/snv';
@@ -188,8 +189,8 @@ export default function AppNavBar() {
                     >
                         Variome Project
                     </Typography>  
-                    <DropdownMenu />
-                    {/* SQ TODO: Make the font color for this match the rest of the App Bar (aka textPrimary)*/}                    
+                    <DropdownMenu />  
+                               
                     <Search>
                         <SearchIconWrapper>
                             <SearchIcon />
@@ -199,6 +200,37 @@ export default function AppNavBar() {
                             inputProps={{ 'aria-label': 'search' }}
                         />
                     </Search>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: "800px" }}>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Button 
+                                component={Link} 
+                                to="/profile"
+                                variant="text" 
+                                sx={{ color: 'black', marginRight: '10px' }}
+                            >
+                                Profile
+                            </Button>
+                            <Button 
+                                component={Link} 
+                                to="/login"
+                                variant="text" 
+                                sx={{ color: 'black', marginRight: '10px' }}
+                            >
+                                Login
+                            </Button>
+                            <Button 
+                                component={Link} 
+                                to="/signup"
+                                variant="text" 
+                                sx={{ color: 'black', marginRight: '10px' }}
+                            >
+                                Sign Up
+                            </Button>
+                        </Box>
+                    </Box>
+                    
                 </Toolbar>
             </AppBar>
             <Drawer

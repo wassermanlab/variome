@@ -2,7 +2,7 @@ import Grid from '@mui/material/Grid'
 import Variant from '../components/Variant'
 import Annotations from '../components/Annotations'
 import References from '../components/References'
-import Overview from '../components/Overview'
+import SNV from '../components/SNV'
 
 export default function Dashboard() {
   return (
@@ -13,7 +13,7 @@ export default function Dashboard() {
                 <Variant />
             </Grid>
             <Grid item xs={12}>
-              <Overview />
+              <SNV />
             </Grid>
           </Grid>
         </Grid>
