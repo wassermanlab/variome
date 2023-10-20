@@ -24,7 +24,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
-
+import { Select, MenuItem } from '@mui/material';
+import { useState } from 'react';
 
 import Home from '../pages/home';
 import SNV from '../pages/snv';
@@ -124,6 +125,32 @@ const Search = styled('div')(({ theme }) => ({
     },
   }));
 
+  const DropdownMenu = () => {
+    const [assembly, setAssembly] = useState('');
+  
+    const handleChange = (event) => {
+      setAssembly(event.target.value);
+    };
+  
+    return (
+      <Select
+        value={assembly}
+        onChange={handleChange}
+        displayEmpty
+        inputProps={{ 'aria-label': 'Assembly' }}
+        style={{ color: 'black', marginLeft: '20px' }}
+      >
+        <MenuItem value="" disabled>
+        Select Assembly
+        </MenuItem>
+        <MenuItem value="GRCh37 – SNV and Mt">GRCh37 – SNV and Mt</MenuItem>
+        <MenuItem value="GRCh37 – SV">GRCh37 – SV</MenuItem>
+        <MenuItem value="GRCh38 – SNV and Mt">GRCh38 – SNV and Mt</MenuItem>
+        <MenuItem value="GRCh38 – SV">GRCh38 – SV</MenuItem>
+      </Select>
+    );
+  };
+
 export default function AppNavBar() {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
@@ -160,7 +187,7 @@ export default function AppNavBar() {
                     >
                         Variome Project
                     </Typography>  
-                    {/* SQ TODO: Add select here for assembly type */}  
+                    <DropdownMenu />
                     {/* SQ TODO: Make the font color for this match the rest of the App Bar (aka textPrimary)*/}                    
                     <Search>
                         <SearchIconWrapper>
