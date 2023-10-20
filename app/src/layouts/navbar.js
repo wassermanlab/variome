@@ -27,6 +27,11 @@ import SearchIcon from '@mui/icons-material/Search';
 
 
 import Home from '../pages/home';
+import SNV from '../pages/snv';
+import About from '../pages/about';
+import TermsOfUse from '../pages/terms';
+import FAQ from '../pages/faq';
+import Contact from '../pages/contact';
 import Dashboard from '../pages/dashboard';
 
 const drawerWidth = 240;
@@ -65,13 +70,13 @@ const AppBar = styled(MuiAppBar, {
             duration: theme.transitions.duration.enteringScreen,
         }),
     }),
-    backgroundColor: (theme) => theme.palette.common.white
 }));
 
 const DrawerHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     padding: theme.spacing(0, 1),
+    //paddingTop: "2%",
     // necessary for content to be below app bar
     ...theme.mixins.toolbar,
     justifyContent: 'flex-end',
@@ -133,10 +138,12 @@ export default function AppNavBar() {
   return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
-            <AppBar position="fixed" open={open}>
+            <AppBar position="fixed" open={open} sx={(theme) => ({
+                bgcolor: theme.palette.common.white
+            })}>
                 <Toolbar>
                     <IconButton
-                        color="inherit"
+                        color="textPrimary"
                         aria-label="open drawer"
                         onClick={handleDrawerOpen}
                         edge="start"
@@ -148,19 +155,20 @@ export default function AppNavBar() {
                         variant="h6"
                         noWrap
                         component="div"
-                        color="inherit"
+                        color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
                         Variome Project
                     </Typography>  
-                    {/* TODO: Add select here for assembly type */}                      
+                    {/* SQ TODO: Add select here for assembly type */}  
+                    {/* SQ TODO: Make the font color for this match the rest of the App Bar (aka textPrimary)*/}                    
                     <Search>
                         <SearchIconWrapper>
                             <SearchIcon />
                         </SearchIconWrapper>
                         <StyledInputBase
-                        placeholder="Search variant"
-                        inputProps={{ 'aria-label': 'search' }}
+                            placeholder="Search variant"
+                            inputProps={{ 'aria-label': 'search' }}
                         />
                     </Search>
                 </Toolbar>
@@ -179,7 +187,7 @@ export default function AppNavBar() {
                 open={open}
             >
                 <DrawerHeader>
-                    {/* TODO: Add Logo here */}
+                    {/* BH TODO: Add Logo here */}
                     <IconButton onClick={handleDrawerClose}>
                         {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
                     </IconButton>
@@ -222,9 +230,17 @@ export default function AppNavBar() {
             <Main open={open}>
                 <DrawerHeader />
                 <Routes>
-                    <Route path="/" exact element={<Home/>} />
-                    <Route path="/snv" exact element={<Dashboard/>} />
+                    <Route path="/" exact element={ <Home/> } />
+                    {/* BH TODO: Add "variant-id" to this url path to connect to database */}
+                    <Route path="/snv" exact element={ <SNV/> } />
+                    <Route path="/about" exact element={ <About/> } />
+                    <Route path="/terms" exact element={ <TermsOfUse/> } />
+                    <Route path="/faq" exact element={ <FAQ/> } />
+                    <Route path="/contact" exact element={ <Contact/> } />
+                    {/* BH TODO: Delete this "dashboard" route once the new SNV page is implemented */}
+                    <Route path="/dashboard" exact element={ <Dashboard/> } />
                 </Routes>
+                {/* SQ TODO: Possibly add footer here */}
             </Main>
         </Box>
     

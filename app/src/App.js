@@ -15,9 +15,9 @@ function AppRouter () {
         <CssBaseline />
         <BrowserRouter>
             <Routes>
-                {/* TODO: Pages that do not use navbar (like login/signup) go below*/}
+                {/* SQ TODO: Pages that do not use navbar (like login/signup) go below*/}
                 {/*<Route path="/login" exact element={<Login/>}/>*/}
-                <Route path="/*" element={<NavBar/>}/>
+                <Route path="/*" element={ <NavBar/> }/>
             </Routes>
         </BrowserRouter>
       </ThemeProvider>
