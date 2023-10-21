@@ -6,27 +6,23 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 
-export default function References() {
-    const referencesList = [
+export default function VariantDetails() {
+    const variantDetailsList = [
         {
-            ref: 'dbSNP',
-            val: 'rs7164960',
+            title: 'Type',
+            val: 'SNV',
         },
         {
-            ref: 'UCSC',
-            val: 'Search UCSC',
+            title: 'Position',
+            val: '27107251',
         },
         {
-            ref: 'Ensembl',
-            val: 'Search Ensembl',
+            title: 'Site Quality',
+            val: '447',
         },
         {
-            ref: 'ClinVar',
-            val: 'Search ClinVar',
-        },
-        {
-            ref: 'gnomAD',
-            val: 'Search gnomAD',
+            title: 'Reference Genome',
+            val: 'hg37',
         }
     ]
 
@@ -35,16 +31,11 @@ export default function References() {
             <Card>
                 <CardContent>
                     <Grid container>
-                        <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
-                                References
-                            </Typography>
-                        </Grid>
-                        {referencesList.map((item, index) => (
+                        {variantDetailsList.map((item, index) => (
                             <Grid container>
                                 <Grid item xs={3} key={index}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                        {item.ref}
+                                        {item.title}
                                     </Typography>
                                 </Grid>
                                 <Grid item xs={9}>
