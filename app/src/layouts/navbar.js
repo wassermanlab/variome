@@ -157,7 +157,7 @@ export default function AppNavBar() {
                         color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        Variome Project
+                        <Link href="/" color="textPrimary" underline="none">Variome Project</Link>
                     </Typography>  
                     {/* SQ TODO: Add select here for assembly type */}  
                     {/* SQ TODO: Make the font color for this match the rest of the App Bar (aka textPrimary)*/}                    

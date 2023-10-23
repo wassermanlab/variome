@@ -8,7 +8,8 @@ import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid'
+import Grid from '@mui/material/Grid';
+import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
@@ -91,7 +92,7 @@ export default function Home() {
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1">SNV example</Typography>
+                                                <Typography variant="body1"><Link href="/snv/21-27099567-A-C" color="primary">21-27099567-A-C</Link></Typography>
                                             </Grid>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>
