@@ -230,8 +230,7 @@ export default function AppNavBar() {
                 <DrawerHeader />
                 <Routes>
                     <Route path="/" exact element={ <Home/> } />
-                    {/* BH TODO: Add "variant-id" to this url path to connect to database */}
-                    <Route path="/snv" exact element={ <SNV/> } />
+                    <Route path="/snv/:varId" loader={({ params }) => {}} action={({ params }) => {}} element={ <SNV/>} />
                     <Route path="/about" exact element={ <About/> } />
                     <Route path="/terms" exact element={ <TermsOfUse/> } />
                     <Route path="/faq" exact element={ <FAQ/> } />

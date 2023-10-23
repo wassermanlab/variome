@@ -16,15 +16,47 @@ function createData(name, total, xx, xy, gnomad) {
     return { name, total, xx, xy, gnomad };
 }
 
-const rows = [
-    createData('Allele Number', 159, 6.0, 24, 4.0),
-    createData('Allele Count', 237, 9.0, 37, 4.3),
-    createData('Allele Frequency', 262, 16.0, 24, 6.0),
-    createData('No. of Homozygotes', 305, 3.7, 67, 4.3),
-];
 
-
-export default function PopFrequencies() {
+export default function PopFrequencies(props) {
+    console.log(props.popFrequencies)
+    const ibvlFreq = props.popFrequencies.genomic_ibvl_freq;
+    const gnomadFreq = props.popFrequencies.genomic_gnomad_freq;
+    var rows = []
+    
+    // BH TODO: Format decimals to appropriate scientific notation
+    if (ibvlFreq && gnomadFreq) {
+        rows = [
+            createData(
+                'Allele Number', 
+                ibvlFreq["an_tot"], 
+                ibvlFreq["an_xx"],  
+                ibvlFreq["an_xy"],  
+                gnomadFreq["an_tot"], 
+            ),
+            createData(
+                'Allele Count', 
+                ibvlFreq["ac_tot"], 
+                ibvlFreq["ac_xx"],  
+                ibvlFreq["ac_xy"],  
+                gnomadFreq["ac_tot"],
+            ),
+            createData(
+                'Allele Frequency',
+                ibvlFreq["af_tot"], 
+                ibvlFreq["af_xx"],  
+                ibvlFreq["af_xy"],  
+                gnomadFreq["af_tot"],
+            ),
+            createData(
+                'No. of Homozygotes',
+                ibvlFreq["hom_tot"], 
+                ibvlFreq["hom_xx"],  
+                ibvlFreq["hom_xy"],  
+                gnomadFreq["hom_tot"],
+            ),
+        ];
+    }
+    
 
     return (
         <React.Fragment>
@@ -32,7 +64,7 @@ export default function PopFrequencies() {
                 <CardContent>
                     <Grid container>
                         <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
                                 IBVL Frequencies
                             </Typography>
                         </Grid>
@@ -55,10 +87,10 @@ export default function PopFrequencies() {
                                         {/* BH TODO: Change the font of the headings in this table */}
                                         <TableRow>
                                             <TableCell sx={{ borderBottom: 'none' }}></TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none' }}>Total</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none' }}>xx</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none' }}>xy</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none' }}>Total</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Total</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>xx</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>xy</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Total</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

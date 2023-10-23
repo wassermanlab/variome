@@ -6,7 +6,7 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 
-export default function Variant() {
+export default function Variant(props) {
 
     return (
         <React.Fragment>
@@ -15,7 +15,7 @@ export default function Variant() {
                     <Grid container>
                         <Grid item xs={7}>
                             <Typography variant="h4" sx={{ fontWeight: 'light' }}>
-                                21-27107251-C-G
+                                { props.varId }
                             </Typography>
                             {/* BH TODO: Add "Copy variant ID" here */}
                         </Grid>
@@ -24,7 +24,7 @@ export default function Variant() {
                                 Alternate Allele
                             </Typography>
                             <Typography variant="subtitle1">
-                                G
+                                { props.variantMetadata["alt"] }
                             </Typography>
                         </Grid>
                         <Grid item xs={2}>

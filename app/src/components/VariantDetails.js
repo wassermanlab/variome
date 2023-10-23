@@ -6,15 +6,15 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 
-export default function VariantDetails() {
+export default function VariantDetails(props) {
     const variantDetailsList = [
         {
             title: 'Type',
-            val: 'SNV',
+            val: props.variantMetadata["var_type"],
         },
         {
             title: 'Position',
-            val: '27107251',
+            val: props.variantMetadata["pos"],
         },
         {
             title: 'Site Quality',
@@ -32,8 +32,8 @@ export default function VariantDetails() {
                 <CardContent>
                     <Grid container>
                         {variantDetailsList.map((item, index) => (
-                            <Grid container>
-                                <Grid item xs={3} key={index}>
+                            <Grid container key={index}>
+                                <Grid item xs={3}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
                                         {item.title}
                                     </Typography>
