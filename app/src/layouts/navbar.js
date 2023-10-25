@@ -35,6 +35,7 @@ import TermsOfUse from '../pages/terms';
 import FAQ from '../pages/faq';
 import Contact from '../pages/contact';
 import Dashboard from '../pages/dashboard';
+import Profile from '../pages/profile';
 
 const drawerWidth = 240;
 
@@ -299,6 +300,7 @@ export default function AppNavBar() {
                     <Route path="/contact" exact element={ <Contact/> } />
                     {/* BH TODO: Delete this "dashboard" route once the new SNV page is implemented */}
                     <Route path="/dashboard" exact element={ <Dashboard/> } />
+                    <Route path="/profile" exact element={ <Profile/> } />
                 </Routes>
             
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { styled } from '@mui/material/styles';
-import { makeStyles } from '@material-ui/core';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -30,22 +29,16 @@ const Root = styled('div')(({ theme }) => ({
     },
 }))
 
-const useStyles = makeStyles({
-    root: {
-      maxWidth: 400,
-      margin: 'auto',
-      marginTop: 50,
-    },
-  });
 
-  const Profile = () => { 
+export default function Profile() {
+
     return (
         <Container maxWidth="xl">
             <Box sx={{ display: 'flex'}}>  
                 <Grid container direction="row" justifyContent="center" alignItems="center" spacing={2}>
                     <Grid item xs={7}>
                         <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            Profile
+                           Profile
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
@@ -59,8 +52,6 @@ const useStyles = makeStyles({
             </Box> 
         </Container>
         
+        
   )
-
 }
-
-export default Profile;
