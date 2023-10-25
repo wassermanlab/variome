@@ -26,7 +26,6 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 import { useState, useEffect } from 'react';
 
-
 import Home from '../pages/home';
 import SNV from '../pages/snv';
 import About from '../pages/about';
@@ -136,25 +135,19 @@ export default function AppNavBar() {
         setOpen(false);
     };
 
+    const handleScroll = () => {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.body.offsetHeight;
+        const scrollPosition = window.scrollY || window.pageYOffset;
 
-    const [isVisible, setIsVisible] = useState(true);
+        if (documentHeight - windowHeight <= scrollPosition) {
+            document.getElementById('footer').style.display = 'block';
+        } else {
+            document.getElementById('footer').style.display = 'none';
+        }
+    };
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY;
-            const footer = document.getElementById('footer');
-            if (footer) {
-                const footerHeight = footer.offsetHeight;
-                const fullHeight = document.body.offsetHeight;
-                const windowHeight = window.innerHeight;
-                if (currentScrollY + windowHeight >= fullHeight - footerHeight) {
-                    setIsVisible(true);
-                } else {
-                    setIsVisible(false);
-                }
-            }
-        };
-
+    React.useEffect(() => {
         window.addEventListener('scroll', handleScroll);
 
         return () => {
@@ -162,7 +155,6 @@ export default function AppNavBar() {
         };
     }, []);
 
-    if (!isVisible) return null;
 
   return (
         <Box sx={{ display: 'flex' }}>
@@ -273,6 +265,7 @@ export default function AppNavBar() {
                 <Box
             id="footer"
             sx={{
+                display: 'none',
                 position: 'fixed',
                 bottom: 0,
                 width: '120%',
@@ -282,7 +275,7 @@ export default function AppNavBar() {
                 paddingBottom: '2.5rem'
             }}
         >
-                {isVisible && (
+
             <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
                 <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200, marginRight: 10, marginLeft: 100 }} />
                 <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px', marginLeft: '40px' }}>
@@ -304,8 +297,7 @@ export default function AppNavBar() {
                     </Link>
                 </Typography>
                 </Box>
-            
-            )}
+        
             
             </Box>
             </Main>
