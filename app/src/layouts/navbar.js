@@ -24,7 +24,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
-
+import { useState, useEffect } from 'react';
 
 import Home from '../pages/home';
 import SNV from '../pages/snv';
@@ -134,6 +134,27 @@ export default function AppNavBar() {
         setOpen(false);
     };
 
+    const handleScroll = () => {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.body.offsetHeight;
+        const scrollPosition = window.scrollY || window.pageYOffset;
+
+        if (documentHeight - windowHeight <= scrollPosition) {
+            document.getElementById('footer').style.display = 'block';
+        } else {
+            document.getElementById('footer').style.display = 'none';
+        }
+    };
+
+    React.useEffect(() => {
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+
   return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
@@ -236,7 +257,45 @@ export default function AppNavBar() {
                     <Route path="/faq" exact element={ <FAQ/> } />
                     <Route path="/contact" exact element={ <Contact/> } />
                 </Routes>
-                {/* SQ TODO: Possibly add footer here */}
+                
+                <Box
+            id="footer"
+            sx={{
+                display: 'none',
+                position: 'fixed',
+                bottom: 0,
+                width: '120%',
+                transform: 'translateX(-5%)',
+                bgcolor: '#0F3057',
+                zIndex: 1000,
+                paddingBottom: '2.5rem'
+            }}
+        >
+
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
+                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200, marginRight: 10, marginLeft: 100 }} />
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px', marginLeft: '40px' }}>
+                    Variome
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                    <Link href="/about" color="inherit">
+                        About
+                    </Link>
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                    <Link href="/terms" color="inherit">
+                        Terms of Use
+                    </Link>
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
+                    <Link href="/contact" color="inherit">
+                        Contact
+                    </Link>
+                </Typography>
+                </Box>
+        
+            
+            </Box>
             </Main>
         </Box>
     

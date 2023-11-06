@@ -164,3 +164,4 @@ app/yarn-error.log*
 config.py
 config.json
 .DS_Store
+node_modules
