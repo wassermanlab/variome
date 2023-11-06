@@ -14,6 +14,8 @@ import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import Button from '@mui/material/Button';
+import Link from '@mui/material/Link';
 
 const PREFIX = 'Home';
 const classes = {
@@ -169,7 +171,13 @@ export default function Home() {
                                         <Typography variant="body1" sx={{ fontWeight: 'light' }}>
                                             <b>Wyeth W. Wasserman</b>, PhD (Co-Lead)
                                         </Typography>
-                                        {/* SQ TODO: Add "Learn More" button here that links to the SGP home page */}
+                                        
+                                        <Link href="https://www.bcchr.ca/silent-genomes-project" target="_blank" rel="noopener noreferrer">
+                                            <Button size="large" sx={{ marginTop: '20px', fontWeight: 'bold', border: '1px solid grey' }}>
+                                                Learn More
+                                            </Button>
+                                        </Link>
+                                        
                                     </Grid>
                                     <Grid item xs={6}>
                                         {/* SQ TODO: Make this work with the image */}

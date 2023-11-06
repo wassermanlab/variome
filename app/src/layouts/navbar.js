@@ -108,10 +108,11 @@ const Search = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    color: 'darkgrey'
   }));
   
   const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: 'inherit',
+    color: theme.palette.text.primary,
     '& .MuiInputBase-input': {
       padding: theme.spacing(1, 1, 1, 0),
       // vertical padding + font size from searchIcon
@@ -263,7 +264,6 @@ export default function AppNavBar() {
                     <Route path="/faq" exact element={ <FAQ/> } />
                     <Route path="/contact" exact element={ <Contact/> } />
                 </Routes>
-
             </Main>
         </Box>
     
