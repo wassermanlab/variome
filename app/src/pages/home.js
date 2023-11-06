@@ -3,6 +3,7 @@ import { styled } from '@mui/material/styles';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
@@ -52,6 +53,31 @@ const Item = styled('div')(({ theme }) => ({
   }));
 
 export default function Home() {
+    const [options, setOptions] = React.useState([])
+
+    const getData = async(searchTerm) => {
+        const data = {
+            "variant_id": searchTerm
+        }
+        const response = await fetch("http://127.0.0.1:8000/api/search", {
+            method: 'POST',
+            body:JSON.stringify(data),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
+        const json = await response.json();
+        setOptions(json["variants"]);
+    };
+
+    const onInputChange = (event, value, reason) => {
+        if (value) {
+            getData(value);
+        } else {
+            setOptions([]);
+        }
+    }
 
     return (
         <Container maxWidth="xl">
@@ -78,7 +104,14 @@ export default function Home() {
                                         <Typography variant="h5" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
                                             Variant Search
                                         </Typography>
-                                        <TextField id="variant-search" label="Search variants" fullWidth />
+                                        {/* TODO: Remove the arrow in the dropdown bar before anything has been typed */}
+                                        <Autocomplete
+                                            id="home-search-bar"
+                                            options={options}
+                                            onInputChange={onInputChange}
+                                            renderInput={(params) => <TextField {...params} label="Search variants" />}
+                                            fullWidth
+                                        />
                                     </Grid>
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
