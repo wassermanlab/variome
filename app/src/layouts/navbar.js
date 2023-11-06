@@ -33,7 +33,6 @@ import About from '../pages/about';
 import TermsOfUse from '../pages/terms';
 import FAQ from '../pages/faq';
 import Contact from '../pages/contact';
-import Dashboard from '../pages/dashboard';
 
 const drawerWidth = 240;
 
@@ -186,7 +185,7 @@ export default function AppNavBar() {
                         color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        Variome Project
+                        <Link href="/" color="textPrimary" underline="none">Variome Project</Link>
                     </Typography>  
                     <DropdownMenu />
                     {/* SQ TODO: Make the font color for this match the rest of the App Bar (aka textPrimary)*/}                    
@@ -259,17 +258,12 @@ export default function AppNavBar() {
                 <DrawerHeader />
                 <Routes>
                     <Route path="/" exact element={ <Home/> } />
-                    {/* BH TODO: Add "variant-id" to this url path to connect to database */}
-                    <Route path="/snv" exact element={ <SNV/> } />
+                    <Route path="/snv/:varId" loader={({ params }) => {}} action={({ params }) => {}} element={ <SNV/>} />
                     <Route path="/about" exact element={ <About/> } />
                     <Route path="/terms" exact element={ <TermsOfUse/> } />
                     <Route path="/faq" exact element={ <FAQ/> } />
                     <Route path="/contact" exact element={ <Contact/> } />
-                    {/* BH TODO: Delete this "dashboard" route once the new SNV page is implemented */}
-                    <Route path="/dashboard" exact element={ <Dashboard/> } />
                 </Routes>
-            
-
             </Main>
         </Box>
     

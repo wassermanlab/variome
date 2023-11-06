@@ -1,57 +1,119 @@
-import React from 'react';
-import { styled } from '@mui/material/styles';
+import React, { useEffect, useState } from 'react';
 
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid'
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import { useParams } from 'react-router-dom'
 
-const PREFIX = 'Home';
-const classes = {
-    root: `${PREFIX}-root`,
-    cta: `${PREFIX}-cta`,
-}
-const Root = styled('div')(({ theme }) => ({
-    [`&.${classes.root}`]: {
-        display: 'flex',
-        alignItems: 'center',
-        backgroundColor: theme.palette.primary.main
-    },
-    [`& .${classes.cta}`]: {
-        borderRadius: theme.shape.radius
-    },
-}))
+import Variant from '../components/Variant';
+import VariantDetails from '../components/VariantDetails';
+import References from '../components/References';
+import PopFrequencies from '../components/PopFrequencies';
+import Annotations from '../components/Annotations';
 
 
 export default function SNV() {
+    let params = useParams();
+    const varId = params.varId
+    const [loading, setLoading] = useState(false);
+    const [variantMetadata, setVariantMetadata] = useState({});
+    const [popFrequencies, setPopFrequencies] = useState({});
+    const [variantAnnotations, setVariantAnnotations] = useState({});
+
+    // Get Variant metadata
+    useEffect(() => {
+        const fetchSNVData = async () => {
+            setLoading(true);
+            const response = await fetch("http://127.0.0.1:8000/api/snv/" + varId);
+            const json = await response.json(); //TODO: Error check result
+            setVariantMetadata(json);
+            console.log(json)
+        }
+        const fetchFreqData = async () => {
+            setLoading(true);
+            const response = await fetch("http://127.0.0.1:8000/api/genomic_population_frequencies/" + varId);
+            const json = await response.json(); //TODO: Error check result
+            setPopFrequencies(json);
+            console.log(json)
+        }
+        const fetchAnnData = async () => {
+            setLoading(true);
+            const response = await fetch("http://127.0.0.1:8000/api/annotations/" + varId);
+            const json = await response.json(); //TODO: Error check result
+            setVariantAnnotations(json);
+            console.log(json)
+            setLoading(false)
+        }
+
+        fetchSNVData();
+        fetchFreqData();
+        fetchAnnData();
+        //setLoading(false);
+
+
+    }, [varId])
+
+    /*
+    // Get Population frequencies data
+    useEffect(() => {
+        const fetchRefData = async () => {
+            const response = await fetch("http://127.0.0.1:8000/api/genomic_population_frequencies/" + varId);
+            const json = await response.json(); //TODO: Error check result
+            setPopFrequencies(json[0]);
+            console.log(json[0])
+        }
+        fetchRefData();
+    }, [varId])
+
+    // Get Variant annotation data
+    useEffect(() => {
+        const fetchRefData = async () => {
+            const response = await fetch("http://127.0.0.1:8000/api/annotations/" + varId);
+            const json = await response.json(); //TODO: Error check result
+            setVariantAnnotations(json);
+        }
+        fetchRefData();
+    }, [varId])
+    */
 
     return (
         <Container maxWidth="xl">
+            <Dialog
+                disableEscapeKeyDown={true}
+                open={loading}
+                sx={{ textAlign: "center" }}
+            >
+                <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
+                <DialogContent><CircularProgress/></DialogContent>
+            </Dialog>
             <Box sx={{ display: 'flex'}}>  
-                <Grid container direction="row" justifyContent="center" alignItems="center" spacing={2}>
-                    <Grid item xs={7}>
-                        <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            SNV
-                        </Typography>
+                <Grid container direction="row" justifyContent="center" alignItems="top" spacing={2}>
+                    <Grid item xs={8}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <Variant varId={varId} variantMetadata={variantMetadata}/>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <VariantDetails varId={varId} variantMetadata={variantMetadata}/>
+                            </Grid>
+                        </Grid> 
                     </Grid>
-                    <Grid item xs={5}>
-                        <Alert severity="warning">
-                            <AlertTitle sx={{ fontWeight: 'bold' }}>Disclaimer</AlertTitle>
-                            This is a test database. All data used is open source and does
-                            not include Indigenous data.
-                        </Alert>
+                    {/* BH TODO: Make the references box as tall as the Variant and Variant Details boxes together */}
+                    <Grid item xs={4}>
+                        <References varId={varId} variantMetadata={variantMetadata}/>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Annotations varId={varId} variantAnnotations={variantAnnotations}/>
                     </Grid>
                 </Grid>
             </Box> 
         </Container>
-        
-        
   )
 }

@@ -1,63 +1,75 @@
 import React from 'react';
-import Grid from '@mui/material/Grid';
+
 import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
-import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
+import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
 
-const referencesList = [
-  {
-    title: 'dbSNP',
-    value: 'rs7164960',
-  },
-  {
-    title: 'UCSC',
-    value: 'Search UCSC',
-  },
-  {
-    title: 'Esembl',
-    value: 'Search Esembl',
-  },
-  {
-    title: 'ClinVar',
-    value: 'Search ClinVar ()',
-  },
-  {
-    title: 'gnomAD',
-    value: 'Search gnomAD',
-  }
-];
 
-const renderReferences = () => {
-  return referencesList.map((item, index) => (
-    <Grid item xs={6} key={index}>
-      <Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
-        {item.title}
-      </Typography>
-      <Typography variant='body1'>{item.value}</Typography>
-    </Grid>
-  ));
-};
+export default function References(props) {
+    // BH TODO: Add conditional formatting for what is disaplyed based on which
+    //          data is found in the database (i.e. no clinvar VCV means there 
+    //          should be something that says "Search ClinVar" instead)
+    // BH TODO: Add functional URL links for these, as well as the conditional
+    //          formatting for if the link does not exist (i.e. no url in the
+    //          database for gnomAD means it just brings you to the gnomAD home
+    //          page instead etc.)
+    const referencesList = [
+        {
+            ref: 'dbSNP',
+            val: props.variantMetadata["dbsnp_id"],
+            link: props.variantMetadata["dbsnp_url"],
+        },
+        {
+            ref: 'UCSC',
+            val: 'Search UCSC',
+            link: props.variantMetadata["ucsc_url"],
+        },
+        {
+            ref: 'Ensembl',
+            val: 'Search Ensembl',
+            link: props.variantMetadata["ensembl_url"],
+        },
+        {
+            ref: 'ClinVar',
+            val: props.variantMetadata["clinvar_vcv"],
+            link: props.variantMetadata["clinvar_url"],
+        },
+        {
+            ref: 'gnomAD',
+            val: 'Search gnomAD',
+            link: props.variantMetadata["gnomad_url"],
+        }
+    ]
 
-const References = () => {
-  return (
-    <Card>
-      <CardHeader
-        title='References'
-        titleTypographyProps={{
-          sx: {
-            lineHeight: '2rem !important',
-            letterSpacing: '0.15px !important',
-          },
-        }}
-      />
-      <CardContent sx={{ pt: (theme) => `${theme.spacing(3)} !important` }}>
-        <Grid container spacing={2}>
-          {renderReferences()}
-        </Grid>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default References
+    return (
+        <React.Fragment>
+            <Card>
+                <CardContent>
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
+                                References
+                            </Typography>
+                        </Grid>
+                        {referencesList.map((item, index) => (
+                            <Grid container key={index} alignItems="center">
+                                <Grid item xs={3}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                        {item.ref}
+                                    </Typography>
+                                </Grid>
+                                <Grid item xs={9}>
+                                    <Typography variant="subtitle1">
+                                        <Link color="primary" href={item.link} target="_blank">{item.val}</Link>
+                                    </Typography>
+                                </Grid>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </CardContent>
+            </Card>
+        </React.Fragment>
+    )
+}
