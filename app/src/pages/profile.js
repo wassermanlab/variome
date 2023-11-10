@@ -1,16 +1,16 @@
-import Box from '@mui/material/Box'
-import Grid from '@mui/material/Grid'
-import Alert from '@mui/material/Alert'
-import Select from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import InputLabel from '@mui/material/InputLabel'
-import AlertTitle from '@mui/material/AlertTitle'
-import CardContent from '@mui/material/CardContent'
-import FormControl from '@mui/material/FormControl'
-import Button from '@mui/material/Button'
-import { styled } from '@mui/material/styles';
+import Box from '@mui/system/Box';
+import Grid from '@mui/material/Grid';
+import Alert from '@mui/material/Alert';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
+import AlertTitle from '@mui/material/AlertTitle';
+import CardContent from '@mui/material/CardContent';
+import FormControl from '@mui/material/FormControl';
+import Button from '@mui/material/Button';
+import { styled } from '@mui/styles';
 
 const PREFIX = 'Home';
 const classes = {
@@ -90,4 +90,4 @@ const Profile = () => {
   )
 }
 
-export default Profile
+export default Profile;

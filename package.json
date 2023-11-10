@@ -5,6 +5,7 @@
     "@material-ui/core": "^4.12.4",
     "@mui/icons-material": "^5.14.14",
     "@mui/material": "^5.14.14",
+    "@mui/styles": "^5.14.17",
     "mdi-material-ui": "^7.7.0",
     "mui": "^0.0.1",
     "react-is": "^18.2.0",
