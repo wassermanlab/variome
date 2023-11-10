@@ -262,46 +262,11 @@ export default function AppNavBar() {
                     <Route path="/dashboard" exact element={ <Dashboard/> } />
                 </Routes>
                 
-                <Box
-            id="footer"
-            sx={{
-                display: 'none',
-                position: 'fixed',
-                bottom: 0,
-                width: '120%',
-                transform: 'translateX(-5%)',
-                bgcolor: '#0F3057',
-                zIndex: 1000,
-                paddingBottom: '2.5rem'
-            }}
-        >
-
-            <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
-                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200, marginRight: 10, marginLeft: 100 }} />
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px', marginLeft: '40px' }}>
-                    Variome
-                </Typography>
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
-                    <Link href="/about" color="inherit">
-                        About
-                    </Link>
-                </Typography>
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
-                    <Link href="/terms" color="inherit">
-                        Terms of Use
-                    </Link>
-                </Typography>
-                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
-                    <Link href="/contact" color="inherit">
-                        Contact
-                    </Link>
-                </Typography>
-                </Box>
-        
-            
-            </Box>
             </Main>
+
+            
         </Box>
+    
     
   );
 }
