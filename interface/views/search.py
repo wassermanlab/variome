@@ -30,8 +30,9 @@ def snv_search(request, **kwargs):
 
     if request.method == 'POST':
         if variants:
+            # Only send at most 10 variants
             data_out = {
-                "variants": list(variants),
+                "variants": list(variants)[:10],
             }
         else:
             data_out = {

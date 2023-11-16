@@ -6,7 +6,6 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
@@ -15,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
+
+import Search from '../components/Search';
 
 const PREFIX = 'Home';
 const classes = {
@@ -32,17 +33,6 @@ const Root = styled('div')(({ theme }) => ({
     },
 }))
 
-/*const Item = styled(Card)(({ theme }) => ({
-    backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
-    ...theme.typography.body2,
-    padding: theme.spacing(1),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-  }));
-
-const SecondItem = styled('div')(({ theme }) => ({
-    textAlign: 'left',
-}))*/
 
 const Item = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -54,31 +44,6 @@ const Item = styled('div')(({ theme }) => ({
   }));
 
 export default function Home() {
-    const [options, setOptions] = React.useState([])
-
-    const getData = async(searchTerm) => {
-        const data = {
-            "variant_id": searchTerm
-        }
-        const response = await fetch("http://127.0.0.1:8000/api/search", {
-            method: 'POST',
-            body:JSON.stringify(data),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
-        });
-        const json = await response.json();
-        setOptions(json["variants"]);
-    };
-
-    const onInputChange = (event, value, reason) => {
-        if (value) {
-            getData(value);
-        } else {
-            setOptions([]);
-        }
-    }
 
     return (
         <Container maxWidth="xl">
@@ -106,13 +71,7 @@ export default function Home() {
                                             Variant Search
                                         </Typography>
                                         {/* TODO: Remove the arrow in the dropdown bar before anything has been typed */}
-                                        <Autocomplete
-                                            id="home-search-bar"
-                                            options={options}
-                                            onInputChange={onInputChange}
-                                            renderInput={(params) => <TextField {...params} label="Search variants" />}
-                                            fullWidth
-                                        />
+                                        <Search variant="outlined" width="100%" marginLeft="0px"/>
                                     </Grid>
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
@@ -126,7 +85,7 @@ export default function Home() {
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1"><Link href="/snv/21-27099567-A-C" color="primary">21-27099567-A-C</Link></Typography>
+                                                <Typography variant="body1"><Link href="/snv/22-50623773-C-A" color="primary">22-50623773-C-A</Link></Typography>
                                             </Grid>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>

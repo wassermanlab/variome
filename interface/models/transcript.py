@@ -1,7 +1,7 @@
 from django.db import models
 from .gene import Gene
 
-
+# TODO: Add transcript choices here
 TRANSCRIPT_CHOICES = []
 
 
