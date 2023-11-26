@@ -7,6 +7,7 @@ import Container from '@mui/material/Container';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+import Paper from '@mui/material/Paper';
 import { useParams } from 'react-router-dom'
 
 import Variant from '../components/Variant';
@@ -110,7 +111,9 @@ export default function SNV() {
                         <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
                     </Grid>
                     <Grid item xs={12}>
-                        <Annotations varId={varId} variantAnnotations={variantAnnotations}/>
+                        <Paper sx={{ height: '300px', overflowY: 'auto', padding: 2 }}>
+                            <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+                        </Paper>
                     </Grid>
                 </Grid>
             </Box> 
