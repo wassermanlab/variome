@@ -26,8 +26,9 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 import { Select, MenuItem } from '@mui/material';
 import { useState } from 'react';
-//import Button from '@material-ui/core/Button';
 import Button from '@mui/material/Button';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 
 import Home from '../pages/home';
 import SNV from '../pages/snv';
@@ -35,8 +36,8 @@ import About from '../pages/about';
 import TermsOfUse from '../pages/terms';
 import FAQ from '../pages/faq';
 import Contact from '../pages/contact';
-import Dashboard from '../pages/dashboard';
 import Profile from '../pages/profile';
+import Search from '../components/Search';
 
 const drawerWidth = 240;
 
@@ -86,6 +87,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
     justifyContent: 'flex-end',
 }));
 
+{/*
 const Search = styled('div')(({ theme }) => ({
     position: 'relative',
     borderRadius: theme.shape.borderRadius,
@@ -102,9 +104,9 @@ const Search = styled('div')(({ theme }) => ({
       marginLeft: theme.spacing(3),
       width: 'auto',
     },
-  }));
+}));
 
-  const SearchIconWrapper = styled('div')(({ theme }) => ({
+const SearchIconWrapper = styled('div')(({ theme }) => ({
     padding: theme.spacing(0, 2),
     height: '100%',
     position: 'absolute',
@@ -113,9 +115,9 @@ const Search = styled('div')(({ theme }) => ({
     alignItems: 'center',
     justifyContent: 'center',
     color: 'darkgrey'
-  }));
+}));
   
-  const StyledInputBase = styled(InputBase)(({ theme }) => ({
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
     color: theme.palette.text.primary,
     '& .MuiInputBase-input': {
       padding: theme.spacing(1, 1, 1, 0),
@@ -127,9 +129,10 @@ const Search = styled('div')(({ theme }) => ({
         width: '20ch',
       },
     },
-  }));
+}));
+*/}
 
-  const DropdownMenu = () => {
+const DropdownMenu = () => {
     const [assembly, setAssembly] = useState('');
   
     const handleChange = (event) => {
@@ -137,23 +140,25 @@ const Search = styled('div')(({ theme }) => ({
     };
   
     return (
-      <Select
-        value={assembly}
-        onChange={handleChange}
-        displayEmpty
-        inputProps={{ 'aria-label': 'Assembly' }}
-        style={{ color: 'black', marginLeft: '20px' }}
-      >
-        <MenuItem value="" disabled>
-        Select Assembly
-        </MenuItem>
-        <MenuItem value="GRCh37 – SNV and Mt">GRCh37 – SNV and Mt</MenuItem>
-        <MenuItem value="GRCh37 – SV">GRCh37 – SV</MenuItem>
-        <MenuItem value="GRCh38 – SNV and Mt">GRCh38 – SNV and Mt</MenuItem>
-        <MenuItem value="GRCh38 – SV">GRCh38 – SV</MenuItem>
-      </Select>
+        <Select
+            value={assembly}
+            onChange={handleChange}
+            displayEmpty
+            inputProps={{ 'aria-label': 'Assembly' }}
+            style={{ color: 'black', marginLeft: '20px' }}
+            //variant="standard"
+        >
+            {/* TODO: Update the choices for this select once we add SV and Mt */}
+            {/* TODO: Make this functional -- currently only one SNV assembly so it does nothing */}
+            <MenuItem value="" disabled>Select Assembly</MenuItem>
+            <MenuItem value="GRCh37 – SNV and Mt">GRCh37 – SNV and Mt</MenuItem>
+            {/*<MenuItem value="GRCh37 – SV">GRCh37 – SV</MenuItem>*/}
+            <MenuItem value="GRCh38 – SNV and Mt">GRCh38 – SNV and Mt</MenuItem>
+            {/*<MenuItem value="GRCh38 – SV">GRCh38 – SV</MenuItem>*/}
+        </Select>
     );
-  };
+};
+
 
 export default function AppNavBar() {
     const theme = useTheme();
@@ -189,10 +194,10 @@ export default function AppNavBar() {
                         color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        Variome Project
+                        <Link href="/" color="textPrimary" underline="none">Variome Project</Link>
                     </Typography>  
-                    <DropdownMenu />  
-                               
+                    <DropdownMenu />
+                    {/*                    
                     <Search>
                         <SearchIconWrapper>
                             <SearchIcon />
@@ -202,37 +207,8 @@ export default function AppNavBar() {
                             inputProps={{ 'aria-label': 'search' }}
                         />
                     </Search>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: "800px" }}>
-                        <Box sx={{ flexGrow: 1 }} />
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Button 
-                                component={Link} 
-                                to="/profile"
-                                variant="text" 
-                                sx={{ color: 'black', marginRight: '10px' }}
-                            >
-                                Profile
-                            </Button>
-                            <Button 
-                                component={Link} 
-                                to="/login"
-                                variant="text" 
-                                sx={{ color: 'black', marginRight: '10px' }}
-                            >
-                                Login
-                            </Button>
-                            <Button 
-                                component={Link} 
-                                to="/signup"
-                                variant="text" 
-                                sx={{ color: 'black', marginRight: '10px' }}
-                            >
-                                Sign Up
-                            </Button>
-                        </Box>
-                    </Box>
-                    
+                    */}
+                    <Search variant="standard" width="25%" marginLeft="20px"/>
                 </Toolbar>
             </AppBar>
             <Drawer
@@ -293,18 +269,13 @@ export default function AppNavBar() {
                 <DrawerHeader />
                 <Routes>
                     <Route path="/" exact element={ <Home/> } />
-                    {/* BH TODO: Add "variant-id" to this url path to connect to database */}
-                    <Route path="/snv" exact element={ <SNV/> } />
+                    <Route path="/snv/:varId" loader={({ params }) => {}} action={({ params }) => {}} element={ <SNV/>} />
                     <Route path="/about" exact element={ <About/> } />
                     <Route path="/terms" exact element={ <TermsOfUse/> } />
                     <Route path="/faq" exact element={ <FAQ/> } />
                     <Route path="/contact" exact element={ <Contact/> } />
-                    {/* BH TODO: Delete this "dashboard" route once the new SNV page is implemented */}
-                    <Route path="/dashboard" exact element={ <Dashboard/> } />
                     <Route path="/profile" exact element={ <Profile/> } />
                 </Routes>
-            
-
             </Main>
         </Box>
     

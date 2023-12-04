@@ -32,29 +32,34 @@ def snv_annotations(request, variant_id, **kwargs):
         variant = Variant.objects.get(variant_id=variant_id)
         variants_transcripts = VariantTranscript.objects.filter(variant_id=variant.id)
         variants_consequences = VariantConsequence.objects.filter(variant_transcript__in=variants_transcripts)
-        variants_annotations = VariantAnnotation.objects.filter(variant_transcript__in=variants_transcripts)
     except Variant.DoesNotExist:
         raise Http404
     except VariantTranscript.DoesNotExist:
+        # TODO: Change this to return no transcripts instead of throwing an error
         raise Http404
 
     if request.method == 'GET':
-        data_out = []
-        #for variant_transcript in variants_transcripts:
-        #    data = {
-        #        "variant_transcript": VariantTranscriptSerializer(variant_transcript).data
-        #    }
-        #    data_out.append(data)
+        data_out = {}
         for variant_consequence in variants_consequences:
-            data = {
-                "variant_consequence": VariantConsequenceSerializer(variant_consequence).data
+            # TODO: Sort transcripts by transcript type
+            severity = variant_consequence.severity.consequence
+
+            try:
+                annotation = VariantAnnotation.objects.get(variant_transcript=variant_consequence.variant_transcript)
+                annotation = VariantAnnotationSerializer(annotation)
+            except VariantAnnotation.DoesNotExist:
+                annotation = {}
+
+            severity_dict = {
+                "severity_number": variant_consequence.severity.severity_number,
+                "transcript": VariantConsequenceSerializer(variant_consequence).data,
+                "annotations": annotation
             }
-            data_out.append(data)
-        for variant_annotation in variants_annotations:
-            data = {
-                "variant_annotation": VariantAnnotationSerializer(variant_annotation).data
-            }
-            data_out.append(data)
+            
+            try:
+                data_out[severity].append(severity_dict)
+            except KeyError:
+                data_out[severity] = [severity_dict]
 
         if json:
             return JsonResponse(data_out)
