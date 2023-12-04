@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { makeStyles } from '@mui/styles';
+//import { makeStyles } from '@mui/styles';
 import { Button, TextField, Grid, Container, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 
-const useStyles = makeStyles((theme) => ({
+/*const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
     justifyContent: 'center',
@@ -17,10 +17,10 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
-}));
+}));*/
 
 const Signup = () => {
-  const classes = useStyles();
+  //const classes = useStyles();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
@@ -33,12 +33,12 @@ const Signup = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs" className={classes.root}>
+    <Container component="main" maxWidth="xs" /*className={classes.root}*/>
       <div>
         <Typography component="h1" variant="h5">
           Sign Up for Variome
         </Typography>
-        <form className={classes.form} onSubmit={handleSignup}>
+        <form /*className={classes.form}*/ onSubmit={handleSignup}>
           <TextField
             variant="outlined"
             margin="normal"
@@ -89,7 +89,7 @@ const Signup = () => {
             fullWidth
             variant="contained"
             color="primary"
-            className={classes.submit}
+            /*className={classes.submit}*/
             component={Link}
             to="/"
           >

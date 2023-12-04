@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { makeStyles } from '@mui/styles';
+//import { makeStyles } from '@mui/styles';
 import {
   Button,
   TextField,
@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 
-const useStyles = makeStyles((theme) => ({
+/*const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
     justifyContent: 'center',
@@ -23,10 +23,10 @@ const useStyles = makeStyles((theme) => ({
   submit: {
     margin: theme.spacing(3, 0, 2),
   },
-}));
+}));*/
 
 const Login = () => {
-  const classes = useStyles();
+  //const classes = useStyles();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -36,12 +36,12 @@ const Login = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs" className={classes.root}>
+    <Container component="main" maxWidth="xs" /*className={classes.root}*/>
       <div>
         <Typography component="h1" variant="h5">
           Log in to Variome
         </Typography>
-        <form className={classes.form} onSubmit={handleLogin}>
+        <form /*className={classes.form}*/ onSubmit={handleLogin}>
           <TextField
             variant="outlined"
             margin="normal"
@@ -70,7 +70,7 @@ const Login = () => {
             fullWidth
             variant="contained"
             color="primary"
-            className={classes.submit}
+            /*className={classes.submit}*/
             component={Link} 
             to="/"
           >

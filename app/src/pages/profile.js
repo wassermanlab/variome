@@ -10,7 +10,7 @@ import AlertTitle from '@mui/material/AlertTitle';
 import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
-import { styled } from '@mui/styles';
+import { styled } from '@mui/material/styles';
 
 const PREFIX = 'Home';
 const classes = {
