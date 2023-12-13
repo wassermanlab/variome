@@ -194,7 +194,7 @@ export default function AppNavBar() {
                         color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        <Link href="/" color="textPrimary" underline="none">Variome Project</Link>
+                        <Link href="/" color="textPrimary" underline="none">He Kakano</Link>
                     </Typography>  
                     <DropdownMenu />
                     {/*                    
