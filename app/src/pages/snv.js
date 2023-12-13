@@ -19,6 +19,7 @@ import Annotations from '../components/Annotations';
 export default function SNV() {
     let params = useParams();
     const varId = params.varId
+    const config = require("../config.json")
     const [loading, setLoading] = useState(false);
     const [variantMetadata, setVariantMetadata] = useState({});
     const [popFrequencies, setPopFrequencies] = useState({});
@@ -28,21 +29,21 @@ export default function SNV() {
     useEffect(() => {
         const fetchSNVData = async () => {
             setLoading(true);
-            const response = await fetch("http://127.0.0.1:8000/api/snv/" + varId);
+            const response = await fetch(config.backend_url + "snv/" + varId);
             const json = await response.json(); //TODO: Error check result
             setVariantMetadata(json);
             console.log(json)
         }
         const fetchFreqData = async () => {
             setLoading(true);
-            const response = await fetch("http://127.0.0.1:8000/api/genomic_population_frequencies/" + varId);
+            const response = await fetch(config.backend_url + "genomic_population_frequencies/" + varId);
             const json = await response.json(); //TODO: Error check result
             setPopFrequencies(json);
             console.log(json)
         }
         const fetchAnnData = async () => {
             setLoading(true);
-            const response = await fetch("http://127.0.0.1:8000/api/annotations/" + varId);
+            const response = await fetch(config.backend_url + "annotations/" + varId);
             const json = await response.json(); //TODO: Error check result
             setVariantAnnotations(json);
             console.log(json)
