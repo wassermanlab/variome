@@ -46,7 +46,7 @@ def snv_annotations(request, variant_id, **kwargs):
 
             try:
                 annotation = VariantAnnotation.objects.get(variant_transcript=variant_consequence.variant_transcript)
-                annotation = VariantAnnotationSerializer(annotation)
+                annotation = VariantAnnotationSerializer(annotation).data
             except VariantAnnotation.DoesNotExist:
                 annotation = {}
 

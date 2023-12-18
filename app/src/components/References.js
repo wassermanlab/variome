@@ -33,7 +33,7 @@ export default function References(props) {
         },
         {
             ref: 'ClinVar',
-            val: props.variantMetadata["clinvar_vcv"],
+            val: Math.trunc(props.variantMetadata["clinvar_vcv"]),
             link: props.variantMetadata["clinvar_url"],
         },
         {

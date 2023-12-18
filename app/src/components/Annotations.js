@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 
 
 export default function Annotations(props) {
-
+    console.log(props)
     return (
         <React.Fragment>
             <Card>
@@ -46,11 +46,11 @@ export default function Annotations(props) {
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Transcript</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSc</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSp</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Other Annotations</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Polyphen</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SIFT</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>CADD</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SpliceAI</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Other Annotations</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     {Object.keys(props.variantAnnotations).map((key, index) => (
@@ -60,18 +60,20 @@ export default function Annotations(props) {
                                                     colSpan={9} 
                                                     sx={{ fontWeight: 'bold', borderBottom: 'none' }}
                                                 >
-                                                    {(key.charAt(0).toUpperCase() + key.slice(1)).split("_variant")}
+                                                    {(key.charAt(0).toUpperCase() + key.slice(1)).split("_variant").join("").replace(/_/g, ' ')}
                                                 </TableCell>
                                             </TableRow>
                                             {props.variantAnnotations[key].map((transcript, index) => (
                                                 /* BH TODO: Add error checking here for when there is no annotation data */
+                                                /* BH TODO: Add CADD and SpliceAI to API endpoint */
+                                                /* BH TODO: What falls under "Other Annotations" ? */
                                                 <TableRow key={index}>
                                                     <TableCell align="center">{transcript.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
                                                     <TableCell align="center">{transcript.transcript.variant_transcript.transcript.transcript_id}</TableCell>
                                                     <TableCell align="center">{transcript.transcript.variant_transcript.hgvsc}</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                    <TableCell align="center">-</TableCell>
+                                                    <TableCell align="center">{(transcript.annotations.hgvsp === "nan" || typeof transcript.annotations.hgvsp == 'undefined') ? "-" : transcript.annotations.hgvsp}</TableCell>
+                                                    <TableCell align="center">{(transcript.annotations.polyphen === "nan" || typeof transcript.annotations.polyphen == 'undefined') ? "-" : transcript.annotations.polyphen}</TableCell>
+                                                    <TableCell align="center">{(transcript.annotations.sift === "nan" || typeof transcript.annotations.sift == 'undefined') ? "-" : transcript.annotations.sift}</TableCell>
                                                     <TableCell align="center">-</TableCell>
                                                     <TableCell align="center">-</TableCell>
                                                     <TableCell align="center">-</TableCell>

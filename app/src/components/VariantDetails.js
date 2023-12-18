@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 
 
 export default function VariantDetails(props) {
+    console.log(props)
     const variantDetailsList = [
         {
             title: 'Type',
@@ -18,11 +19,13 @@ export default function VariantDetails(props) {
         },
         {
             title: 'Site Quality',
-            val: '447',
+            val: props.ibvlFrequencies["quality"],
+            //val: 'qual'
         },
         {
-            title: 'Reference Genome',
-            val: 'hg37',
+            title: 'Allele Frequency',
+            val: props.ibvlFrequencies["af_tot"],
+            //val: 'af'
         }
     ]
 

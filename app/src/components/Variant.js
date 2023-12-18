@@ -15,10 +15,15 @@ export default function Variant(props) {
                     <Grid container>
                         <Grid item xs={7}>
                             <Typography variant="h4" sx={{ fontWeight: 'light' }}>
-                                { props.varId }
+                                {/* TODO: Get the reference genome information from the database based 
+                                    on which version of the database is currently being used -- need to
+                                    figure this out a little bit more, as we will have a separate database
+                                    for each reference genome */}
+                                { props.varId } (hg38)
                             </Typography>
                             {/* BH TODO: Add "Copy variant ID" here */}
                         </Grid>
+                        {/*
                         <Grid item xs={2}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 'light' }}>
                                 Alternate Allele
@@ -27,6 +32,8 @@ export default function Variant(props) {
                                 { props.variantMetadata["alt"] }
                             </Typography>
                         </Grid>
+                        */}
+                        {/*
                         <Grid item xs={2}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 'light' }}>
                                 Allele Frequency
@@ -35,6 +42,7 @@ export default function Variant(props) {
                                 1.156 E-02
                             </Typography>
                         </Grid>
+                        */}
                     </Grid>
                 </CardContent>
             </Card>

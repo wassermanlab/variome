@@ -18,7 +18,6 @@ function createData(name, total, xx, xy, gnomad) {
 
 
 export default function PopFrequencies(props) {
-    console.log(props.popFrequencies)
     const ibvlFreq = props.popFrequencies.genomic_ibvl_freq;
     const gnomadFreq = props.popFrequencies.genomic_gnomad_freq;
     var rows = []
@@ -28,31 +27,31 @@ export default function PopFrequencies(props) {
         rows = [
             createData(
                 'Allele Number', 
-                ibvlFreq["an_tot"], 
-                ibvlFreq["an_xx"],  
-                ibvlFreq["an_xy"],  
-                gnomadFreq["an_tot"], 
+                Math.trunc(ibvlFreq["an_tot"]), 
+                Math.trunc(ibvlFreq["an_xx"]),  
+                Math.trunc(ibvlFreq["an_xy"]),  
+                Math.trunc(gnomadFreq["an_tot"]), 
             ),
             createData(
                 'Allele Count', 
-                ibvlFreq["ac_tot"], 
-                ibvlFreq["ac_xx"],  
-                ibvlFreq["ac_xy"],  
-                gnomadFreq["ac_tot"],
+                Math.trunc(ibvlFreq["ac_tot"]), 
+                Math.trunc(ibvlFreq["ac_xx"]),  
+                Math.trunc(ibvlFreq["ac_xy"]),  
+                Math.trunc(gnomadFreq["ac_tot"]),
             ),
             createData(
                 'Allele Frequency',
-                ibvlFreq["af_tot"], 
-                ibvlFreq["af_xx"],  
-                ibvlFreq["af_xy"],  
-                gnomadFreq["af_tot"],
+                Number(ibvlFreq["af_tot"]).toFixed(4), 
+                Number(ibvlFreq["af_xx"]).toFixed(4),  
+                Number(ibvlFreq["af_xy"]).toFixed(4),  
+                Number(gnomadFreq["af_tot"]).toFixed(4),
             ),
             createData(
                 'No. of Homozygotes',
-                ibvlFreq["hom_tot"], 
-                ibvlFreq["hom_xx"],  
-                ibvlFreq["hom_xy"],  
-                gnomadFreq["hom_tot"],
+                Math.trunc(ibvlFreq["hom_tot"]), 
+                Math.trunc(ibvlFreq["hom_xx"]),  
+                Math.trunc(ibvlFreq["hom_xy"]),  
+                Math.trunc(gnomadFreq["hom_tot"]),
             ),
         ];
     }
@@ -88,8 +87,8 @@ export default function PopFrequencies(props) {
                                         <TableRow>
                                             <TableCell sx={{ borderBottom: 'none' }}></TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Total</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>xx</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>xy</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>XX</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>XY</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Total</TableCell>
                                         </TableRow>
                                     </TableHead>
