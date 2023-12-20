@@ -17,7 +17,7 @@ import PopFrequencies from '../components/PopFrequencies';
 import Annotations from '../components/Annotations';
 
 
-export default function SNV() {
+export default function SNV() { 
     let params = useParams();
     const varId = params.varId
     const [loading, setLoading] = useState(false);
