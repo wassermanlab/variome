@@ -26,8 +26,9 @@ export default function Annotations(props) {
                         </Grid>
                         <Grid item xs={12}>
                             {/* SQ TODO: Make this table scrollable for when it is larger than the screen */}
-                            <TableContainer>
-                                <Table aria-label="simple table">
+                            <div style={{ overflowX: 'auto' }}>
+                            <TableContainer sx={{ overflowX: 'auto' }}>
+                                <Table aria-label="simple table" sx={{ minWidth: 800 }}>
                                     <colgroup>
                                         <col style={{ width: '10%'}}/>
                                         <col style={{ width: '10%'}}/>
@@ -81,6 +82,7 @@ export default function Annotations(props) {
                                     ))}
                                 </Table>
                             </TableContainer>
+                            </div>
                         </Grid>
                     </Grid>
                 </CardContent>
