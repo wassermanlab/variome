@@ -13,7 +13,6 @@ import Typography from '@mui/material/Typography';
 
 
 export default function Annotations(props) {
-    console.log(props)
     return (
         <React.Fragment>
             <Card>

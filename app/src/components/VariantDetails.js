@@ -20,12 +20,14 @@ export default function VariantDetails(props) {
         {
             title: 'Site Quality',
             val: props.ibvlFrequencies["quality"],
-            //val: 'qual'
         },
         {
             title: 'Allele Frequency',
-            val: props.ibvlFrequencies["af_tot"],
-            //val: 'af'
+            val: Number(props.ibvlFrequencies["af_tot"]).toFixed(4)
+        },
+        {
+            title: 'Filter',
+            val: '-'
         }
     ]
 
@@ -34,6 +36,15 @@ export default function VariantDetails(props) {
             <Card>
                 <CardContent>
                     <Grid container>
+                        <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
+                                {/* TODO: Get the reference genome information from the database based 
+                                    on which version of the database is currently being used -- need to
+                                    figure this out a little bit more, as we will have a separate database
+                                    for each reference genome */}
+                                { props.varId } (hg38)
+                            </Typography>
+                        </Grid>
                         {variantDetailsList.map((item, index) => (
                             <Grid container key={index}>
                                 <Grid item xs={3}>

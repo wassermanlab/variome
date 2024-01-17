@@ -12,8 +12,8 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/system';
 
-function createData(name, total, xx, xy, gnomad) {
-    return { name, total, xx, xy, gnomad };
+function createData(name, total, xx, xy, af_popmax, gnomad) {
+    return { name, total, xx, xy, af_popmax, gnomad };
 }
 
 
@@ -22,7 +22,6 @@ export default function PopFrequencies(props) {
     const gnomadFreq = props.popFrequencies.genomic_gnomad_freq;
     var rows = []
     
-    // BH TODO: Format decimals to appropriate scientific notation
     if (ibvlFreq && gnomadFreq) {
         rows = [
             createData(
@@ -30,6 +29,7 @@ export default function PopFrequencies(props) {
                 Math.trunc(ibvlFreq["an_tot"]), 
                 Math.trunc(ibvlFreq["an_xx"]),  
                 Math.trunc(ibvlFreq["an_xy"]),  
+                '-',
                 Math.trunc(gnomadFreq["an_tot"]), 
             ),
             createData(
@@ -37,20 +37,31 @@ export default function PopFrequencies(props) {
                 Math.trunc(ibvlFreq["ac_tot"]), 
                 Math.trunc(ibvlFreq["ac_xx"]),  
                 Math.trunc(ibvlFreq["ac_xy"]),  
+                '-',
                 Math.trunc(gnomadFreq["ac_tot"]),
             ),
             createData(
                 'Allele Frequency',
                 Number(ibvlFreq["af_tot"]).toFixed(4), 
                 Number(ibvlFreq["af_xx"]).toFixed(4),  
-                Number(ibvlFreq["af_xy"]).toFixed(4),  
+                Number(ibvlFreq["af_xy"]).toFixed(4), 
+                '-', 
                 Number(gnomadFreq["af_tot"]).toFixed(4),
+            ),
+            createData(
+                'Allele Frequency Popmax',
+                '-', 
+                '-',  
+                '-', 
+                '-', 
+                '-',
             ),
             createData(
                 'No. of Homozygotes',
                 Math.trunc(ibvlFreq["hom_tot"]), 
                 Math.trunc(ibvlFreq["hom_xx"]),  
-                Math.trunc(ibvlFreq["hom_xy"]),  
+                Math.trunc(ibvlFreq["hom_xy"]), 
+                '-', 
                 Math.trunc(gnomadFreq["hom_tot"]),
             ),
         ];

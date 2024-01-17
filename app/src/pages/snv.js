@@ -9,7 +9,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import { useParams } from 'react-router-dom'
 
-import Variant from '../components/Variant';
 import VariantDetails from '../components/VariantDetails';
 import References from '../components/References';
 import PopFrequencies from '../components/PopFrequencies';
@@ -70,30 +69,26 @@ export default function SNV() {
                     <DialogContent><CircularProgress/></DialogContent>
                 </Dialog>
             ) : (
-                <Box sx={{ display: 'flex'}}>  
+                <Box sx={{ display: 'flex'}}>
                     <Grid container direction="row" justifyContent="center" alignItems="top" spacing={2}>
-                        <Grid item xs={8}>
+                        <Grid item xs={5}>
                             <Grid container spacing={2}>
-                                <Grid item xs={12}>
-                                    <Variant varId={varId} /*variantMetadata={variantMetadata}*//>
-                                </Grid>
                                 <Grid item xs={12}>
                                     <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq}/>
                                 </Grid>
-                            </Grid> 
+                                <Grid item xs={12}>
+                                    <References varId={varId} variantMetadata={variantMetadata}/>
+                                </Grid>
+                            </Grid>
                         </Grid>
-                        {/* BH TODO: Make the references box as tall as the Variant and Variant Details boxes together */}
-                        <Grid item xs={4}>
-                            <References varId={varId} variantMetadata={variantMetadata}/>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
-                        </Grid>
+                        <Grid item xs={7}>
+                                <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
+                            </Grid>
                         <Grid item xs={12}>
                             <Annotations varId={varId} variantAnnotations={variantAnnotations}/>
                         </Grid>
                     </Grid>
-                </Box> 
+                </Box>
             )}
         </Container>
   )
