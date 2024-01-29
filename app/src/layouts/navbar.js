@@ -7,7 +7,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
-import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -19,6 +18,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Link from '@mui/material/Link';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -26,6 +26,7 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 import { Select, MenuItem } from '@mui/material';
 import { useState } from 'react';
+import Button from '@mui/material/Button';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 
@@ -35,6 +36,7 @@ import About from '../pages/about';
 import TermsOfUse from '../pages/terms';
 import FAQ from '../pages/faq';
 import Contact from '../pages/contact';
+import Profile from '../pages/profile';
 import Search from '../components/Search';
 
 const drawerWidth = 240;
@@ -192,7 +194,7 @@ export default function AppNavBar() {
                         color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        <Link href="/" color="textPrimary" underline="none">Variome Project</Link>
+                        <Link href="/" color="textPrimary" underline="none">He Kākano</Link>
                     </Typography>  
                     <DropdownMenu />
                     {/*                    
@@ -272,6 +274,7 @@ export default function AppNavBar() {
                     <Route path="/terms" exact element={ <TermsOfUse/> } />
                     <Route path="/faq" exact element={ <FAQ/> } />
                     <Route path="/contact" exact element={ <Contact/> } />
+                    <Route path="/profile" exact element={ <Profile/> } />
                 </Routes>
             </Main>
         </Box>
