@@ -10,12 +10,13 @@ import TextField from '@mui/material/TextField';
 
 export default function Search(props) {
     const [options, setOptions] = React.useState([])
+    const config = require("../config.json")
 
     const getData = async(searchTerm) => {
         const data = {
             "variant_id": searchTerm
         }
-        const response = await fetch("http://127.0.0.1:8000/api/search", {
+        const response = await fetch(config.backend_url + "search", {
             method: 'POST',
             body:JSON.stringify(data),
             headers: {
@@ -37,7 +38,7 @@ export default function Search(props) {
 
     const onChange = (event, value, reason) => {
         // TODO: Add error checking here
-        window.location.href = "http://localhost:3000/snv/" + value
+        window.location.href = config.frontend_url + "snv/" + value
     }
 
     const [assembly, setAssembly] = React.useState('');
