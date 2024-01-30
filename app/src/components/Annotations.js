@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React, { useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
@@ -10,9 +9,19 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 
 export default function Annotations(props) {
+
+    const [selectedTranscript, setSelectedTranscript] = useState('Ensembl');
+
+    const handleTranscriptChange = (event) => {
+        setSelectedTranscript(event.target.value);
+    };
+
     return (
         <React.Fragment>
             <Card>
@@ -88,6 +97,27 @@ export default function Annotations(props) {
                     </Grid>
                 </CardContent>
             </Card>
+
+            <div style={{ marginTop: '20px' }} />
+            
+            <Card>
+                <CardContent>
+                    <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
+                        Transcripts
+                    </Typography>
+                    <RadioGroup
+                        row
+                        aria-label="transcripts"
+                        name="transcripts"
+                        value={selectedTranscript}
+                        onChange={handleTranscriptChange}
+                    >
+                        <FormControlLabel value="Ensembl" control={<Radio />} label="Ensembl" />
+                        <FormControlLabel value="Refseq" control={<Radio />} label="Refseq" />
+                    </RadioGroup>
+                </CardContent>
+            </Card>
+
         </React.Fragment>
     )
 }
