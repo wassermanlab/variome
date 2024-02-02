@@ -24,30 +24,55 @@ export default function SNV() {
     const [variantMetadata, setVariantMetadata] = useState({});
     const [popFrequencies, setPopFrequencies] = useState({});
     const [variantAnnotations, setVariantAnnotations] = useState({});
+    const [error, setError] = useState(null); 
 
     // Get Variant metadata
     useEffect(() => {
         const fetchSNVData = async () => {
             setLoading(true);
-            const response = await fetch(config.backend_url + "snv/" + varId);
-            const json = await response.json(); //TODO: Error check result
-            setVariantMetadata(json);
-            //console.log(json)
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/snv/" + varId);
+                const json = await response.json();
+                setVariantMetadata(json);
+                console.log(json);
+            } catch (error) {
+                setError("Error fetching variant metadata");
+            } finally {
+                setLoading(false);
+            }
+
         }
+
         const fetchFreqData = async () => {
             setLoading(true);
-            const response = await fetch(config.backend_url + "genomic_population_frequencies/" + varId);
-            const json = await response.json(); //TODO: Error check result
-            setPopFrequencies(json);
-            //console.log(json)
+          
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/genomic_population_frequencies/" + varId);
+                const json = await response.json();
+                setPopFrequencies(json);
+                console.log(json);
+            } catch (error) {
+                setError("Error fetching population frequencies");
+            } finally {
+                setLoading(false);
+            }
+
         }
+
         const fetchAnnData = async () => {
             setLoading(true);
-            const response = await fetch(config.backend_url + "annotations/" + varId);
-            const json = await response.json(); //TODO: Error check result
-            setVariantAnnotations(json);
-            //console.log(json)
-            setLoading(false)
+
+            try {
+                const response = await fetch("http://127.0.0.1:8000/api/annotations/" + varId);
+                const json = await response.json();
+                setVariantAnnotations(json);
+                console.log(json);
+            } catch (error) {
+                setError("Error fetching annotations");
+            } finally {
+                setLoading(false);
+            }
+
         }
 
         fetchSNVData();
@@ -60,6 +85,29 @@ export default function SNV() {
 
     return (
         <Container maxWidth="xl">
+
+            <Dialog
+                disableEscapeKeyDown={true}
+                open={loading}
+                sx={{ textAlign: "center" }}
+            >
+                <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
+                <DialogContent><CircularProgress/></DialogContent>
+            </Dialog>
+
+            {error && (
+                <Paper elevation={3} sx={{ p: 2, textAlign: 'center', marginTop: 2, marginBottom: 2, color: 'red' }}>
+                    <strong>{error}</strong>
+                </Paper>
+            )}
+            
+            <Box sx={{ display: 'flex'}}>  
+                <Grid container direction="row" justifyContent="center" alignItems="top" spacing={2}>
+                    <Grid item xs={8}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <Variant varId={varId} variantMetadata={variantMetadata}/>
+
             { loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
@@ -80,6 +128,7 @@ export default function SNV() {
                                 <Grid item xs={12}>
                                     <References varId={varId} variantMetadata={variantMetadata}/>
                                 </Grid>
+
                             </Grid>
                         </Grid>
                         <Grid item xs={7}>
