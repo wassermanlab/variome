@@ -86,28 +86,12 @@ export default function SNV() {
     return (
         <Container maxWidth="xl">
 
-            <Dialog
-                disableEscapeKeyDown={true}
-                open={loading}
-                sx={{ textAlign: "center" }}
-            >
-                <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
-                <DialogContent><CircularProgress/></DialogContent>
-            </Dialog>
-
             {error && (
                 <Paper elevation={3} sx={{ p: 2, textAlign: 'center', marginTop: 2, marginBottom: 2, color: 'red' }}>
                     <strong>{error}</strong>
                 </Paper>
             )}
-            
-            <Box sx={{ display: 'flex'}}>  
-                <Grid container direction="row" justifyContent="center" alignItems="top" spacing={2}>
-                    <Grid item xs={8}>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                                <Variant varId={varId} variantMetadata={variantMetadata}/>
-
+                                
             { loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
@@ -135,8 +119,8 @@ export default function SNV() {
                                 <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
                             </Grid>
 
-                        </Grid> 
-                    </Grid>
+                    </Grid> 
+                    
                     {/* BH TODO: Make the references box as tall as the Variant and Variant Details boxes together */}
                     <Grid item xs={4}>
                         <References varId={varId} variantMetadata={variantMetadata}/>
