@@ -15,70 +15,44 @@ import References from '../components/References';
 import PopFrequencies from '../components/PopFrequencies';
 import Annotations from '../components/Annotations';
 
+import Api from '../Api';
 
-export default function SNV() { 
+export default function SNV() {
     let params = useParams();
     const varId = params.varId
     const config = require("../config.json")
     const [loading, setLoading] = useState(true);
     const [variantMetadata, setVariantMetadata] = useState({});
-    const [popFrequencies, setPopFrequencies] = useState({});
+    const [popFrequencies, setPopFrequencies] = useState({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
     const [variantAnnotations, setVariantAnnotations] = useState({});
-    const [error, setError] = useState(null); 
+    const [error, setError] = useState(null);
 
     // Get Variant metadata
     useEffect(() => {
         const fetchSNVData = async () => {
-            setLoading(true);
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/snv/" + varId);
-                const json = await response.json();
-                setVariantMetadata(json);
-                console.log(json);
-            } catch (error) {
-                setError("Error fetching variant metadata");
-            } finally {
-                setLoading(false);
-            }
-
+            const json = await Api.get("snv/" + varId);
+            setVariantMetadata(json);
+            console.log('snv data', json);
         }
 
         const fetchFreqData = async () => {
-            setLoading(true);
-          
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/genomic_population_frequencies/" + varId);
-                const json = await response.json();
-                setPopFrequencies(json);
-                console.log(json);
-            } catch (error) {
-                setError("Error fetching population frequencies");
-            } finally {
-                setLoading(false);
-            }
+            const json = await Api.get("genomic_population_frequencies/" + varId);
+            setPopFrequencies(json);
+            console.log('freq data', json);
 
         }
 
         const fetchAnnData = async () => {
-            setLoading(true);
-
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/annotations/" + varId);
-                const json = await response.json();
-                setVariantAnnotations(json);
-                console.log(json);
-            } catch (error) {
-                setError("Error fetching annotations");
-            } finally {
-                setLoading(false);
-            }
+            const json = await Api.get("annotations/" + varId);
+            setVariantAnnotations(json);
+            console.log('annotations data', json);
 
         }
 
-        fetchSNVData();
-        fetchFreqData();
-        fetchAnnData();
-        //setLoading(false);
+        setLoading(true);
+        Promise.all([fetchSNVData(), fetchFreqData(), fetchAnnData()]).then(() => {
+            setLoading(false);
+        });
 
 
     }, [varId])
@@ -91,45 +65,30 @@ export default function SNV() {
                     <strong>{error}</strong>
                 </Paper>
             )}
-                                
-            { loading ? (
+
+            {loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
                     open={loading}
                     sx={{ textAlign: "center" }}
                 >
                     <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
-                    <DialogContent><CircularProgress/></DialogContent>
+                    <DialogContent><CircularProgress /></DialogContent>
                 </Dialog>
             ) : (
-                <Box sx={{ display: 'flex'}}>
-                    <Grid container direction="row" justifyContent="center" alignItems="top" spacing={2}>
-                        <Grid item xs={5}>
-                            <Grid container spacing={2}>
-                                <Grid item xs={12}>
-                                    <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq}/>
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <References varId={varId} variantMetadata={variantMetadata}/>
-                                </Grid>
+                <Box sx={{ display: 'flex', flexDirection:'column' }}>
 
-                            </Grid>
-                        </Grid>
-                        <Grid item xs={7}>
-                                <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
-                            </Grid>
-
-                    </Grid> 
-                    
-                    {/* BH TODO: Make the references box as tall as the Variant and Variant Details boxes together */}
+                    <Grid item xs={12}>
+                        <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
+                    </Grid>
                     <Grid item xs={4}>
-                        <References varId={varId} variantMetadata={variantMetadata}/>
+                        <References varId={varId} variantMetadata={variantMetadata} />
                     </Grid>
                     <Grid item xs={12}>
-                        <PopFrequencies varId={varId} popFrequencies={popFrequencies}/>
+                        <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
                     </Grid>
                     <Grid item xs={12}>
-                        <Paper sx={{ height: '300px', overflowY: 'auto', padding: 2 }}>
+                        <Paper sx={{  overflowY: 'auto', padding: 2 }}>
                             <Annotations varId={varId} variantAnnotations={variantAnnotations} />
                         </Paper>
 
@@ -137,5 +96,5 @@ export default function SNV() {
                 </Box>
             )}
         </Container>
-  )
+    )
 }

@@ -14,7 +14,7 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 
-export default function Annotations(props) {
+export default function Annotations({variantAnnotations}) {
 
     const [selectedTranscript, setSelectedTranscript] = useState('Ensembl');
 
@@ -53,6 +53,8 @@ export default function Annotations(props) {
                                         <TableRow>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Gene</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Transcript</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Impact</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Biotype</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSc</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSp</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Polyphen</TableCell>
@@ -62,7 +64,7 @@ export default function Annotations(props) {
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Other Annotations</TableCell>
                                         </TableRow>
                                     </TableHead>
-                                    {Object.keys(props.variantAnnotations).map((key, index) => (
+                                    {Object.keys(variantAnnotations).map((key, index) => (
                                         <TableBody key={index}>
                                             <TableRow key={key}>
                                                 <TableCell 
@@ -72,17 +74,19 @@ export default function Annotations(props) {
                                                     {(key.charAt(0).toUpperCase() + key.slice(1)).split("_variant").join("").replace(/_/g, ' ')}
                                                 </TableCell>
                                             </TableRow>
-                                            {props.variantAnnotations[key].map((transcript, index) => (
+                                            {variantAnnotations[key].map((annotation, index) => (
                                                 /* BH TODO: Add error checking here for when there is no annotation data */
                                                 /* BH TODO: Add CADD and SpliceAI to API endpoint */
                                                 /* BH TODO: What falls under "Other Annotations" ? */
                                                 <TableRow key={index}>
-                                                    <TableCell align="center">{transcript.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
-                                                    <TableCell align="center">{transcript.transcript.variant_transcript.transcript.transcript_id}</TableCell>
-                                                    <TableCell align="center">{transcript.transcript.variant_transcript.hgvsc}</TableCell>
-                                                    <TableCell align="center">{(transcript.annotations.hgvsp === "nan" || typeof transcript.annotations.hgvsp == 'undefined') ? "-" : transcript.annotations.hgvsp}</TableCell>
-                                                    <TableCell align="center">{(transcript.annotations.polyphen === "nan" || typeof transcript.annotations.polyphen == 'undefined') ? "-" : transcript.annotations.polyphen}</TableCell>
-                                                    <TableCell align="center">{(transcript.annotations.sift === "nan" || typeof transcript.annotations.sift == 'undefined') ? "-" : transcript.annotations.sift}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.transcript_id}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.impact}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.biotype}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.hgvsc}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.hgvsp === "nan" || typeof annotation.annotations.hgvsp == 'undefined') ? "-" : annotation.annotations.hgvsp}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.polyphen === "nan" || typeof annotation.annotations.polyphen == 'undefined') ? "-" : annotation.annotations.polyphen}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.sift === "nan" || typeof annotation.annotations.sift == 'undefined') ? "-" : annotation.annotations.sift}</TableCell>
                                                     <TableCell align="center">-</TableCell>
                                                     <TableCell align="center">-</TableCell>
                                                     <TableCell align="center">-</TableCell>
@@ -103,7 +107,7 @@ export default function Annotations(props) {
             <Card>
                 <CardContent>
                     <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
-                        Transcripts
+                        Database
                     </Typography>
                     <RadioGroup
                         row
