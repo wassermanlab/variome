@@ -1,57 +1,100 @@
-import React from 'react';
-import { styled } from '@mui/material/styles';
+import React, { useEffect, useState } from 'react';
 
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid'
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Paper from '@mui/material/Paper';
+import { useParams } from 'react-router-dom'
 
-const PREFIX = 'Home';
-const classes = {
-    root: `${PREFIX}-root`,
-    cta: `${PREFIX}-cta`,
-}
-const Root = styled('div')(({ theme }) => ({
-    [`&.${classes.root}`]: {
-        display: 'flex',
-        alignItems: 'center',
-        backgroundColor: theme.palette.primary.main
-    },
-    [`& .${classes.cta}`]: {
-        borderRadius: theme.shape.radius
-    },
-}))
+import VariantDetails from '../components/VariantDetails';
+import References from '../components/References';
+import PopFrequencies from '../components/PopFrequencies';
+import Annotations from '../components/Annotations';
 
+import Api from '../Api';
 
 export default function SNV() {
+    let params = useParams();
+    const varId = params.varId
+    const config = require("../config.json")
+    const [loading, setLoading] = useState(true);
+    const [variantMetadata, setVariantMetadata] = useState({});
+    const [popFrequencies, setPopFrequencies] = useState({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
+    const [variantAnnotations, setVariantAnnotations] = useState({});
+    const [error, setError] = useState(null);
+
+    // Get Variant metadata
+    useEffect(() => {
+        const fetchSNVData = async () => {
+            const json = await Api.get("snv/" + varId);
+            setVariantMetadata(json);
+            console.log('snv data', json);
+        }
+
+        const fetchFreqData = async () => {
+            const json = await Api.get("genomic_population_frequencies/" + varId);
+            setPopFrequencies(json);
+            console.log('freq data', json);
+
+        }
+
+        const fetchAnnData = async () => {
+            const json = await Api.get("annotations/" + varId);
+            setVariantAnnotations(json);
+            console.log('annotations data', json);
+
+        }
+
+        setLoading(true);
+        Promise.all([fetchSNVData(), fetchFreqData(), fetchAnnData()]).then(() => {
+            setLoading(false);
+        });
+
+
+    }, [varId])
 
     return (
         <Container maxWidth="xl">
-            <Box sx={{ display: 'flex'}}>  
-                <Grid container direction="row" justifyContent="center" alignItems="center" spacing={2}>
-                    <Grid item xs={7}>
-                        <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            SNV
-                        </Typography>
+
+            {error && (
+                <Paper elevation={3} sx={{ p: 2, textAlign: 'center', marginTop: 2, marginBottom: 2, color: 'red' }}>
+                    <strong>{error}</strong>
+                </Paper>
+            )}
+
+            {loading ? (
+                <Dialog
+                    disableEscapeKeyDown={true}
+                    open={loading}
+                    sx={{ textAlign: "center" }}
+                >
+                    <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
+                    <DialogContent><CircularProgress /></DialogContent>
+                </Dialog>
+            ) : (
+                <Box sx={{ display: 'flex', flexDirection:'column' }}>
+
+                    <Grid item xs={12}>
+                        <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
                     </Grid>
-                    <Grid item xs={5}>
-                        <Alert severity="warning">
-                            <AlertTitle sx={{ fontWeight: 'bold' }}>Disclaimer</AlertTitle>
-                            This is a test database. All data used is open source and does
-                            not include Indigenous data.
-                        </Alert>
+                    <Grid item xs={4}>
+                        <References varId={varId} variantMetadata={variantMetadata} />
                     </Grid>
-                </Grid>
-            </Box> 
+                    <Grid item xs={12}>
+                        <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Paper sx={{  overflowY: 'auto', padding: 2 }}>
+                            <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+                        </Paper>
+
+                    </Grid>
+                </Box>
+            )}
         </Container>
-        
-        
-  )
+    )
 }

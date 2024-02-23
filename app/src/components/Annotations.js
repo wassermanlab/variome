@@ -1,71 +1,127 @@
-import Card from '@mui/material/Card'
-import Table from '@mui/material/Table'
-import TableRow from '@mui/material/TableRow'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import Typography from '@mui/material/Typography'
-import TableContainer from '@mui/material/TableContainer'
+import React, { useState } from 'react';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Grid from '@mui/material/Grid';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
+import Radio from '@mui/material/Radio';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
-const rows = [
-  {
-    gene: 'ATP5J',
-    transcript: 'ENST0000045671.2',
-    HGVSc: 'ENST0000283791.3:c.157G>C',
-    HGVSp: 'ENSP0000038192.2:p.Gly6Arg',
-    OtherAnnotations: 'None',
-    Polyphen: 0.769
-  },
-  {
-    gene: 'ATP5J',
-    transcript: 'ENST0000045671.2',
-    HGVSc: 'ENST0000283791.3:c.157G>C',
-    HGVSp: 'ENSP0000038192.2:p.Gly6Arg',
-    OtherAnnotations: 'None',
-    Polyphen: 0.769
-  },  
-  {
-    gene: 'ATP5J',
-    transcript: 'ENST0000045671.2',
-    HGVSc: 'ENST0000283791.3:c.157G>C',
-    HGVSp: 'ENSP0000038192.2:p.Gly6Arg',
-    OtherAnnotations: 'None',
-    Polyphen: 0.769
-  }
-]
 
-const Annotations = () => {
-  return (
-    <Card>
-      <TableContainer>
-      <Typography variant='h4'>Annotations</Typography>
-        <Table sx={{ minWidth: 800 }} aria-label='table in dashboard'>
-          <TableHead>
-            <TableRow>
-              <TableCell>Gene</TableCell>
-              <TableCell>Transcript</TableCell>
-              <TableCell>HGVSc</TableCell>
-              <TableCell>HGVSp</TableCell>
-              <TableCell>Other Annotations</TableCell>
-              <TableCell>Polyphen</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map(row => (
-              <TableRow hover key={row.name} sx={{ '&:last-of-type td, &:last-of-type th': { border: 0 } }}>
-                <TableCell>{row.gene}</TableCell>
-                <TableCell>{row.transcript}</TableCell>
-                <TableCell>{row.HGVSc}</TableCell>
-                <TableCell>{row.HGVSp}</TableCell>
-                <TableCell>{row.OtherAnnotations}</TableCell>
-                <TableCell>{row.Polyphen}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Card>
-  )
+export default function Annotations({variantAnnotations}) {
+
+    const [selectedTranscript, setSelectedTranscript] = useState('Ensembl');
+
+    const handleTranscriptChange = (event) => {
+        setSelectedTranscript(event.target.value);
+    };
+
+    return (
+        <React.Fragment>
+            <Card>
+                <CardContent>
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
+                                Annotations
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            {/* SQ TODO: Make this table scrollable for when it is larger than the screen */}
+                            <div style={{ overflowX: 'auto' }}>
+                            <TableContainer sx={{ overflowX: 'auto' }}>
+                                <Table aria-label="simple table" sx={{ minWidth: 800 }}>
+                                    <colgroup>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                        <col style={{ width: '10%'}}/>
+                                    </colgroup>
+                                    <TableHead>
+                                        {/* BH TODO: Change the font of the headings in this table */}
+                                        <TableRow>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Gene</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Transcript</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Impact</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Biotype</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSc</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSp</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Polyphen</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SIFT</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>CADD</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SpliceAI</TableCell>
+                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Other Annotations</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    {Object.keys(variantAnnotations).map((key, index) => (
+                                        <TableBody key={index}>
+                                            <TableRow key={key}>
+                                                <TableCell 
+                                                    colSpan={9} 
+                                                    sx={{ fontWeight: 'bold', borderBottom: 'none' }}
+                                                >
+                                                    {(key.charAt(0).toUpperCase() + key.slice(1)).split("_variant").join("").replace(/_/g, ' ')}
+                                                </TableCell>
+                                            </TableRow>
+                                            {variantAnnotations[key].map((annotation, index) => (
+                                                /* BH TODO: Add error checking here for when there is no annotation data */
+                                                /* BH TODO: Add CADD and SpliceAI to API endpoint */
+                                                /* BH TODO: What falls under "Other Annotations" ? */
+                                                <TableRow key={index}>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.transcript_id}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.impact}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.biotype}</TableCell>
+                                                    <TableCell align="center">{annotation.transcript.variant_transcript.hgvsc}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.hgvsp === "nan" || typeof annotation.annotations.hgvsp == 'undefined') ? "-" : annotation.annotations.hgvsp}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.polyphen === "nan" || typeof annotation.annotations.polyphen == 'undefined') ? "-" : annotation.annotations.polyphen}</TableCell>
+                                                    <TableCell align="center">{(annotation.annotations.sift === "nan" || typeof annotation.annotations.sift == 'undefined') ? "-" : annotation.annotations.sift}</TableCell>
+                                                    <TableCell align="center">-</TableCell>
+                                                    <TableCell align="center">-</TableCell>
+                                                    <TableCell align="center">-</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    ))}
+                                </Table>
+                            </TableContainer>
+                            </div>
+                        </Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            <div style={{ marginTop: '20px' }} />
+            
+            <Card>
+                <CardContent>
+                    <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
+                        Database
+                    </Typography>
+                    <RadioGroup
+                        row
+                        aria-label="transcripts"
+                        name="transcripts"
+                        value={selectedTranscript}
+                        onChange={handleTranscriptChange}
+                    >
+                        <FormControlLabel value="Ensembl" control={<Radio />} label="Ensembl" />
+                        <FormControlLabel value="Refseq" control={<Radio />} label="Refseq" />
+                    </RadioGroup>
+                </CardContent>
+            </Card>
+
+        </React.Fragment>
+    )
 }
-
-export default Annotations

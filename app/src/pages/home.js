@@ -3,16 +3,18 @@ import { styled } from '@mui/material/styles';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid'
+import Grid from '@mui/material/Grid';
+import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import Link from '@mui/material/Link';
+import Button from '@mui/material/Button';
+import Search from '../components/Search';
 
 const PREFIX = 'Home';
 const classes = {
@@ -30,17 +32,6 @@ const Root = styled('div')(({ theme }) => ({
     },
 }))
 
-/*const Item = styled(Card)(({ theme }) => ({
-    backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
-    ...theme.typography.body2,
-    padding: theme.spacing(1),
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-  }));
-
-const SecondItem = styled('div')(({ theme }) => ({
-    textAlign: 'left',
-}))*/
 
 const Item = styled('div')(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -60,7 +51,7 @@ export default function Home() {
                     <Grid item xs={7}>
                         {/* BH TODO: Pick a better font for this */}
                         <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            Welcome to the Variome Database
+                            Welcome to the He Kākano Database
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
@@ -78,7 +69,8 @@ export default function Home() {
                                         <Typography variant="h5" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
                                             Variant Search
                                         </Typography>
-                                        <TextField id="variant-search" label="Search variants" fullWidth />
+                                        {/* TODO: Remove the arrow in the dropdown bar before anything has been typed */}
+                                        <Search variant="outlined" width="100%" marginLeft="0px"/>
                                     </Grid>
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
@@ -92,7 +84,7 @@ export default function Home() {
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1">SNV example</Typography>
+                                                <Typography variant="body1"><Link href="/snv/22-50623773-C-A" color="primary">22-50623773-C-A</Link></Typography>
                                             </Grid>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>
@@ -136,14 +128,20 @@ export default function Home() {
                                         <Typography variant="body1" sx={{ fontWeight: 'light' }}>
                                             <b>Wyeth W. Wasserman</b>, PhD (Co-Lead)
                                         </Typography>
-                                        {/* SQ TODO: Add "Learn More" button here that links to the SGP home page */}
+                                        
+                                        <Link href="https://www.bcchr.ca/silent-genomes-project" target="_blank" rel="noopener noreferrer">
+                                            <Button size="large" sx={{ marginTop: '20px', fontWeight: 'bold', border: '1px solid grey' }}>
+                                                Learn More
+                                            </Button>
+                                        </Link>
+                                        
                                     </Grid>
                                     <Grid item xs={6}>
-                                        {/* SQ TODO: Make this work with the image */}
                                         <Box
                                             component="img"
                                             alt="Temporary Logo"
-                                            src="/assets/temp-logo.svg"
+                                            src="/temp-logo.svg"
+                                            style={{ width: '200px', marginLeft: '80px', marginTop: '20px'  }}
                                         />
                                     </Grid>
                                 </Grid>
