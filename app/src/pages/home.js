@@ -14,7 +14,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-
 import Search from '../components/Search';
 
 const PREFIX = 'Home';
@@ -151,6 +150,41 @@ export default function Home() {
                     </Grid>
                 </Grid>
             </Box> 
+
+            <Box
+            sx={{
+                width: '100%', 
+                bgcolor: '#0F3057',
+                zIndex: 1000,
+                marginTop: '30px', 
+                padding: '20px', 
+            }}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
+                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200, marginRight: 10, marginLeft: 100 }} />
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px', marginLeft: '40px' }}>
+                    Variome
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                    <Link href="/about" color="inherit">
+                        About
+                    </Link>
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                    <Link href="/terms" color="inherit">
+                        Terms of Use
+                    </Link>
+                </Typography>
+                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
+                    <Link href="/contact" color="inherit">
+                        Contact
+                    </Link>
+                </Typography>
+                </Box>
+        
+
+            </Box>
+
         </Container>
         
         
