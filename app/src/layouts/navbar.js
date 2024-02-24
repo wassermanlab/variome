@@ -178,9 +178,10 @@ export default function AppNavBar() {
         const scrollPosition = window.scrollY || window.pageYOffset;
 
         if (documentHeight - windowHeight <= scrollPosition) {
-            document.getElementById('footer').style.display = 'block';
+            // Cannot read properties of null (reading 'style')
+//            document.getElementById('footer').style.display = 'block';
         } else {
-            document.getElementById('footer').style.display = 'none';
+ //           document.getElementById('footer').style.display = 'none';
         }
     };
 
