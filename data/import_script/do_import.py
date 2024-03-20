@@ -336,6 +336,19 @@ def import_file(file, file_info, action_info):
                 skip = True
         if skip:
             continue
+        for col in data:
+            if col in table.columns and isinstance(table.columns[col].type, String) and data[col] is None:
+                data[col] = ""
+#                print("replaced None with empty string. col: " + col + " value: " + str(data[col]))
+        for table_col in table.columns:
+            if table_col.name not in data:
+                if isinstance(table_col.type, String):
+                    data[table_col.name] = ""
+#                    print("filled missing col " + table_col.name + " with empty string")
+                else:
+                    data[table_col.name] = None
+#                    print("filled missing col " + table_col.name + " with None")
+        
         data_list.append(data)
 
     # dispose of df to save ram
@@ -506,7 +519,7 @@ def start(db_engine):
         # if modelName not in pk_maps:
         #     pk_maps[modelName] = {}
         if modelName not in next_id_maps:
-             next_id_maps[modelName] = 1
+            next_id_maps[modelName] = 1
         if action_info.get("empty_first") and isDevelopment and False:
             log_output("Emptying table " + modelName)
             table = get_table(modelName)
