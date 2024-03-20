@@ -1,4 +1,30 @@
 transcript_id	gene	transcript_type	tsl	biotype
+ENSR00000300748				CTCF_binding_site
+ENSR00001238012				promoter_flanking_region
+ENSR00000143415				TF_binding_site
+ENSR00001238013				TF_binding_site
+ENSR00000300758				CTCF_binding_site
+ENSR00001057259				open_chromatin_region
+ENSR00000665474				open_chromatin_region
+ENSR00000300759				CTCF_binding_site
+ENSR00000665475				open_chromatin_region
+ENSR00001238015				enhancer
+ENSM00068846900				
+ENSR00001057260				CTCF_binding_site
+ENSR00001238016				enhancer
+ENSR00000300762				CTCF_binding_site
+ENSR00000665477				TF_binding_site
+ENST00000615943	U2	E		snRNA
+XR_950596.3	LOC105379418	R		lncRNA
+XR_950597.3	LOC105379418	R		lncRNA
+ENSR00001057265				open_chromatin_region
+ENSR00001057267				CTCF_binding_site
+ENSR00000665486				open_chromatin_region
+ENSR00000665487				CTCF_binding_site
+ENST00000635667	FRG1FP	E		unprocessed_pseudogene
+NR_132320.1	LOC102723780	R		transcribed_pseudogene
+ENSR00000143422				promoter
+ENSR00000665494				open_chromatin_region
 ENST00000624155	CU104787.1	E	1	lncRNA
 ENSR00001057273				promoter
 ENST00000422332	ACTR3BP7	E		processed_pseudogene
