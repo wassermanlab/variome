@@ -166,3 +166,4 @@ config.py
 config.json
 .DS_Store
 node_modules
+data/import/jobs/*
