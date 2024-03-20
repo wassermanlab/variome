@@ -7,6 +7,7 @@ class Severity(models.Model):
 
     class Meta:
         db_table = "severities"
+        verbose_name_plural = 'Severities'
 
     def __str__(self):
         return self.consequence
