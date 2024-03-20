@@ -9,6 +9,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import Paper from '@mui/material/Paper';
 import { useParams } from 'react-router-dom'
+import './styles.css'; // Import CSS file
 
 import VariantDetails from '../components/VariantDetails';
 import References from '../components/References';
@@ -77,36 +78,27 @@ export default function SNV() {
                 </Dialog>
             ) : (
                 <Box sx={{ display: 'flex', flexDirection:'column' }}> */}
-
-            <Grid container spacing={2}>
-
+         <Grid container spacing={2} className="flex-container">
                 {/* Variant ID Block */}
-                <Grid item xs={12} md={6} style={{ display: 'flex' }}>
-                    <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                        <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
-                    </div>
+                <Grid item xs={12} md={6} className="flex-item ">
+                    <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
                 </Grid>
-                
+
                 {/* Reference Box */}
-                <Grid item xs={12} md={6} style={{ display: 'flex' }}>
-                    <div style={{ height: '100%' }}>
-                        <References varId={varId} variantMetadata={variantMetadata} />
-                    </div>
+                <Grid item xs={12} md={6} className="flex-item">
+                    <References varId={varId} variantMetadata={variantMetadata} />
                 </Grid>
-                            
+
                 {/* Pop Frequencies Box */}
-                <Grid item xs={12}>
+                <Grid item xs={12} className="gridItem">
                     <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
                 </Grid>
 
                 {/* Annotations Box */}
-                <Grid item xs={12}>
+                <Grid item xs={12} className="gridItem">
                     <Annotations varId={varId} variantAnnotations={variantAnnotations} />
                 </Grid>
             </Grid>
-
-
-
 
 {/*                 </Box>
             )} */}
