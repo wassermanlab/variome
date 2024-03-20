@@ -66,7 +66,7 @@ export default function SNV() {
                 </Paper>
             )}
 
-            {loading ? (
+{/*             {loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
                     open={loading}
@@ -76,25 +76,40 @@ export default function SNV() {
                     <DialogContent><CircularProgress /></DialogContent>
                 </Dialog>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection:'column' }}>
+                <Box sx={{ display: 'flex', flexDirection:'column' }}> */}
 
-                    <Grid item xs={12}>
+            <Grid container spacing={2}>
+
+                {/* Variant ID Block */}
+                <Grid item xs={12} md={6} style={{ display: 'flex' }}>
+                    <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                         <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
-                    </Grid>
-                    <Grid item xs={4}>
+                    </div>
+                </Grid>
+                
+                {/* Reference Box */}
+                <Grid item xs={12} md={6} style={{ display: 'flex' }}>
+                    <div style={{ height: '100%' }}>
                         <References varId={varId} variantMetadata={variantMetadata} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Paper sx={{  overflowY: 'auto', padding: 2 }}>
-                            <Annotations varId={varId} variantAnnotations={variantAnnotations} />
-                        </Paper>
+                    </div>
+                </Grid>
+                            
+                {/* Pop Frequencies Box */}
+                <Grid item xs={12}>
+                    <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                </Grid>
 
-                    </Grid>
-                </Box>
-            )}
+                {/* Annotations Box */}
+                <Grid item xs={12}>
+                    <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+                </Grid>
+            </Grid>
+
+
+
+
+{/*                 </Box>
+            )} */}
         </Container>
     )
 }
