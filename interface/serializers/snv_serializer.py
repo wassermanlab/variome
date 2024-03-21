@@ -16,7 +16,7 @@ class SNVSerializer(serializers.ModelSerializer):
     class Meta:
         model = SNV
         fields = [
-            "id", "variant", "var_type", "length", "chr", "pos", "ref", "alt",
+            "id", "variant", "type", "length", "chr", "pos", "ref", "alt",
             "cadd_intr", "cadd_score", "dbsnp_id", "dbsnp_url",
             "ucsc_url", "ensembl_url", "clinvar_vcv", 
             "clinvar_url", "gnomad_url", "splice_ai"

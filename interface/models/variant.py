@@ -11,7 +11,7 @@ VAR_CHOICES = [
 class Variant(models.Model):
     variant_id = models.CharField(max_length=255, unique=True)
     var_type = models.CharField(max_length=30, choices=VAR_CHOICES)
-    filter = models.CharField(max_length=100)
+    filter = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
         db_table = "variants"

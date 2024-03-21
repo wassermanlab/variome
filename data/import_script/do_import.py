@@ -64,121 +64,95 @@ model_import_actions = {
         "name": "genes",
         "pk_lookup_col": "short_name",
         "fk_map": {},
-        "empty_first": True,
         "filters": {
             "short_name": lambda x: x.upper() if x is not None else None
-        },
-        #"skip":True
+        }
     },
     "transcripts": {
         "name": "transcripts",
         "pk_lookup_col": "transcript_id",
-        "fk_map": {"gene": "genes"},
-        "empty_first": True,
-        "filters": {
-            "transcript_type": lambda x: x.replace("RefSeq", "R") if x is not None else None,
-        },
-        #"skip":True
+        "fk_map": {"gene": "genes"}
     },
     "variants": {
         "name": "variants",
         "pk_lookup_col": "variant_id",
-        "fk_map": {},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {}
     },
     "variants_transcripts": {
         "name": "variants_transcripts",
         "pk_lookup_col": ["transcript", "variant"],
-        "fk_map": {"transcript": "transcripts", "variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"transcript": "transcripts", "variant": "variants"}
     },
     "variants_annotations": {
         "name": "variants_annotations",
         "pk_lookup_col": None,
         "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"},
-        "empty_first": True,
         "filters":{
             "hgvsp": lambda x: x.replace("%3D","=") if x is not None else None
-        },
-        #"skip":True
+        }
     },
+    "severities":{
+        "name":"severities",
+        "pk_lookup_col": None,
+        "fk_map": {},
+        },
     "variants_consequences": {
         "name": "variants_consequences",
         "pk_lookup_col": None,
-        "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"},
-        "empty_first": True,
-        #"skip":True,
+        "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"}
     },
     "sv_consequences": {
         "name": "sv_consequences",
         "pk_lookup_col": None,
-        "fk_map": {"gene": "genes", "variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"gene": "genes", "variant": "variants"}
     },
     "snvs": {
         "name": "snvs",
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"},
-        "empty_first": True,
         "filters":{
             "dbsnp_id": lambda x: x.split('&')[0] if x is not None else None
-        },
-        #"skip":True
+        }
     },
     "svs": {
         "name": "svs",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"variant": "variants"}
     },
     "svs_ctx": {
         "name": "svs_ctx",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"variant": "variants"}
     },
     "str": {
         "name": "str",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"variant": "variants"}
     },
     "mts": {
         "name": "mts",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
-        #"skip":True
+        "fk_map": {"variant": "variants"}
     },
     "genomic_ibvl_frequencies": {
         "name": "genomic_ibvl_frequencies",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
+        "fk_map": {"variant": "variants"}
     },
     "genomic_gnomad_frequencies": {
         "name": "genomic_gnomad_frequencies",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
+        "fk_map": {"variant": "variants"}
     },
     "mt_ibvl_frequencies": {
         "name": "mt_ibvl_frequencies",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
+        "fk_map": {"variant": "variants"}
     },
     "mt_gnomad_frequencies": {
         "name": "mt_gnomad_frequencies",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"},
-        "empty_first": True,
+        "fk_map": {"variant": "variants"}
     },
 }
 
@@ -362,6 +336,19 @@ def import_file(file, file_info, action_info):
                 skip = True
         if skip:
             continue
+        for col in data:
+            if col in table.columns and isinstance(table.columns[col].type, String) and data[col] is None:
+                data[col] = ""
+#                print("replaced None with empty string. col: " + col + " value: " + str(data[col]))
+        for table_col in table.columns:
+            if table_col.name not in data:
+                if isinstance(table_col.type, String):
+                    data[table_col.name] = ""
+#                    print("filled missing col " + table_col.name + " with empty string")
+                else:
+                    data[table_col.name] = None
+#                    print("filled missing col " + table_col.name + " with None")
+        
         data_list.append(data)
 
     # dispose of df to save ram
@@ -386,10 +373,12 @@ def import_file(file, file_info, action_info):
                 connection.rollback()
                 fail_chunks += 1
                 for row in chunk:
+                    did_succeed = False
                     try:
                         connection.execute(table.insert(), row)
                         connection.commit()
                         successCount += 1
+                        did_succeed = True
 
                     except DataError as e:
                         log_data_issue(e)
@@ -405,8 +394,11 @@ def import_file(file, file_info, action_info):
                             log_data_issue(e)
 #                            quit()
                     except Exception as e:
+                        
                         log_data_issue(e)
                         failCount += 1
+                    if (not did_succeed):
+                        connection.rollback()
 
             if pk_lookup_col is not None:
                 pk_map = {}
@@ -467,7 +459,7 @@ def start(db_engine):
     else:
         metadata.reflect(bind=engine)
     Session = sessionmaker(bind=engine)
-    jobs_dir = os.path.abspath(os.path.join("", "jobs"))
+    jobs_dir = os.path.abspath(os.path.join("data/import_script", "jobs"))
     os.makedirs(jobs_dir, exist_ok=True)
     os.makedirs(os.path.join(jobs_dir, "1"), exist_ok=True)
     
@@ -515,7 +507,7 @@ def start(db_engine):
             arrived_at_start_model = True
 
         if action_info.get("skip") or not os.path.isdir(model_directory):
-            log_output("Skipping " + modelName)
+            log_output("Skipping " + modelName + " (expected dir: " + model_directory + ")")
             continue
 
         referenced_models = action_info.get("fk_map").values()
@@ -527,7 +519,7 @@ def start(db_engine):
         # if modelName not in pk_maps:
         #     pk_maps[modelName] = {}
         if modelName not in next_id_maps:
-             next_id_maps[modelName] = 1
+            next_id_maps[modelName] = 1
         if action_info.get("empty_first") and isDevelopment and False:
             log_output("Emptying table " + modelName)
             table = get_table(modelName)
