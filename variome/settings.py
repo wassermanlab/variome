@@ -8,27 +8,43 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
-"""
 
-import config
+Quick-start development settings - unsuitable for production
+See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+"""
+import os
+import dotenv
 from pathlib import Path
+import dj_database_url
+
+dotenv.load_dotenv()
+
+
+is_development = os.environ.get("ENVIRONMENT") != "production"
+DOMAIN = os.environ.get("HOST") or '127.0.0.1'
+DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or 'django-insecure-t=e420f^zm70rl(y%%wl6g!k97-od*b$i=y%qrq*z^r)_r-mc@' 
+
+is_development = os.environ.get("ENVIRONMENT") != "production"
+
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = os.environ.get('TZ') or 'America/Vancouver'
+USE_I18N = True
+USE_TZ = True
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config.django_secret_key
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = is_development
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
+    DOMAIN
 ]
 
 
@@ -43,7 +59,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_extensions'
+    'django_extensions',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -82,16 +99,7 @@ WSGI_APPLICATION = 'variome.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': BASE_DIR / 'db.sqlite3',
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'variome',
-        'USER': config.db["user"],
-        'PASSWORD': config.db["password"],
-        'HOST': config.db["host"],
-        'PORT': config.db["port"]
-    }
+    'default': dj_database_url.parse(DB)
 }
 
 
@@ -113,19 +121,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -136,12 +131,18 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# TODO: Remove this and fix cors issues
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:3123',
+    'http://'+DOMAIN,
+    'https://'+DOMAIN
+]
 
 # Authentication
 CSRF_COOKIE_SAMESITE = 'Strict'
 SESSION_COOKIE_SAMESITE = 'Strict'
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS

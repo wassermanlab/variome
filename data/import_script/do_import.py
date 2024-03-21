@@ -1,19 +1,12 @@
 import json
 from natsort import natsorted
 from sqlalchemy import (
-    create_engine,
-    text,
     MetaData,
     Table,
-    Column,
     Integer,
     String,
-    select,
     func,
-    delete,
     Float,
-    UniqueConstraint,
-    ForeignKeyConstraint,
 )
 from sqlalchemy.exc import DataError, IntegrityError, ProgrammingError
 import pandas as pd
@@ -21,19 +14,18 @@ import numpy as np
 import signal
 import sys
 import os
-from dotenv import load_dotenv
 from datetime import datetime
-from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+from django.conf import settings
 
 from .import_utils import *
-from sqlalchemy.orm import sessionmaker
-import traceback
 
 
 load_dotenv()
 
 # get command line arguments
-rootDir = os.environ.get("ORACLE_TABLE_PATH")
+rootDir = os.environ.get("PIPELINE_OUTPUT_PATH") or os.path.join(settings.BASE_DIR, 'data/fixtures')
 chunk_size = int(os.environ.get("CHUNK_SIZE"))
 #verbose = os.environ.get("VERBOSE") == "true"
 dbConnectionString = os.environ.get("DB")
