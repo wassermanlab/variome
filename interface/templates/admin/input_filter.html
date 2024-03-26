@@ -1,0 +1,48 @@
+{% load i18n %}
+
+<h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
+<ul>
+    <li>
+        {% with choices.0 as all_choice %}
+        <form method="GET" action="">
+
+            {% for k, v in all_choice.query_parts %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}" />
+            {% endfor %}
+
+            <!-- <select name="{{ spec.parameter_name }}-filter-option">
+                {% if spec.filter_option == "contains" %}
+                <option value="contains" selected>Contains</option>
+                {% else %}
+                <option value="contains">Contains</option>
+                {% endif %}
+                
+                {% if spec.filter_option == "equals" %}
+                <option value="equals" selected>Equals</option>
+                {% else %}
+                <option value="equals">Equals</option>
+                {% endif %}
+                
+                {% if spec.filter_option == "starts" %}
+                <option value="starts" selected>Starts with</option>
+                {% else %}
+                <option value="starts">Starts with</option>
+                {% endif %}
+                
+                {% if spec.filter_option == "ends" %}
+                <option value="ends" selected>Ends with</option>
+                {% else %}
+                <option value="ends">Ends with</option>
+                {% endif %}
+            </select> -->       
+           
+            <input type="text" value="{{ spec.value|default_if_none:'' }}" name="{{ spec.parameter_name }}" />
+     
+            {% if not all_choice.selected %}
+            <strong><a href="{{ all_choice.query_string }}">x {% trans 'Remove' %}</a></strong>
+            {% endif %}
+
+        </form>
+        {% endwith %}
+    </li>
+</ul>
