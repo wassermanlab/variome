@@ -26,8 +26,10 @@ CREATE USER variome WITH PASSWORD 'variome';
 GRANT ALL PRIVILEGES on DATABASE variome to variome;
 ```
 
-4. Set up configuration file (config.py)
-tba
+4. Set up configuration file (.env)
+```
+cp .env-sample .env
+```
 
 5. Load the data and create a superuser account
 ```
