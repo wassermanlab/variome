@@ -24,6 +24,7 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
         }
         filteredTranscripts = _.filter(filteredTranscripts, filter)
 
+        
         var columns = _.without(_.keys(filteredTranscripts[0]), 'gene', 'database');
         return (
             <Box sx={{ overflowX: 'scroll', maxWidth: '100vw' }} >
