@@ -6,24 +6,24 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 
-export default function VariantDetails(props) {
-    console.log(props)
+export default function VariantDetails({variantMetadata, ibvlFrequencies, varId}) {
+    console.log({variantMetadata, ibvlFrequencies, varId})
     const variantDetailsList = [
         {
             title: 'Type',
-            val: props.variantMetadata["var_type"],
+            val: variantMetadata["var_type"],
         },
         {
             title: 'Position',
-            val: props.variantMetadata["pos"],
+            val: variantMetadata["pos"],
         },
         {
             title: 'Site Quality',
-            val: props.ibvlFrequencies["quality"],
+            val: ibvlFrequencies?.quality,
         },
         {
             title: 'Allele Frequency',
-            val: Number(props.ibvlFrequencies["af_tot"]).toFixed(4)
+            val: Number(ibvlFrequencies?.af_tot).toFixed(4)
         },
         {
             title: 'Filter',
@@ -42,7 +42,7 @@ export default function VariantDetails(props) {
                                     on which version of the database is currently being used -- need to
                                     figure this out a little bit more, as we will have a separate database
                                     for each reference genome */}
-                                { props.varId } (hg38)
+                                { varId } (hg38)
                             </Typography>
                         </Grid>
                         {variantDetailsList.map((item, index) => (

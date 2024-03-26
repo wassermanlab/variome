@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -63,19 +64,21 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
     }
 
     return (
-        <React.Fragment>
-            <Card>
-                <CardContent>
-                    <Grid container>
-                        <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
-                                Annotations
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                            {/* SQ TODO: Make this table scrollable for when it is larger than the screen */}
-                            <div style={{ overflowX: 'auto' }}>
-                            <TableContainer sx={{ overflowX: 'auto' }}>
+        <Grid container>
+            <Grid item xs={12}>
+                <TableContainer >
+
+                    {variantAnnotations.map(geneAnnotations => {
+                        return (
+                            <Card key={geneAnnotations.gene}>
+                                <h3>{geneAnnotations.gene}</h3>
+                                {geneAnnotations.transcripts && geneAnnotations.transcripts.length > 0 ?
+                                    <TranscriptsAnnotationsTable transcripts={geneAnnotations.transcripts} gene={geneAnnotations.gene} /> : <></>}
+                            </Card>
+
+                        )
+                    })}
+                    {/*}
                                 <Table aria-label="simple table" sx={{ minWidth: 800 }}>
                                     <colgroup>
                                         <col style={{ width: '10%'}}/>
@@ -89,7 +92,6 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
                                         <col style={{ width: '10%'}}/>
                                     </colgroup>
                                     <TableHead>
-                                        {/* BH TODO: Change the font of the headings in this table */}
                                         <TableRow>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Gene</TableCell>
                                             <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Transcript</TableCell>
@@ -115,9 +117,6 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
                                                 </TableCell>
                                             </TableRow>
                                             {variantAnnotations[key].map((annotation, index) => (
-                                                /* BH TODO: Add error checking here for when there is no annotation data */
-                                                /* BH TODO: Add CADD and SpliceAI to API endpoint */
-                                                /* BH TODO: What falls under "Other Annotations" ? */
                                                 <TableRow key={index}>
                                                     <TableCell align="center">{annotation.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
                                                     <TableCell align="center">{annotation.transcript.variant_transcript.transcript.transcript_id}</TableCell>
@@ -133,35 +132,10 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
                                                 </TableRow>
                                             ))}
                                         </TableBody>
-                                    ))}
-                                </Table>
-                            </TableContainer>
-                            </div>
-                        </Grid>
-                    </Grid>
-                </CardContent>
-            </Card>
-
-            <div style={{ marginTop: '20px' }} />
-            
-            <Card>
-                <CardContent>
-                    <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
-                        Database
-                    </Typography>
-                    <RadioGroup
-                        row
-                        aria-label="transcripts"
-                        name="transcripts"
-                        value={selectedTranscript}
-                        onChange={handleTranscriptChange}
-                    >
-                        <FormControlLabel value="Ensembl" control={<Radio />} label="Ensembl" />
-                        <FormControlLabel value="Refseq" control={<Radio />} label="Refseq" />
-                    </RadioGroup>
-                </CardContent>
-            </Card>
-
-        </React.Fragment>
+                                    ))} 
+                                </Table>{*/}
+                </TableContainer>
+            </Grid>
+        </Grid>
     )
 }
