@@ -167,4 +167,3 @@ config.json
 .DS_Store
 node_modules
 data/import_script/jobs/*
-data/backups/*

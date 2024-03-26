@@ -4,7 +4,7 @@ from .severity import Severity
 
 
 class VariantConsequence(models.Model):
-    variant_transcript = models.ForeignKey(VariantTranscript, on_delete=models.CASCADE, db_column='variant_transcript', related_name='consequence')
+    variant_transcript = models.ForeignKey(VariantTranscript, on_delete=models.CASCADE, db_column='variant_transcript')
     severity = models.ForeignKey(Severity, on_delete=models.CASCADE, db_column='severity')
 
     class Meta:
