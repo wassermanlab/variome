@@ -9,6 +9,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import Paper from '@mui/material/Paper';
 import { useParams } from 'react-router-dom'
+import './styles.css'; // Import CSS file
 
 import VariantDetails from '../components/VariantDetails';
 import References from '../components/References';
@@ -66,7 +67,7 @@ export default function SNV() {
                 </Paper>
             )}
 
-            {loading ? (
+{/*             {loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
                     open={loading}
@@ -76,25 +77,31 @@ export default function SNV() {
                     <DialogContent><CircularProgress /></DialogContent>
                 </Dialog>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection:'column' }}>
+                <Box sx={{ display: 'flex', flexDirection:'column' }}> */}
+         <Grid container spacing={2} className="flex-container">
+                {/* Variant ID Block */}
+                <Grid item xs={12} md={6} className="flex-item ">
+                    <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
+                </Grid>
 
-                    <Grid item xs={12}>
-                        <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <References varId={varId} variantMetadata={variantMetadata} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Paper sx={{  overflowY: 'auto', padding: 2 }}>
-                            <Annotations varId={varId} variantAnnotations={variantAnnotations} />
-                        </Paper>
+                {/* Reference Box */}
+                <Grid item xs={12} md={6} className="flex-item">
+                    <References varId={varId} variantMetadata={variantMetadata} />
+                </Grid>
 
-                    </Grid>
-                </Box>
-            )}
+                {/* Pop Frequencies Box */}
+                <Grid item xs={12} className="gridItem">
+                    <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                </Grid>
+
+                {/* Annotations Box */}
+                <Grid item xs={12} className="gridItem">
+                    <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+                </Grid>
+            </Grid>
+
+{/*                 </Box>
+            )} */}
         </Container>
     )
 }
