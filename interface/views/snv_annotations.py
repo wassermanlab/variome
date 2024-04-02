@@ -29,7 +29,6 @@ def snv_annotations(request, variant_id, **kwargs):
     database = request.GET.get(
         "transcript_database", None
     )  # E for Ensembl or R for Refseq
-    print("db type", database)
     if database is None or database not in ["E", "R"]:
         errors.append("Database type is required or invalid.")
         pass
