@@ -38,7 +38,7 @@ export default function References(props) {
 
     return (
         <React.Fragment>
-            <Card>
+            <Card sx={{ height: '235px' }}>
                 <CardContent>
                     <Grid container>
                         <Grid item xs={12}>

@@ -33,11 +33,11 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varId}
 
     return (
         <React.Fragment>
-            <Card>
+            <Card sx={{ height: '235px' }}>
                 <CardContent>
                     <Grid container>
                         <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light'}}>
                                 {/* TODO: Get the reference genome information from the database based 
                                     on which version of the database is currently being used -- need to
                                     figure this out a little bit more, as we will have a separate database

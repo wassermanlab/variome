@@ -16,6 +16,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import { useParams } from 'react-router-dom'
+import './styles.css'; // Import CSS file
 
 import VariantDetails from '../components/VariantDetails';
 import References from '../components/References';
@@ -105,7 +106,7 @@ export default function SNV() {
                 </Paper>
             )}
 
-            {loading ? (
+{/*             {loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
                     open={loading}
@@ -115,19 +116,26 @@ export default function SNV() {
                     <DialogContent><CircularProgress /></DialogContent>
                 </Dialog>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', flexDirection:'column' }}> */}
+         <Grid container spacing={2} className="flex-container">
+                {/* Variant ID Block */}
+                <Grid item xs={12} md={6} className="flex-item ">
+                    <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
+                </Grid>
 
-                    <Grid item xs={12}>
-                        <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
-                    </Grid>
-                    <Grid item xs={4}>
-                        <References varId={varId} variantMetadata={variantMetadata} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Paper sx={{ overflowY: 'auto', padding: 2 }} >
+                {/* Reference Box */}
+                <Grid item xs={12} md={6} className="flex-item">
+                    <References varId={varId} variantMetadata={variantMetadata} />
+                </Grid>
+
+                {/* Pop Frequencies Box */}
+                <Grid item xs={12} className="gridItem">
+                    <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                </Grid>
+
+                {/* Annotations Box */}
+                <Grid item xs={12} className="gridItem">
+                <Paper sx={{ overflowY: 'auto', padding: 2 }} >
                             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
                                 <Typography variant="h4" sx={{ marginRight: '1em' }}>Transcript Annotations</Typography>
                                 <RadioGroup
@@ -152,12 +160,11 @@ export default function SNV() {
                                 variantAnnotations={variantAnnotations}
                                 filter={transcriptsFilter} />
                         </Paper>
+                </Grid>
+            </Grid>
 
-                    </Grid>
-                </Box>
-            )}
-
-
+{/*                 </Box>
+            )} */}
         </Container>
     )
 }
