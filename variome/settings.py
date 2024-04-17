@@ -140,7 +140,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3003',
     'http://localhost:3123',
     'http://'+DOMAIN,
-    'https://'+DOMAIN
+    'https://'+DOMAIN,
+    'http://'+DOMAIN+ ':3000',
 ]
 
 # Authentication
