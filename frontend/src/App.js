@@ -1,14 +1,14 @@
 import './App.css';
-import theme from './styles/theme';
+import theme from './styles/theme.js';
 
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import {BrowserRouter, Routes, Route} from 'react-router-dom';
-import Login from './/pages/login.js'
-import Signup from './/pages/register.js'
-import Profile from './/pages/profile.js'
+import Login from './pages/login.js'
+import Signup from './pages/register.js'
+import Profile from './pages/profile.js'
 
-import NavBar from './layouts/navbar';
+import NavBar from './layouts/navbar.js';
 
 
 function AppRouter () {
