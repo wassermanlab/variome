@@ -16,6 +16,13 @@ function cachedFetch(url, query) {
     map[key] = fetch(url)
       .then((response) => {
         map[key] = null;
+        /*
+        // uncomment for fake loading time
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(response.json());
+          }, 2000);
+        });*/
         return response.json();
       });
   }
