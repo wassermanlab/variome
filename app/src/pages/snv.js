@@ -67,7 +67,7 @@ export default function SNV() {
     useEffect(() => {
 
         const fetchAnnData = async () => {
-            const { annotations, errors } = await Api.get("annotations/" + varId, { transcript_database: transcriptDatabase });
+            const { annotations, errors } = await Api.get("annotations/" + varId, {  });
             if (errors && errors.length > 0) {
                 setError(errors[0]);
                 return;
@@ -138,18 +138,7 @@ export default function SNV() {
                 <Paper sx={{ overflowY: 'auto', padding: 2 }} >
                             <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
                                 <Typography variant="h4" sx={{ marginRight: '1em' }}>Transcript Annotations</Typography>
-                                <RadioGroup
-                                    row
-                                    aria-label="transcript database"
-                                    name="transcript database"
-                                    value={transcriptDatabase}
-                                    onChange={(event) => {
-                                        setTranscriptDatabase(event.target.value);
-                                    }}
-                                >
-                                    <FormControlLabel value="E" control={<Radio />} label="Ensembl" />
-                                    <FormControlLabel value="R" control={<Radio />} label="Refseq" />
-                                </RadioGroup>
+
                                 <FormControlLabel
                                     sx={{ marginLeft: '0.5em', padding: '0.5em', border: '1px dotted rgba(0,0,0,0.2)' }}
                                     control={<ProteinCodingBiotypeFilterCheckbox />}

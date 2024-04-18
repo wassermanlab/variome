@@ -29,9 +29,7 @@ def snv_annotations(request, variant_id, **kwargs):
     database = request.GET.get(
         "transcript_database", None
     )  # E for Ensembl or R for Refseq
-    if database is None or database not in ["E", "R"]:
-        errors.append("Database type is required or invalid.")
-        pass
+    
 
     json = kwargs.get("JSON", False)
 
@@ -51,13 +49,23 @@ def snv_annotations(request, variant_id, **kwargs):
             "variant__snv__cadd_intr": "cadd intr",
             "variant__snv__cadd_score": "cadd score",
         }
-        transcripts = (
-            VariantTranscript.objects.filter(
-                variant__variant_id=variant_id, transcript__transcript_type=database
+        
+        if database is None or database not in ["E", "R"]:
+            transcripts = (
+                VariantTranscript.objects.filter(
+                    variant__variant_id=variant_id
+                )
+                .values(*values_names.keys())
+                .all()
             )
-            .values(*values_names.keys())
-            .all()
-        )
+        else:
+            transcripts = (
+                VariantTranscript.objects.filter(
+                    variant__variant_id=variant_id, transcript__transcript_type=database
+                )
+                .values(*values_names.keys())
+                .all()
+            )
 
         if len(transcripts) == 0:
             raise VariantTranscript.DoesNotExist
