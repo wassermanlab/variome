@@ -142,6 +142,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://'+DOMAIN,
     'https://'+DOMAIN,
     'http://'+DOMAIN+ ':3000',
+    'https://'+DOMAIN+ ':3000'
 ]
 
 # Authentication
