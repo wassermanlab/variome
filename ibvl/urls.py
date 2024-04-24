@@ -31,7 +31,9 @@ api_urls = [
 ]
 
 urlpatterns = [
+    path('', views.index, name='index'),
     path('admin/', admin.site.urls),
     path('api/', include(api_urls)),
-    path('accounts/', include('allauth.urls'))
+    path('accounts/', include('allauth.urls')),
+    path('accounts/profile/', views.profile_view, name='profile'),
 ]

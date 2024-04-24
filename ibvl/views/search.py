@@ -1,5 +1,7 @@
 import json
 from rest_framework import viewsets
+from django.contrib.auth.decorators import login_required
+
 from ibvl.models import (
     Variant,
 )
@@ -14,12 +16,14 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from django.http import Http404
 from django.http.response import JsonResponse
 
-@api_view(['POST'])
+@api_view(['GET'])
+@login_required
 def snv_search(request, **kwargs):
     """
     """
     json_content = kwargs.get('JSON', False)
-    variant_id = json.loads(request.body)["variant_id"]
+
+    variant_id = request.GET.get('variant_id', None)
 
     try:
         # Get all relevant information from the database 
@@ -28,7 +32,7 @@ def snv_search(request, **kwargs):
     except Variant.DoesNotExist:
         variants = None
 
-    if request.method == 'POST':
+    if request.method == 'GET':
         if variants:
             # Only send at most 10 variants
             data_out = {

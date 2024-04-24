@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from django.contrib.auth.decorators import login_required
 from ibvl.models import (
     Variant,
     SNV
@@ -15,6 +16,7 @@ from django.http import Http404
 from django.http.response import JsonResponse
 
 @api_view(['GET'])
+@login_required
 def snv_metadata(request, variant_id, **kwargs):
     """
     """

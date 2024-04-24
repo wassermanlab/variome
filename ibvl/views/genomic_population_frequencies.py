@@ -1,4 +1,6 @@
 from rest_framework import viewsets
+from django.contrib.auth.decorators import login_required
+
 from ibvl.models import (
     Variant,
     GenomicGnomadFrequency,
@@ -17,6 +19,7 @@ from django.http import Http404
 from django.http.response import JsonResponse
 
 @api_view(['GET'])
+@login_required
 def genomic_population_frequencies(request, variant_id, **kwargs):
     """
     """

@@ -4,3 +4,5 @@ from .snv_annotations import snv_annotations
 from .genomic_population_frequencies import genomic_population_frequencies
 from .search import snv_search
 from .authentication import *
+from .profile_view import profile_view
+from .index import index

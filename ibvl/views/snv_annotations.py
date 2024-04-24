@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from django.contrib.auth.decorators import login_required
 from ibvl.models import (
     Variant,
     Gene,
@@ -22,6 +23,7 @@ from django.http.response import JsonResponse
 
 
 @api_view(["GET"])
+@login_required
 def snv_annotations(request, variant_id, **kwargs):
     """ gets the annotations for a variant's transcripts, organized by gene name """
     errors = []
@@ -85,7 +87,8 @@ def snv_annotations(request, variant_id, **kwargs):
         errors.append("Variant ID was not found: " + variant_id)
 
     except VariantTranscript.DoesNotExist:
-        errors.append("No Transcripts were found for variant: " + variant_id)
+        pass
+#        errors.append("No Transcripts were found for variant: " + variant_id)
 
     if request.method == "GET":
         data_out = {"annotations": transcripts_by_gene, "errors": errors}
