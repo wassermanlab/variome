@@ -44,6 +44,8 @@ const drawerWidth = 240;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
     ({ theme, open }) => ({
+        maxWidth:'100vw',//
+        overflow:'hidden',
         flexGrow: 1,
         padding: theme.spacing(3),
         transition: theme.transitions.create('margin', {
@@ -115,7 +117,7 @@ const AssemblyPicker = () => {
     );
 };
 
-export default function AppLayoutWithNavigation({children}) {
+export default function AppLayoutWithNavigation({ user, children }) {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
 
@@ -141,16 +143,23 @@ export default function AppLayoutWithNavigation({children}) {
         };
     }, []);
 
+    const FlexBox = styled(Box)({
+        display: 'flex',
+        alignItems: 'center',
+        gap:'16px'
+    })
+
+    const PlainLink = (props) => <Link {...props} color="inherit" underline="none" />
 
     return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
             <TopBar position="fixed" open={open} sx={(theme) => ({
-                bgcolor: theme.palette.common.white
+                bgcolor: theme.palette.common.white,
+                color: theme.palette.text.primary,
             })}>
-                <Toolbar>
+                <Toolbar >
                     <IconButton
-                        color="textPrimary"
                         aria-label="open drawer"
                         onClick={() => setOpen(true)}
                         edge="start"
@@ -162,14 +171,32 @@ export default function AppLayoutWithNavigation({children}) {
                         variant="h6"
                         noWrap
                         component="div"
-                        color="textPrimary"
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
-                        <Link href="/" color="textPrimary" underline="none">He Kākano</Link>
+                        <PlainLink href="/" >He Kākano</PlainLink>
                     </Typography>
-                    <AssemblyPicker />
-                    <Search variant="standard" width="25%" marginLeft="20px" />
+                    
+                    <FlexBox sx={{ flexGrow: '1' }}>
+                        {user && <>
+                        <AssemblyPicker />
+                        <Search variant="standard" width='200px'/>
+                        </>}
+                    </FlexBox>
+                    <FlexBox >
+                        {user ?
+                            <FlexBox component={PlainLink} href="/profile">
+                                {user.email}
+                                <Person />
+                            </FlexBox>
+                            :
+                            <FlexBox>
+                                <Link href={config.backend_root + "accounts/microsoft/login/?process=login"} color="inherit" underline="none">
+                                    Login
+                                </Link>
+                            </FlexBox>}
+                    </FlexBox>
                 </Toolbar>
+
             </TopBar>
             <Drawer
                 sx={{
@@ -221,12 +248,6 @@ export default function AppLayoutWithNavigation({children}) {
                         <ListItem button key="contact">
                             <ListItemIcon><Email /></ListItemIcon>
                             <ListItemText primary="Contact Us" />
-                        </ListItem>
-                    </Link>
-                    <Link href={config.backend_root + "accounts/microsoft/login/?process=login"}>
-                        <ListItem button key="login">
-                            <ListItemIcon><Login /></ListItemIcon>
-                            <ListItemText primary="Login" />
                         </ListItem>
                     </Link>
                 </List>
