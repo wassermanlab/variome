@@ -1,9 +1,14 @@
-import './App.css';
-import theme from './styles/theme.js';
 
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import _ from 'lodash';
+
+import './App.css';
+import theme from './styles/theme.js';
+import Api from './Api.js';
+
 import Login from './pages/login.js'
 import Signup from './pages/register.js'
 import Profile from './pages/profile.js'
@@ -17,10 +22,21 @@ import FAQ from './pages/faq';
 import Contact from './pages/contact';
 
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.js';
-import { useEffect } from 'react';
+
 
 
 function AppRouter() {
+//  const [user, setUser] = useState({email:"asdf@example.com"});
+const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    Api.get('user',{json:true}).then((response) => {
+      var user = _.get(response, 'user');
+      if (_.isObject(user) && _.has(user, 'email') && user.email) {
+        setUser(user);
+      }
+    });
+  },[]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -30,9 +46,9 @@ function AppRouter() {
           {/* SQ TODO: Pages that do not use navbar (like login/signup) go below*/}
           {/*<Route path="/login" exact element={<Login/>}/>*/}
           <Route path="/*" element={
-            <AppLayoutWithNavigation >
+            <AppLayoutWithNavigation user={user}>
               <Routes>
-                <Route path="/" exact element={<Home />} />
+                <Route path="/" exact element={<Home user={user}/>} />
                 <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />
                 <Route path="/about" exact element={<About />} />
                 <Route path="/terms" exact element={<TermsOfUse />} />

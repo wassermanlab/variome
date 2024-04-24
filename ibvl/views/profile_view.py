@@ -1,19 +1,17 @@
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+import os
 
+DOMAIN = os.environ.get('DOMAIN', 'http://localhost:3000')
 @login_required
 def profile_view(request):
-    request.foo = "bear"
-    is_json = request.GET.get('json', False)
-    if is_json:
-        return profile_view_json(request)
-    else:
-        return render(request, 'profile.html', {
-            'user': request.user,
-    #        'profile': request.user.profile
-        })
+    # do redirect to app
+    return redirect(f'{DOMAIN}/')
+#    return render(request, 'profile.html', {
+#        'user': request.user,
+#    })
 
 
 @login_required

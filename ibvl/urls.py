@@ -36,4 +36,5 @@ urlpatterns = [
     path('api/', include(api_urls)),
     path('accounts/', include('allauth.urls')),
     path('accounts/profile/', views.profile_view, name='profile'),
+    path('api/user/', views.profile_view_json, name='profile'),
 ]

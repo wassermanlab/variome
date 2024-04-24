@@ -42,7 +42,7 @@ const Item = styled('div')(({ theme }) => ({
     textAlign: 'center',
   }));
 
-export default function Home() {
+export default function Home({user}) {
 
     return (
         <Container maxWidth="xl">
@@ -55,14 +55,13 @@ export default function Home() {
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
-                        <Alert severity="warning">
-                            <AlertTitle sx={{ fontWeight: 'bold' }}>Disclaimer</AlertTitle>
+                        <Alert severity="info">
                             This is a test database. All data used is open source and does
                             not include Indigenous data.
                         </Alert>
                     </Grid>
                     <Grid item xs={12}>
-                        <Card>
+                        {user ? <Card>
                             <CardContent>
                                 <Grid container>
                                     <Grid item xs={6}>
@@ -102,7 +101,8 @@ export default function Home() {
                                     </Grid>
                                 </Grid>
                             </CardContent>
-                        </Card>
+                        </Card> : null }
+
                     </Grid>
                     <Grid item xs={12}>
                         <Card>
@@ -160,17 +160,17 @@ export default function Home() {
                 padding: '20px', 
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
-                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200, marginRight: 10, marginLeft: 100 }} />
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px', marginLeft: '40px' }}>
+            <Box sx={{ display: 'flex', justifyContent:'center', alignItems: 'center', p: 2, flexWrap:'wrap', gap:'30px'}}>
+                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200 }} />
+                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     Variome
                 </Typography>
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     <Link href="/about" color="inherit">
                         About
                     </Link>
                 </Typography>
-                <Typography variant="h5" component="div" sx={{ color: 'white', marginRight: '30px' }}>
+                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     <Link href="/terms" color="inherit">
                         Terms of Use
                     </Link>
