@@ -17,10 +17,10 @@ import {
     ListItemText,
     Select,
     MenuItem,
-//    InputBase,
-//    Button,
- //   Autocomplete,
-//    TextField
+    //    InputBase,
+    //    Button,
+    //   Autocomplete,
+    //    TextField
 } from '@mui/material';
 
 import {
@@ -38,15 +38,8 @@ import {
 
 import { useState } from 'react';
 
-import Home from '../pages/home';
-import SNV from '../pages/snv';
-import About from '../pages/about';
-import TermsOfUse from '../pages/terms';
-import FAQ from '../pages/faq';
-import Contact from '../pages/contact';
-import Profile from '../pages/profile';
-import Search from '../components/Search';
-import config from '../config.json';
+import Search from './components/Search';
+import config from './config.json';
 const drawerWidth = 240;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
@@ -68,7 +61,7 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
     }),
 );
 
-const VariomeAppBar = styled(AppBar, {
+const TopBar = styled(AppBar, {
     shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
     transition: theme.transitions.create(['margin', 'width'], {
@@ -95,7 +88,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
     justifyContent: 'flex-end',
 }));
 
-const DropdownMenu = () => {
+const AssemblyPicker = () => {
     const [assembly, setAssembly] = useState('');
 
     const handleChange = (event) => {
@@ -122,17 +115,10 @@ const DropdownMenu = () => {
     );
 };
 
-
-export default function AppNavBar() {
+export default function AppLayoutWithNavigation({children}) {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
 
-    const handleDrawerOpen = () => {
-        setOpen(true);
-    };
-    const handleDrawerClose = () => {
-        setOpen(false);
-    };
 
     const handleScroll = () => {
         const windowHeight = window.innerHeight;
@@ -159,14 +145,14 @@ export default function AppNavBar() {
     return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
-            <VariomeAppBar position="fixed" open={open} sx={(theme) => ({
+            <TopBar position="fixed" open={open} sx={(theme) => ({
                 bgcolor: theme.palette.common.white
             })}>
                 <Toolbar>
                     <IconButton
                         color="textPrimary"
                         aria-label="open drawer"
-                        onClick={handleDrawerOpen}
+                        onClick={() => setOpen(true)}
                         edge="start"
                         sx={{ mr: 2, ...(open && { display: 'none' }) }}
                     >
@@ -181,10 +167,10 @@ export default function AppNavBar() {
                     >
                         <Link href="/" color="textPrimary" underline="none">He Kākano</Link>
                     </Typography>
-                    <DropdownMenu />
+                    <AssemblyPicker />
                     <Search variant="standard" width="25%" marginLeft="20px" />
                 </Toolbar>
-            </VariomeAppBar>
+            </TopBar>
             <Drawer
                 sx={{
                     width: drawerWidth,
@@ -200,7 +186,7 @@ export default function AppNavBar() {
             >
                 <DrawerHeader>
                     {/* BH TODO: Add Logo here */}
-                    <IconButton onClick={handleDrawerClose}>
+                    <IconButton onClick={() => setOpen(false)}>
                         {theme.direction === 'ltr' ? <ChevronLeft /> : <ChevronRight />}
                     </IconButton>
                 </DrawerHeader>
@@ -241,21 +227,13 @@ export default function AppNavBar() {
                         <ListItem button key="login">
                             <ListItemIcon><Login /></ListItemIcon>
                             <ListItemText primary="Login" />
-                        </ListItem> 
+                        </ListItem>
                     </Link>
                 </List>
             </Drawer>
             <Main open={open}>
                 <DrawerHeader />
-                <Routes>
-                    <Route path="/" exact element={<Home />} />
-                    <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />
-                    <Route path="/about" exact element={<About />} />
-                    <Route path="/terms" exact element={<TermsOfUse />} />
-                    <Route path="/faq" exact element={<FAQ />} />
-                    <Route path="/contact" exact element={<Contact />} />
-                    <Route path="/profile" exact element={<Profile />} />
-                </Routes>
+                {children}
 
             </Main>
 
