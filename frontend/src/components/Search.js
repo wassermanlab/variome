@@ -1,4 +1,6 @@
 import React from 'react';
+import Api from '../Api';
+import _ from 'lodash';
 
 import Autocomplete from '@mui/material/Autocomplete';
 import MenuItem from '@mui/material/MenuItem';
@@ -13,19 +15,11 @@ export default function Search(props) {
     const config = require("../config.json")
 
     const getData = async(searchTerm) => {
-        const data = {
+        const response = await Api.get("search", 
+        {
             "variant_id": searchTerm
-        }
-        const response = await fetch(config.backend_url + "search", {
-            method: 'POST',
-            body:JSON.stringify(data),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            }
         });
-        const json = await response.json();
-        setOptions(json["variants"]);
+        setOptions(_.get(response,"variants",[]));
     };
 
     const onInputChange = (event, value, reason) => {

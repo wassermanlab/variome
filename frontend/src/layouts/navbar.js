@@ -1,35 +1,42 @@
 import * as React from 'react';
-import { Routes, Route} from 'react-router-dom'
-import { alpha, styled, useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import Drawer from '@mui/material/Drawer';
-import CssBaseline from '@mui/material/CssBaseline';
-import MuiAppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import List from '@mui/material/List';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import ArticleIcon from '@mui/icons-material/Article';
-import EmailIcon from '@mui/icons-material/Email';
-import HelpCenterIcon from '@mui/icons-material/HelpCenter';
-import HomeIcon from '@mui/icons-material/Home';
-import InfoIcon from '@mui/icons-material/Info';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Link from '@mui/material/Link';
-import ListItem from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import InputBase from '@mui/material/InputBase';
-import SearchIcon from '@mui/icons-material/Search';
+import { Routes, Route } from 'react-router-dom'
+import { styled, useTheme } from '@mui/material/styles';
+import {
+    Box,
+    Drawer,
+    CssBaseline,
+    Toolbar,
+    AppBar,
+    List,
+    Typography,
+    Divider,
+    IconButton,
+    Link,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Select,
+    MenuItem,
+//    InputBase,
+//    Button,
+ //   Autocomplete,
+//    TextField
+} from '@mui/material';
 
-import { useState, useEffect } from 'react';
-import { Select, MenuItem } from '@mui/material';
-import Button from '@mui/material/Button';
-import Autocomplete from '@mui/material/Autocomplete';
-import TextField from '@mui/material/TextField';
+import {
+    Article,
+    Email,
+    HelpCenter,
+    Home as HomeIcon,
+    Info,
+    Menu,
+    ChevronLeft,
+    ChevronRight,
+    Login,
+    Person,
+} from '@mui/icons-material';
+
+import { useState } from 'react';
 
 import Home from '../pages/home';
 import SNV from '../pages/snv';
@@ -39,7 +46,7 @@ import FAQ from '../pages/faq';
 import Contact from '../pages/contact';
 import Profile from '../pages/profile';
 import Search from '../components/Search';
-
+import config from '../config.json';
 const drawerWidth = 240;
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
@@ -56,19 +63,19 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
                 easing: theme.transitions.easing.easeOut,
                 duration: theme.transitions.duration.enteringScreen,
             }),
-        marginLeft: 0,
+            marginLeft: 0,
         }),
     }),
 );
 
-const AppBar = styled(MuiAppBar, {
+const VariomeAppBar = styled(AppBar, {
     shouldForwardProp: (prop) => prop !== 'open',
-    })(({ theme, open }) => ({
-        transition: theme.transitions.create(['margin', 'width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-        }),
-        ...(open && {
+})(({ theme, open }) => ({
+    transition: theme.transitions.create(['margin', 'width'], {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...(open && {
         width: `calc(100% - ${drawerWidth}px)`,
         marginLeft: `${drawerWidth}px`,
         transition: theme.transitions.create(['margin', 'width'], {
@@ -88,58 +95,13 @@ const DrawerHeader = styled('div')(({ theme }) => ({
     justifyContent: 'flex-end',
 }));
 
-{/*
-const Search = styled('div')(({ theme }) => ({
-    position: 'relative',
-    borderRadius: theme.shape.borderRadius,
-    //backgroundColor: alpha(theme.palette.common.white, 0.15),
-    backgroundColor: alpha(theme.palette.primary.main, 0.15),
-    '&:hover': {
-      //backgroundColor: alpha(theme.palette.common.white, 0.25),
-      backgroundColor: alpha(theme.palette.primary.main, 0.25),
-    },
-    marginRight: theme.spacing(2),
-    marginLeft: 0,
-    width: '100%',
-    [theme.breakpoints.up('sm')]: {
-      marginLeft: theme.spacing(3),
-      width: 'auto',
-    },
-}));
-
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-    padding: theme.spacing(0, 2),
-    height: '100%',
-    position: 'absolute',
-    pointerEvents: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'darkgrey'
-}));
-  
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: theme.palette.text.primary,
-    '& .MuiInputBase-input': {
-      padding: theme.spacing(1, 1, 1, 0),
-      // vertical padding + font size from searchIcon
-      paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-      transition: theme.transitions.create('width'),
-      width: '100%',
-      [theme.breakpoints.up('md')]: {
-        width: '20ch',
-      },
-    },
-}));
-*/}
-
 const DropdownMenu = () => {
     const [assembly, setAssembly] = useState('');
-  
+
     const handleChange = (event) => {
-      setAssembly(event.target.value);
+        setAssembly(event.target.value);
     };
-  
+
     return (
         <Select
             value={assembly}
@@ -147,7 +109,7 @@ const DropdownMenu = () => {
             displayEmpty
             inputProps={{ 'aria-label': 'Assembly' }}
             style={{ color: 'black', marginLeft: '20px' }}
-            //variant="standard"
+        //variant="standard"
         >
             {/* TODO: Update the choices for this select once we add SV and Mt */}
             {/* TODO: Make this functional -- currently only one SNV assembly so it does nothing */}
@@ -179,9 +141,9 @@ export default function AppNavBar() {
 
         if (documentHeight - windowHeight <= scrollPosition) {
             // Cannot read properties of null (reading 'style')
-//            document.getElementById('footer').style.display = 'block';
+            //            document.getElementById('footer').style.display = 'block';
         } else {
- //           document.getElementById('footer').style.display = 'none';
+            //           document.getElementById('footer').style.display = 'none';
         }
     };
 
@@ -194,10 +156,10 @@ export default function AppNavBar() {
     }, []);
 
 
-  return (
+    return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
-            <AppBar position="fixed" open={open} sx={(theme) => ({
+            <VariomeAppBar position="fixed" open={open} sx={(theme) => ({
                 bgcolor: theme.palette.common.white
             })}>
                 <Toolbar>
@@ -208,7 +170,7 @@ export default function AppNavBar() {
                         edge="start"
                         sx={{ mr: 2, ...(open && { display: 'none' }) }}
                     >
-                        <MenuIcon />
+                        <Menu />
                     </IconButton>
                     <Typography
                         variant="h6"
@@ -218,30 +180,19 @@ export default function AppNavBar() {
                         sx={{ display: { xs: 'none', sm: 'block' } }}
                     >
                         <Link href="/" color="textPrimary" underline="none">He Kākano</Link>
-                    </Typography>  
+                    </Typography>
                     <DropdownMenu />
-                    {/*                    
-                    <Search>
-                        <SearchIconWrapper>
-                            <SearchIcon />
-                        </SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Search variant"
-                            inputProps={{ 'aria-label': 'search' }}
-                        />
-                    </Search>
-                    */}
-                    <Search variant="standard" width="25%" marginLeft="20px"/>
+                    <Search variant="standard" width="25%" marginLeft="20px" />
                 </Toolbar>
-            </AppBar>
+            </VariomeAppBar>
             <Drawer
                 sx={{
-                width: drawerWidth,
-                flexShrink: 0,
-                '& .MuiDrawer-paper': {
                     width: drawerWidth,
-                    boxSizing: 'border-box',
-                },
+                    flexShrink: 0,
+                    '& .MuiDrawer-paper': {
+                        width: drawerWidth,
+                        boxSizing: 'border-box',
+                    },
                 }}
                 variant="persistent"
                 anchor="left"
@@ -250,7 +201,7 @@ export default function AppNavBar() {
                 <DrawerHeader>
                     {/* BH TODO: Add Logo here */}
                     <IconButton onClick={handleDrawerClose}>
-                        {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                        {theme.direction === 'ltr' ? <ChevronLeft /> : <ChevronRight />}
                     </IconButton>
                 </DrawerHeader>
                 <Divider />
@@ -263,48 +214,54 @@ export default function AppNavBar() {
                     </Link>
                     <Link href="/" color="inherit" underline="none">
                         <ListItem button key="about">
-                            <ListItemIcon><InfoIcon /></ListItemIcon>
+                            <ListItemIcon><Info /></ListItemIcon>
                             <ListItemText primary="About" />
                         </ListItem>
                     </Link>
                     <Link href="/" color="inherit" underline="none">
                         <ListItem button key="terms">
-                            <ListItemIcon><ArticleIcon /></ListItemIcon>
+                            <ListItemIcon><Article /></ListItemIcon>
                             <ListItemText primary="Terms of Use" />
                         </ListItem>
                     </Link>
                     <Divider />
                     <Link href="/" color="inherit" underline="none">
                         <ListItem button key="faq">
-                            <ListItemIcon><HelpCenterIcon /></ListItemIcon>
+                            <ListItemIcon><HelpCenter /></ListItemIcon>
                             <ListItemText primary="FAQ" />
                         </ListItem>
                     </Link>
                     <Link href="/" color="inherit" underline="none">
                         <ListItem button key="contact">
-                            <ListItemIcon><EmailIcon /></ListItemIcon>
+                            <ListItemIcon><Email /></ListItemIcon>
                             <ListItemText primary="Contact Us" />
                         </ListItem>
+                    </Link>
+                    <Link href={config.backend_root + "accounts/microsoft/login/?process=login"}>
+                        <ListItem button key="login">
+                            <ListItemIcon><Login /></ListItemIcon>
+                            <ListItemText primary="Login" />
+                        </ListItem> 
                     </Link>
                 </List>
             </Drawer>
             <Main open={open}>
                 <DrawerHeader />
                 <Routes>
-                    <Route path="/" exact element={ <Home/> } />
-                    <Route path="/snv/:varId" loader={({ params }) => {}} action={({ params }) => {}} element={ <SNV/>} />
-                    <Route path="/about" exact element={ <About/> } />
-                    <Route path="/terms" exact element={ <TermsOfUse/> } />
-                    <Route path="/faq" exact element={ <FAQ/> } />
-                    <Route path="/contact" exact element={ <Contact/> } />
-                    <Route path="/profile" exact element={ <Profile/> } />
+                    <Route path="/" exact element={<Home />} />
+                    <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />
+                    <Route path="/about" exact element={<About />} />
+                    <Route path="/terms" exact element={<TermsOfUse />} />
+                    <Route path="/faq" exact element={<FAQ />} />
+                    <Route path="/contact" exact element={<Contact />} />
+                    <Route path="/profile" exact element={<Profile />} />
                 </Routes>
 
             </Main>
 
-            
+
         </Box>
-    
-    
-  );
+
+
+    );
 }
