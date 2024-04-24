@@ -18,9 +18,9 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
 
         var impactColors = {
             'HIGH': 'red',
-            'MODERATE': 'orange',
-            'LOW': 'yellow',
-            'MODIFIER': 'green'
+            'MODERATE': 'yellow',
+            'LOW': 'green',
+            'MODIFIER': 'black'
         }
         filteredTranscripts = _.filter(filteredTranscripts, filter)
 

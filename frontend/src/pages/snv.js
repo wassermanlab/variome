@@ -29,17 +29,33 @@ export default function SNV() {
     let params = useParams();
     const varId = params.varId
 
-    const defaultTranscriptFilter = { biotype: 'protein_coding' };
+    const FILTER_KEY = 'transcript-filter';
+
+    var defaultTranscriptFilter = { biotype: 'protein_coding' };
+    var startingTranscriptFilter = defaultTranscriptFilter;
+
+    try {
+        var savedFilter = JSON.parse(localStorage.getItem(FILTER_KEY));
+        if (_.isObject(savedFilter)) {
+            startingTranscriptFilter = savedFilter;
+        }
+    } catch (e) { }
+
+
     const config = require("../config.json")
     const [loading, setLoading] = useState(true);
     const [variantMetadata, setVariantMetadata] = useState({});
     const [popFrequencies, setPopFrequencies] = useState({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
     const [variantAnnotations, setVariantAnnotations] = useState([]);
     const [error, setError] = useState(null);
-    const [transcriptsFilter, setTranscriptsFilter] = useState(defaultTranscriptFilter);
+    const [transcriptsFilter, setTranscriptsFilter] = useState(startingTranscriptFilter);
 
     const [transcriptDatabase, setTranscriptDatabase] = useState('E');
 
+    useEffect(() => {
+        localStorage.setItem(FILTER_KEY, JSON.stringify(transcriptsFilter));
+    }, [transcriptsFilter])
+    console.log("var id ", varId)
     // Get Variant metadata
     useEffect(() => {
         const fetchSNVData = async () => {
@@ -52,22 +68,19 @@ export default function SNV() {
             const json = await Api.get("genomic_population_frequencies/" + varId);
             setPopFrequencies(json);
             console.log('freq data', json);
-
         }
-
 
         setLoading(true);
         Promise.all([fetchSNVData(), fetchFreqData()]).then(() => {
             setLoading(false);
         });
 
-
     }, [varId])
 
     useEffect(() => {
 
         const fetchAnnData = async () => {
-            const { annotations, errors } = await Api.get("annotations/" + varId, { transcript_database: transcriptDatabase });
+            const { annotations, errors } = await Api.get("annotations/" + varId, {});
             if (errors && errors.length > 0) {
                 setError(errors[0]);
                 return;
@@ -82,7 +95,7 @@ export default function SNV() {
 
     function ProteinCodingBiotypeFilterCheckbox() {
 
-        function isChecked(){
+        function isChecked() {
             var iss = _.isEqual(transcriptsFilter, defaultTranscriptFilter);
             console.log(_.toPairs(transcriptsFilter), _.toPairs(defaultTranscriptFilter));
             return iss;
@@ -106,7 +119,7 @@ export default function SNV() {
                 </Paper>
             )}
 
-{/*             {loading ? (
+            {loading ? (
                 <Dialog
                     disableEscapeKeyDown={true}
                     open={loading}
@@ -115,56 +128,45 @@ export default function SNV() {
                     <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
                     <DialogContent><CircularProgress /></DialogContent>
                 </Dialog>
-            ) : (
-                <Box sx={{ display: 'flex', flexDirection:'column' }}> */}
-         <Grid container spacing={2} className="flex-container">
-                {/* Variant ID Block */}
-                <Grid item xs={12} md={6} className="flex-item ">
-                    <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
-                </Grid>
+            ) :
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Grid container spacing={2} className="flex-container">
+                        {/* Variant ID Block */}
+                        <Grid item xs={12} md={6} className="flex-item ">
+                            <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
+                        </Grid>
 
-                {/* Reference Box */}
-                <Grid item xs={12} md={6} className="flex-item">
-                    <References varId={varId} variantMetadata={variantMetadata} />
-                </Grid>
+                        {/* Reference Box */}
+                        <Grid item xs={12} md={6} className="flex-item">
+                            <References varId={varId} variantMetadata={variantMetadata} />
+                        </Grid>
 
-                {/* Pop Frequencies Box */}
-                <Grid item xs={12} className="gridItem">
-                    <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
-                </Grid>
+                        {/* Pop Frequencies Box */}
+                        <Grid item xs={12} className="gridItem">
+                            <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                        </Grid>
 
-                {/* Annotations Box */}
-                <Grid item xs={12} className="gridItem">
-                <Paper sx={{ overflowY: 'auto', padding: 2 }} >
-                            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                <Typography variant="h4" sx={{ marginRight: '1em' }}>Transcript Annotations</Typography>
-                                <RadioGroup
-                                    row
-                                    aria-label="transcript database"
-                                    name="transcript database"
-                                    value={transcriptDatabase}
-                                    onChange={(event) => {
-                                        setTranscriptDatabase(event.target.value);
-                                    }}
-                                >
-                                    <FormControlLabel value="E" control={<Radio />} label="Ensembl" />
-                                    <FormControlLabel value="R" control={<Radio />} label="Refseq" />
-                                </RadioGroup>
-                                <FormControlLabel
-                                    sx={{ marginLeft: '0.5em', padding: '0.5em', border: '1px dotted rgba(0,0,0,0.2)' }}
-                                    control={<ProteinCodingBiotypeFilterCheckbox />}
-                                    label="Only Protein-coding Biotypes" />
-                            </Box>
-                            <Annotations
-                                varId={varId}
-                                variantAnnotations={variantAnnotations}
-                                filter={transcriptsFilter} />
-                        </Paper>
-                </Grid>
-            </Grid>
+                        {/* Annotations Box */}
+                        <Grid item xs={12} className="gridItem">
+                            <Paper sx={{ overflowY: 'auto', padding: 2 }} >
+                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                    <Typography variant="h4" sx={{ marginRight: '1em' }}>Transcript Annotations</Typography>
 
-{/*                 </Box>
-            )} */}
+                                    <FormControlLabel
+                                        sx={{ marginLeft: '0.5em', padding: '0.5em', border: '1px dotted rgba(0,0,0,0.2)' }}
+                                        control={<ProteinCodingBiotypeFilterCheckbox />}
+                                        label="Only Protein-coding Biotypes" />
+                                </Box>
+                                <Annotations
+                                    varId={varId}
+                                    variantAnnotations={variantAnnotations}
+                                    filter={transcriptsFilter} />
+                            </Paper>
+                        </Grid>
+                    </Grid>
+
+                </Box>
+            }
         </Container>
     )
 }
