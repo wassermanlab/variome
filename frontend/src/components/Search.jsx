@@ -1,25 +1,24 @@
 import React from 'react';
-import Api from '../Api';
 import _ from 'lodash';
+import { useNavigate } from 'react-router-dom';
 
 import Autocomplete from '@mui/material/Autocomplete';
-import MenuItem from '@mui/material/MenuItem';
-import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
-import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 
+import Api from '../Api';
+import config from '../config.json';
 
 export default function Search(props) {
     const [options, setOptions] = React.useState([])
-    const config = require("../config.json")
 
-    const getData = async(searchTerm) => {
-        const response = await Api.get("search", 
-        {
-            "variant_id": searchTerm
-        });
-        setOptions(_.get(response,"variants",[]));
+    const navigate = useNavigate();
+    const getData = async (searchTerm) => {
+        const response = await Api.get("search",
+            {
+                "variant_id": searchTerm
+            });
+        setOptions(_.get(response, "variants", []));
     };
 
     const onInputChange = (event, value, reason) => {
@@ -32,13 +31,15 @@ export default function Search(props) {
 
     const onChange = (event, value, reason) => {
         // TODO: Add error checking here
-        window.location.href = config.frontend_url + "snv/" + value
+        if (value){
+            navigate("/snv/" + value)
+        }
     }
 
     const [assembly, setAssembly] = React.useState('');
-  
+
     const handleChange = (event) => {
-      setAssembly(event.target.value);
+        setAssembly(event.target.value);
     };
 
     return (
@@ -54,21 +55,21 @@ export default function Search(props) {
                 options={options}
                 onInputChange={onInputChange}
                 onChange={onChange}
-                renderInput={(params) => 
-                    <TextField 
-                        {...params} 
+                renderInput={(params) =>
+                    <TextField
+                        {...params}
                         //label="Search variants"
-                        placeholder="Search variants" 
+                        placeholder="Search variants"
                         variant={props.variant}
                         InputProps={{
                             ...params.InputProps,
-                             startAdornment: (
+                            startAdornment: (
                                 <SearchIcon />
                             )
                         }}
                     />
                 }
-                sx={{ width: props.width, marginLeft: props.marginLeft}}
+                sx={{ width: props.width, marginLeft: props.marginLeft }}
             />
         </React.Fragment>
     );

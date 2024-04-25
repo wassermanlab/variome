@@ -9,12 +9,13 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
-import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
+import {Link as MuiLink} from '@mui/material';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import Search from '../components/Search';
+import Link from '../components/Link';
 
 const PREFIX = 'Home';
 const classes = {
@@ -83,7 +84,7 @@ export default function Home({user}) {
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1"><Link href="/snv/22-50623773-C-A" color="primary">22-50623773-C-A</Link></Typography>
+                                                <Typography variant="body1"><Link to="/snv/22-50623773-C-A" color="primary">22-50623773-C-A</Link></Typography>
                                             </Grid>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>

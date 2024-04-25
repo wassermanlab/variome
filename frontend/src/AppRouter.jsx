@@ -6,28 +6,29 @@ import { useEffect, useState } from 'react';
 import _ from 'lodash';
 
 import './App.css';
-import theme from './styles/theme.js';
-import Api from './Api.js';
+import theme from './styles/theme.jsx';
+import Api from './Api.jsx';
 
-import Login from './pages/login.js'
-import Signup from './pages/register.js'
-import Profile from './pages/profile.js'
+import Login from './pages/login.jsx'
+import Signup from './pages/register.jsx'
+import Profile from './pages/profile.jsx'
+import Logout from './pages/logout.jsx'
 
 
-import Home from './pages/home';
-import SNV from './pages/snv';
-import About from './pages/about';
-import TermsOfUse from './pages/terms';
-import FAQ from './pages/faq';
-import Contact from './pages/contact';
+import Home from './pages/home.jsx';
+import SNV from './pages/snv.jsx';
+import About from './pages/about.jsx';
+import TermsOfUse from './pages/terms.jsx';
+import FAQ from './pages/faq.jsx';
+import Contact from './pages/contact.jsx';
 
-import AppLayoutWithNavigation from './AppLayoutWithNavigation.js';
+import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
 
 
 
 function AppRouter() {
-//  const [user, setUser] = useState({email:"asdf@example.com"});
-const [user, setUser] = useState(null);
+  //  const [user, setUser] = useState({email:"asdf@example.com"});
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     return false; // auth is not merged in yet
@@ -37,31 +38,30 @@ const [user, setUser] = useState(null);
         setUser(user);
       }
     });
-  },[]);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
         <Routes>
-          {/* SQ TODO: Pages that do not use navbar (like login/signup) go below*/}
-          {/*<Route path="/login" exact element={<Login/>}/>*/}
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user}>
               <Routes>
-                <Route path="/" exact element={<Home user={user}/>} />
-                <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />
+                <Route path="/" exact element={<Home user={user} />} />
                 <Route path="/about" exact element={<About />} />
                 <Route path="/terms" exact element={<TermsOfUse />} />
                 <Route path="/faq" exact element={<FAQ />} />
                 <Route path="/contact" exact element={<Contact />} />
+                {user && <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />}
+                {user && <Route path="/profile" element={<Profile user={user} />} />}
+                {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
               </Routes>
             </AppLayoutWithNavigation>
           } />
 
           <Route path="/login" exact element={<Login />} />
           <Route path="/signup" exact element={<Signup />} />
-          <Route path="/profile" exact element={<Profile />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

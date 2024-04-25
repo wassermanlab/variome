@@ -35,7 +35,9 @@ const Root = styled('div')(({ theme }) => ({
   },
 }))
 
-export default function Profile() {
+export default function Profile({user}) {
+
+  console.log("user", user);
 
   return (
     <Container maxWidth="xl">
