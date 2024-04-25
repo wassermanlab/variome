@@ -2,6 +2,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.middleware.csrf import get_token
 import os
 
 DOMAIN = os.environ.get('DOMAIN', 'http://localhost:3000')
@@ -29,7 +30,8 @@ def profile_view_json(request):
         'is_staff': request.user.is_staff,
         'is_active': request.user.is_active,
         'date_joined': request.user.date_joined,
-        'last_login': request.user.last_login
+        'last_login': request.user.last_login,
+        'csrf_token': get_token(request),
         }
         
     }

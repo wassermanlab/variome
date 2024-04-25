@@ -23,6 +23,7 @@ import References from '../components/References';
 import PopFrequencies from '../components/PopFrequencies';
 import Annotations from '../components/Annotations';
 
+import config from '../config.json';
 import Api from '../Api';
 
 export default function SNV() {
@@ -41,8 +42,6 @@ export default function SNV() {
         }
     } catch (e) { }
 
-
-    const config = require("../config.json")
     const [loading, setLoading] = useState(true);
     const [variantMetadata, setVariantMetadata] = useState({});
     const [popFrequencies, setPopFrequencies] = useState({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });

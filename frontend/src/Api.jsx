@@ -21,12 +21,12 @@ function getCookie(name) {
   return cookieValue;
 }
 
+var csrftoken;
 
 function cachedFetch(url, query, method='GET', data) {
 
   // NOTE: in settings.py CSRF_COOKIE_HTTPONLY = True blocks getting csrftoken this way
   // we only need it for POST requests
-  var csrftoken = getCookie('csrftoken');
 
   var params = new URLSearchParams(query);
   if (params.toString()) {
@@ -36,19 +36,30 @@ function cachedFetch(url, query, method='GET', data) {
   //  console.log('cr', key);
   if (!map[key]) {
     //    console.log('new', key);
-    map[key] = fetch(url, {
+    var options = {
       credentials: 'include',
       method,
       headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrftoken
+        'Content-Type': 'application/json'
       },
 //      cors: 'no-cors',
       body: data ? JSON.stringify(data) : null,
-    })
-      .then((response) => {
+    };
+
+    if (_.isString(csrftoken)) {
+      console.log('set csrftoken', csrftoken);
+      options.headers['X-Csrftoken'] = csrftoken;
+    }
+
+    map[key] = fetch(url, options)
+      .then(response => response.json())
+      .then((json) => {
+        if (_.isString(_.get(json, 'user.csrf_token'))) {
+          console.log('saving csrf token', json.user.csrf_token);
+          csrftoken = json.user.csrf_token;
+        }
         map[key] = null;
-        return response.json();
+        return json;
       });
   }
   return map[key];
@@ -65,7 +76,7 @@ const Api = {
     },
     post: async (path, data, query) => {
         try {
-            return cachedFetch(API_URL_BASE + path, query, 'POST', data);
+            return cachedFetch(config.backend_root + path, query, 'POST', data);
         } catch (error) {
             console.error('Error fetching '+path, error);
             return {errors:["something went wrong"]};
