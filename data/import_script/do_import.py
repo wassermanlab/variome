@@ -42,7 +42,7 @@ if rootDir == None:
 data_issue_logger = None
 output_logger = None
 
-print(rootDir)
+print("importing", rootDir)
 
 engine = None
 

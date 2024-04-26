@@ -10,6 +10,7 @@ load_dotenv()
 
 chunk_size = int(os.environ.get("CHUNK_SIZE"))
 verbose = os.environ.get("VERBOSE") == "true" or os.environ.get("VERBOSE") == "True"
+print('verbose is', verbose)
 
 def inspectTSV(file):
     total_rows = 0
@@ -48,8 +49,10 @@ def setup_loggers(job_dir):
     global data_issue_logger, output_logger  # Add global keyword
     data_issue_logger = logging.getLogger("data_issues")
     data_issue_logger.setLevel(logging.WARNING)
+    data_issue_logger.propagate = False
     output_logger = logging.getLogger("output")
     output_logger.setLevel(logging.INFO)
+    output_logger.propagate = False
 
     data_issue_handler = logging.FileHandler(os.path.join(job_dir,"data_issues.log"))
     data_issue_handler.setLevel(logging.WARNING)
@@ -60,7 +63,7 @@ def setup_loggers(job_dir):
     output_logger.addHandler(output_logger_handler)
 
     output_logger.info(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-    print("did setup loggers")
+    print("logging to", os.path.join(job_dir,"data_issues.log"), os.path.join(job_dir,"output.log"))
 
 def log_data_issue(s):
     data_issue_logger.warning(s)
