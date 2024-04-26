@@ -18,9 +18,11 @@ export default function Logout({user, setUser}){
             <h1>Logout</h1>
             <p>Are you sure you want to logout?</p>
             <Button onClick={()=>{
-                Api.post('accounts/logout/').then((response) => {
+                Api.post('accounts/logout/').then(() => {
                     setUser(null);
                     navigate('/');
+                }).catch(err => {
+                    console.log(err);
                 });
             }}>Yes</Button>
             <Link to="/" underline="none"><Button>No</Button></Link>
