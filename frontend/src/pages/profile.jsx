@@ -2,22 +2,11 @@
 import React from 'react';
 import { styled } from '@mui/material/styles';
 
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid'
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Button from '@mui/material/Button';
 
 const PREFIX = 'Home';
 const classes = {
@@ -55,18 +44,25 @@ export default function Profile({user}) {
       <Grid container spacing={7}>
 
         <Grid item xs={12} sm={6}>
-          <TextField fullWidth label='Username' placeholder='username' defaultValue='username' />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField fullWidth label='Name' placeholder='Full Name' defaultValue='Full Name' />
+          <TextField
+            fullWidth
+            label='Username'
+            placeholder='Username'
+            value={user.username} 
+            InputProps={{
+              readOnly: true,
+            }}
+          />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            type='email'
-            label='Email'
-            placeholder='nameexample.com'
-            defaultValue='name@example.com'
+            label='Name'
+            placeholder='Full Name'
+            value={user.name} 
+            InputProps={{
+              readOnly: true, 
+            }}
           />
         </Grid>
       </Grid>
