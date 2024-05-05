@@ -48,13 +48,6 @@ export default function Profile({user}) {
               Profile
             </Typography>
           </Grid>
-          <Grid item xs={5}>
-            <Alert severity="warning">
-              <AlertTitle sx={{ fontWeight: 'bold' }}>Disclaimer</AlertTitle>
-              This is a test database. All data used is open source and does
-              not include Indigenous data.
-            </Alert>
-          </Grid>
         </Grid>
       </Box>
 
@@ -75,21 +68,6 @@ export default function Profile({user}) {
             placeholder='nameexample.com'
             defaultValue='name@example.com'
           />
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>Role</InputLabel>
-            <Select label='Role' defaultValue='admin'>
-              <MenuItem value='admin'>Admin</MenuItem>
-              <MenuItem value='viewer'>Viewer</MenuItem>
-              <MenuItem value='editor'>Editor</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12}>
-          <Button variant='contained' sx={{ marginRight: 3.5 }}>
-            Save Changes
-          </Button>
         </Grid>
       </Grid>
     </Container>
