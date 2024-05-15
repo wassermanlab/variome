@@ -25,7 +25,7 @@ var csrftoken;
 
 function cachedFetch(url, query, method='GET', data) {
 
-  // NOTE: in settings.py CSRF_COOKIE_HTTPONLY = True blocks getting csrftoken this way
+  // NOTE: in settings.py CSRF_COOKIE_HTTPONLY = True blocks getting csrftoken from the cookie
   // we only need it for POST requests
 
   var params = new URLSearchParams(query);

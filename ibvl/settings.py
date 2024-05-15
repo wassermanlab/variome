@@ -77,11 +77,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'corsheaders',
+    'tracking'
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'tracking.middleware.VisitorTrackingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,6 +92,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 ]
+TRACK_AJAX_REQUESTS = False
+TRACK_PAGEVIEWS = True
+TRACK_ANONYMOUS_USERS = False
+TRACK_IGNORE_URLS = ['^(?!api\/snv\/).*$'] # ignore everything other than api/snv
+TRACK_IGNORE_STATUS_CODES = [ 400, 404, 403, 405, 410, 500]
 
 ROOT_URLCONF = 'ibvl.urls'
 
