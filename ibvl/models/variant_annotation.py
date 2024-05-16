@@ -11,9 +11,9 @@ IMPACT_CHOICES = [
 
 class VariantAnnotation(models.Model):
     variant_transcript = models.ForeignKey(VariantTranscript, on_delete=models.CASCADE, db_column='variant_transcript', related_name='annotation')
-    hgvsp = models.CharField(max_length=255, blank=True)
-    polyphen = models.CharField(max_length=255, blank=True)
-    sift = models.CharField(max_length=255, blank=True)
+    hgvsp = models.CharField(max_length=255, blank=True, default='')
+    polyphen = models.CharField(max_length=255, blank=True, default='')
+    sift = models.CharField(max_length=255, blank=True, default='')
     impact = models.CharField(max_length=20, blank=True, default='', choices=IMPACT_CHOICES)
 
     class Meta:
