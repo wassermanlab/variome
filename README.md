@@ -34,7 +34,7 @@ cp .env-sample .env
 5. Load the data and create a superuser account
 ```
 python3 manage.py migrate
-python3 manage.py import_bvl
+python3 manage.py import_ibvl
 python3 manage.py createsuperuser
 ```
 
