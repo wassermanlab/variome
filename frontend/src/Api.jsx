@@ -66,7 +66,7 @@ function cachedFetch(url, query, method='GET', data) {
             resolve(response.json());
           }, 2000);
         });*/
-        return response.json();
+        return json;//response.json();
       });
   }
   return map[key];

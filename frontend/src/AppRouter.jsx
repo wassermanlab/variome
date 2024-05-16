@@ -31,7 +31,6 @@ function AppRouter() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    return false; // auth is not merged in yet
     Api.get('user',{json:true}).then((response) => {
       var user = _.get(response, 'user');
       if (_.isObject(user) && _.has(user, 'email') && user.email) {
