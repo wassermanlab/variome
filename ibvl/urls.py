@@ -33,5 +33,5 @@ api_urls = [
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(api_urls)),
-    path('api/user', views.profile_view_stub, name='profile'),
+    path('api/user/', views.profile_view_stub, name='profile'),
 ]
