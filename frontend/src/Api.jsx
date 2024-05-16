@@ -59,7 +59,14 @@ function cachedFetch(url, query, method='GET', data) {
           csrftoken = json.user.csrf_token;
         }
         map[key] = null;
-        return json;
+        /*
+        // uncomment for fake loading time
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(response.json());
+          }, 2000);
+        });*/
+        return json;//response.json();
       });
   }
   return map[key];

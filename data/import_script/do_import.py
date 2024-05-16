@@ -126,8 +126,8 @@ model_import_actions = {
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"}
     },
-    "genomic_ibvl_frequencies": {
-        "name": "genomic_ibvl_frequencies",
+    "genomic_variome_frequencies": {
+        "name": "genomic_variome_frequencies",
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"}
     },
@@ -423,7 +423,8 @@ def import_file(file, file_info, action_info):
 
 def cleanup(sig, frame):
     global engine, pk_maps, next_id_maps, tables, metadata, data_issue_logger, output_logger
-    print('cleaning up ...')
+    log_output("terminating, cleaning up ...")
+    log_data_issue("terminating, cleaning up ...")
     persist_and_unload_maps()
     engine.dispose()
     #garbage collect
@@ -442,7 +443,6 @@ def start(db_engine):
 
     arrived_at_start_model = False
     arrived_at_start_file = False
-    # Assuming 'engine' is your Engine object
     global job_dir, maps_load_dir, engine, schema
     engine = db_engine
 
@@ -463,13 +463,13 @@ def start(db_engine):
         job_dir = os.path.join(jobs_dir, str(last_job + 1))
     os.makedirs(job_dir, exist_ok=True)
     os.chmod(job_dir, 0o777)  # Set read and write permissions for the directory
-    print("using job dir " + job_dir)
     setup_loggers(job_dir)
 
     if copy_maps_from_job is not None and copy_maps_from_job != "":
         maps_load_dir = os.path.join(jobs_dir, copy_maps_from_job)
     else:
         maps_load_dir = job_dir
+    print("using job dir " + maps_load_dir)
 
     now = datetime.now()
     counts = {}
@@ -488,7 +488,7 @@ def start(db_engine):
         model_counts["duplicate"] = 0
         model_counts["successful_chunks"] = 0
         model_counts["fail_chunks"] = 0
-        model_directory = rootDir + "/" + modelName
+        model_directory =os.path.join( rootDir, modelName)
 
 
         if isinstance(start_at_model, str) and modelName != start_at_model and not arrived_at_start_model:
@@ -497,10 +497,16 @@ def start(db_engine):
 
         if isinstance(start_at_model, str) and modelName == start_at_model:
             arrived_at_start_model = True
+            
+        large_model_file_tsv = os.path.join(rootDir, modelName + ".tsv")
+        large_model_file_tsv_exists = os.path.isfile(large_model_file_tsv)
 
         if action_info.get("skip") or not os.path.isdir(model_directory):
-            log_output("Skipping " + modelName + " (expected dir: " + model_directory + ")")
-            continue
+            if large_model_file_tsv_exists:
+                log_output("using large model tsv file "+ large_model_file_tsv)
+            else:
+                log_output("Skipping " + modelName + " (expected dir: " + model_directory + ")")
+                continue
 
         referenced_models = action_info.get("fk_map").values()
         if "DO_COMPOUND_FK" in action_info.get("fk_map"):
@@ -512,39 +518,14 @@ def start(db_engine):
         #     pk_maps[modelName] = {}
         if modelName not in next_id_maps:
             next_id_maps[modelName] = 1
-        if action_info.get("empty_first") and isDevelopment and False:
-            log_output("Emptying table " + modelName)
-            table = get_table(modelName)
 
+        if large_model_file_tsv_exists:
+            sorted_files = [modelName + ".tsv"]
+        else:
+            sorted_files = natsorted(
+                [f for f in os.listdir(model_directory) if not f.startswith('.')],
+            )
 
-            # Assuming 'table' is your Table object
-            # Replace 'ID' with your actual column name
-            with Session() as session:
-                max_id = session.query(func.max(table.columns['id'])).scalar()
-
-            print("max id found to be "+str(max_id))
-            with engine.connect() as connection:
-
-                # Split the deletion into smaller chunks
-                chunk_size = 1000
-                offset = 0
-                while True:
-                    try:
-                        delete_stmt = table.delete().where(table.c.id <= max_id - offset).where(table.c.id > max_id - chunk_size - offset)
-                        connection.execute(delete_stmt)
-                        offset += chunk_size
-                        connection.commit()
-#                        print("did delete a chunk")
-                    except ProgrammingError as e:
-                        print(e)
-                        break
-                    except Exception as e:
-                        print("error emptying table " + modelName)
-                        print(e)
-                        break
-        sorted_files = natsorted(
-            [f for f in os.listdir(model_directory) if not f.startswith('.')],
-        )
 
         for file in sorted_files:
             if file.endswith(".tsv"):
@@ -554,7 +535,11 @@ def start(db_engine):
                     continue
                 if isinstance(start_at_file, str) and file == start_at_file:
                     arrived_at_start_file = True
-                targetFile = model_directory + "/" + file
+                    
+                if large_model_file_tsv_exists:
+                    targetFile = large_model_file_tsv
+                else:
+                    targetFile = model_directory + "/" + file
                 file_info = inspectTSV(targetFile)
                 log_output(
                     "\nimporting "
