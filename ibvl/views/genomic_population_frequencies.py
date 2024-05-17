@@ -29,9 +29,11 @@ def genomic_population_frequencies(request, variant_id, **kwargs):
         gen_gnomad_freq = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
         gen_ibvl_freq = GenomicVariomeFrequency.objects.get(variant_id=variant.id)
     except Variant.DoesNotExist:
-        raise Http404
-    except VariantTranscript.DoesNotExist:
-        raise Http404
+        return JsonResponse({"errors":["variant_id not found"]}, status=404)
+    except GenomicGnomadFrequency.DoesNotExist:
+        return JsonResponse({"errors":["genomic gnomad frequency not found for this variant"]}, status=404)
+    except GenomicVariomeFrequency.DoesNotExist:
+        return JsonResponse({"errors":["genomic variome frequency not found for this variant"]}, status=404)
 
     if request.method == 'GET':
         data_out = {
