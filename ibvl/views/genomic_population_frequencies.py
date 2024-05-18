@@ -23,34 +23,32 @@ def genomic_population_frequencies(request, variant_id, **kwargs):
 
     json = kwargs.get('JSON', False)
 
+    data_out = {}
     try:
         # Get all relevant information from the database 
+        errors = []
         variant = Variant.objects.get(variant_id=variant_id)
-        gen_gnomad_freq = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
-        gen_ibvl_freq = GenomicVariomeFrequency.objects.get(variant_id=variant.id)
     except Variant.DoesNotExist:
-        return JsonResponse({"errors":["variant_id not found"]}, status=404)
+        errors.append("variant_id not found")
+        return JsonResponse({"errors":errors}, status=404)
+    
+    try:
+        gen_gnomad_freq = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
+        data_out["genomic_gnomad_freq"] = GenomicGnomadFrequencySerializer(gen_gnomad_freq).data
     except GenomicGnomadFrequency.DoesNotExist:
-        return JsonResponse({"errors":["genomic gnomad frequency not found for this variant"]}, status=404)
+        errors.append("genomic gnomad frequency not found for this variant")
+#        return JsonResponse({"errors":["genomic gnomad frequency not found for this variant"]}, status=404)
+    
+    try:
+        gen_ibvl_freq = GenomicVariomeFrequency.objects.get(variant_id=variant.id)
+        data_out["genomic_ibvl_freq"] = GenomicVariomeFrequencySerializer(gen_ibvl_freq).data
     except GenomicVariomeFrequency.DoesNotExist:
-        return JsonResponse({"errors":["genomic variome frequency not found for this variant"]}, status=404)
+        errors.append("genomic variome frequency not found for this variant")
+#        return JsonResponse({"errors":["genomic variome frequency not found for this variant"]}, status=404)
 
     if request.method == 'GET':
-        data_out = {
-            "genomic_gnomad_freq": GenomicGnomadFrequencySerializer(gen_gnomad_freq).data,
-            "genomic_ibvl_freq": GenomicVariomeFrequencySerializer(gen_ibvl_freq).data
-        }
-        #data_out = []
-        #for gen_gnomad_freq in gen_gnomad_freqs:
-        #    data = {
-        #        "genomic_gnomad_freq": GenomicGnomadFrequencySerializer(gen_gnomad_freq).data
-        #    }
-        #    data_out.append(data)
-        #for gen_ibvl_freq in gen_ibvl_freqs:
-        #    data = {
-        #        "genomic_ibvl_freq": GenomicVariomeFrequencySerializer(gen_ibvl_freq).data
-        #    }
-        #    data_out.append(data)
+        data_out["errors"] = errors
+        
 
         if json:
             return JsonResponse(data_out)
