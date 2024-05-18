@@ -10,7 +10,7 @@ from .variant_transcript import VariantTranscriptAdmin
 from .variant_annotation import VariantAnnotationAdmin
 from .variant_consequence import VariantConsequenceAdmin
 from .genomic_gnomad_frequency import GenomicGnomadFrequencyAdmin
-from .genomic_ibvl_frequency import GenomicIBVLFrequencyAdmin
+from .genomic_variome_frequency import GenomicVariomeFrequencyAdmin
 
 from .variant import VariantAdmin
 from .snv import SNVAdmin
