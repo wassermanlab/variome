@@ -17,13 +17,11 @@ idna==3.6
 inflection==0.5.1
 jurigged==0.5.7
 load-dotenv==0.1.0
-logging==0.4.9.6
 mypy-extensions==1.0.0
 natsort==8.4.0
 numpy==1.26.1
 ovld==0.3.2
 pandas==2.1.2
-psycopg2==2.9.6
 psycopg2-binary==2.9.9
 python-dateutil==2.8.2
 python-dotenv==1.0.1
