@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from ibvl.models import (
-    GenomicIBVLFrequency
+    GenomicVariomeFrequency
 )
 
 from ibvl.serializers import (
@@ -9,11 +9,11 @@ from ibvl.serializers import (
 )
 
 
-class GenomicIBVLFrequencySerializer(serializers.ModelSerializer):
+class GenomicVariomeFrequencySerializer(serializers.ModelSerializer):
     """
     """
     variant = VariantSerializer(read_only=True)
 
     class Meta:
-        model = GenomicIBVLFrequency
+        model = GenomicVariomeFrequency
         fields = "__all__"

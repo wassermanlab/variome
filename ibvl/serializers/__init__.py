@@ -8,4 +8,4 @@ from .variant_transcript_serializer import VariantTranscriptSerializer
 from .variant_annotation_serializer import VariantAnnotationSerializer
 from .variant_consequence_serializer import VariantConsequenceSerializer
 from .genomic_gnomad_serializer import GenomicGnomadFrequencySerializer
-from .genomic_ibvl_serializer import GenomicIBVLFrequencySerializer
+from .genomic_variome_serializer import GenomicVariomeFrequencySerializer

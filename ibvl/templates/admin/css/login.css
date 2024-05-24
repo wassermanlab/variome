@@ -1,0 +1,51 @@
+/* admin/css/login.css */
+
+/* Styles for the login form */
+#login-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-row {
+    margin-bottom: 15px;
+  }
+  
+  .errornote {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+  
+  .password-reset-link a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .password-reset-link a:hover {
+    text-decoration: underline;
+  }
+  
+  .submit-row {
+    text-align: center;
+  }
+  
+  #microsoft-login-link {
+    margin-top: 1em;
+  }
+  
+  #microsoft-login-link a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  #microsoft-login-link a:hover {
+    text-decoration: underline;
+  }
+  

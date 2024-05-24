@@ -57,6 +57,10 @@ export default function SNV() {
     console.log("var id ", varId)
     // Get Variant metadata
     useEffect(() => {
+        setError(null)
+        setVariantMetadata({});
+        setPopFrequencies({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
+        setVariantAnnotations([]);
         const fetchSNVData = async () => {
             const json = await Api.get("snv/" + varId);
             setVariantMetadata(json);
@@ -69,15 +73,6 @@ export default function SNV() {
             console.log('freq data', json);
         }
 
-        setLoading(true);
-        Promise.all([fetchSNVData(), fetchFreqData()]).then(() => {
-            setLoading(false);
-        });
-
-    }, [varId])
-
-    useEffect(() => {
-
         const fetchAnnData = async () => {
             const { annotations, errors } = await Api.get("annotations/" + varId, {});
             if (errors && errors.length > 0) {
@@ -88,9 +83,13 @@ export default function SNV() {
             console.log('annotations data', annotations);
         }
 
-        fetchAnnData();
+        setLoading(true);
+        Promise.all([fetchSNVData(), fetchFreqData(), fetchAnnData()]).then(() => {
+            setLoading(false);
+        });
 
-    }, [varId, transcriptDatabase])
+    }, [varId])
+
 
     function ProteinCodingBiotypeFilterCheckbox() {
 
