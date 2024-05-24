@@ -5,25 +5,36 @@ from io import StringIO
 import pandas as pd
 
 import data.import_script.orchestrate as import_orchestrate
-from ibvl.models import Gene, GenomicGnomadFrequency, GenomicVariomeFrequency, Severity, SNV, Transcript, VariantAnnotation, VariantConsequence, VariantTranscript, Variant
+from ibvl.models import (
+    Gene,
+    GenomicGnomadFrequency,
+    GenomicVariomeFrequency,
+    Severity,
+    SNV,
+    Transcript,
+    VariantAnnotation,
+    VariantConsequence,
+    VariantTranscript,
+    Variant,
+)
 
 
 class Command(BaseCommand):
-    help = 'deletes everything, then imports background variant data as per .env config'
+    help = "deletes the variant library tables, then imports from tsv files as per .env config"
 
     def handle(self, *args, **options):
 
         def truncate_table(model):
             print("truncating table: ", model._meta.db_table)
             with connection.cursor() as cursor:
-                cursor.execute('TRUNCATE TABLE {} CASCADE'.format(
-                    model._meta.db_table))
+                cursor.execute("TRUNCATE TABLE {} CASCADE".format(model._meta.db_table))
 
-        start_at_model = os.getenv('START_AT_MODEL')
+        start_at_model = os.getenv("START_AT_MODEL")
 
-        if (isinstance(start_at_model, str) and start_at_model != ""):
-            print(f"starting at model {
-                  start_at_model}. likely resuming a failed migration so do not delete tables first")
+        if isinstance(start_at_model, str) and start_at_model != "":
+            print(
+                f"starting at model {start_at_model}. likely resuming a failed migration so do not delete tables first"
+            )
         else:
             truncate_table(Gene)
             truncate_table(GenomicGnomadFrequency)
@@ -36,7 +47,6 @@ class Command(BaseCommand):
             truncate_table(Variant)
             print("tables are empty. Now will import new data...")
 
-        
         truncate_table(Severity)
         severities_csv = """1,1,transcript_ablation
                             2,2,splice_acceptor_variant
@@ -76,14 +86,15 @@ class Command(BaseCommand):
                             36,36,intergenic_variant
                             """
 
-        severities_df = pd.read_csv(StringIO(severities_csv), names=[
-                                    "id", "severity_number", "consequence"])
+        severities_df = pd.read_csv(
+            StringIO(severities_csv), names=["id", "severity_number", "consequence"]
+        )
 
-        for (severity) in severities_df.iterrows():
+        for severity in severities_df.iterrows():
             Severity.objects.create(
                 id=severity[1]["id"],
                 severity_number=severity[1]["severity_number"],
-                consequence=severity[1]["consequence"]
+                consequence=severity[1]["consequence"],
             )
         print("re-imported severities")
 
