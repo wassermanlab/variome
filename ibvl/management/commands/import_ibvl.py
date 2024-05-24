@@ -6,7 +6,7 @@ import os
 import datetime
 from django.core.management import call_command
 import data.import_script.orchestrate as import_orchestrate
-from ibvl.models import Gene, GenomicGnomadFrequency, GenomicIBVLFrequency, Severity, SNV, Transcript, VariantAnnotation, VariantConsequence, VariantTranscript, Variant
+from ibvl.models import Gene, GenomicGnomadFrequency, GenomicVariomeFrequency, Severity, SNV, Transcript, VariantAnnotation, VariantConsequence, VariantTranscript, Variant
 
 class Command(BaseCommand):
     help = 'deletes everything, then imports background variant data as per .env config'
@@ -17,7 +17,7 @@ class Command(BaseCommand):
         
         Gene.objects.all().delete()
         GenomicGnomadFrequency.objects.all().delete()
-        GenomicIBVLFrequency.objects.all().delete()
+        GenomicVariomeFrequency.objects.all().delete()
         Severity.objects.all().delete()
         SNV.objects.all().delete()
         Transcript.objects.all().delete()
