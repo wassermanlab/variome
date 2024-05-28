@@ -171,3 +171,8 @@ config.json
 node_modules
 data/import_script/jobs/*
 data/backups/*
+
+# rye's requirements file is dependent on OS,
+# so best to exclude from version control
+requirements.lock
+requirements-dev.lock
