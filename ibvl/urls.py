@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from .variant_library import views as bvl
 from .variant_library_access import views as access
+from .views import backend_home_page
 
 api_urls = [
     path('snv/<str:variant_id>', bvl.snv_metadata, name='snv_metadata'),
@@ -33,7 +34,7 @@ api_urls = [
 ]
 
 urlpatterns = [
-    path('', access.index, name='index'),
+    path('', backend_home_page, name='backend_home_page'),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('tracking/', include('tracking.urls')),

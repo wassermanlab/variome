@@ -103,7 +103,7 @@ ROOT_URLCONF = 'ibvl.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['ibvl/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
