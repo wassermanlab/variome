@@ -62,13 +62,11 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'ibvl.apps.IbvlConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -77,7 +75,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'corsheaders',
-    'tracking'
+    'tracking',
+    'ibvl.apps.IbvlConfig',
+    'ibvl.apps.AccessConfig'
 ]
 
 MIDDLEWARE = [
@@ -124,6 +124,7 @@ AUTHENTICATION_BACKENDS = [
     # `allauth` specific authentication methods, such as login by email
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
+
 if (MICROSOFT_CLIENT_ID and MICROSOFT_AUTH_SECRET and MICROSOFT_TENANT):
     print("setting up microsoft auth", MICROSOFT_CLIENT_ID)
     

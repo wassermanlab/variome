@@ -1,4 +1,3 @@
-# Import models from folder
 from .gene import Gene
 from .variant import Variant
 from .severity import Severity

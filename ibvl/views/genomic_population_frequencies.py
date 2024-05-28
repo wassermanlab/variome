@@ -11,6 +11,8 @@ from ibvl.serializers import (
     GenomicVariomeFrequencySerializer
 )
 
+#from ..decorators import access_count_gate
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
@@ -20,6 +22,7 @@ from django.http.response import JsonResponse
 
 @api_view(['GET'])
 @login_required
+#@access_count_gate()
 def genomic_population_frequencies(request, variant_id, **kwargs):
     """
     """

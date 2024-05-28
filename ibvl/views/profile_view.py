@@ -17,6 +17,7 @@ def profile_view(request):
 
 @login_required
 def profile_view_json(request):
+    
     if not request.user.is_authenticated:
         return JsonResponse({
             'user':None
@@ -31,6 +32,8 @@ def profile_view_json(request):
         'is_active': request.user.is_active,
         'date_joined': request.user.date_joined,
         'last_login': request.user.last_login,
+        'variant_access_count': request.user.profile.access_count,
+        'can_access_variants': request.user.profile.can_access_variants,
         'csrf_token': get_token(request),
         }
         
