@@ -1,6 +1,6 @@
 from django.contrib import admin
-from ibvl.models import Variant
-from .components.filters import InputFilter
+from ..models import Variant
+from ...admin.components.filters import InputFilter
 
 class VariantIdFilter(InputFilter):
     parameter_name = 'variant_id'

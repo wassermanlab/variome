@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import Transcript
+from ..models import Transcript
 
 
 class TranscriptAdmin(admin.ModelAdmin):

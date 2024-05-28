@@ -2,10 +2,10 @@ import json
 from rest_framework import viewsets
 from django.contrib.auth.decorators import login_required
 
-from ibvl.models import (
+from ..models import (
     Variant,
 )
-from ibvl.serializers import (
+from ..serializers import (
     VariantSerializer,
 )
 

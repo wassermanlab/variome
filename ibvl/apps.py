@@ -13,5 +13,5 @@ class AccessConfig(AppConfig):
 
 class IbvlConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'ibvl'
+    name = 'ibvl.variant_library'
     verbose_name = 'Variant Library'

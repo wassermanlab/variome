@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from django.contrib.auth.decorators import login_required
-from ibvl.models import (
+
+from ..models import (
     Variant,
     Gene,
     Transcript,
@@ -8,7 +9,7 @@ from ibvl.models import (
     VariantAnnotation,
     VariantConsequence,
 )
-from ibvl.serializers import (
+from ..serializers import (
     VariantTranscriptSerializer,
     VariantConsequenceSerializer,
     VariantAnnotationSerializer,

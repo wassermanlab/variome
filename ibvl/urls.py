@@ -16,26 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from . import views
+from .variant_library import views as bvl
+from .variant_library_access import views as access
 
 api_urls = [
-    path('snv/<str:variant_id>', views.snv_metadata, name='snv_metadata'),
-    path('annotations/<str:variant_id>', views.snv_annotations, name='snv_annotations'),
-    path('genomic_population_frequencies/<str:variant_id>', views.genomic_population_frequencies, name='genomic_population_frequencies'),
-    path('search', views.snv_search, name='search'),
-    path('csrf/', views.get_csrf, name='api-csrf'),
-    path('login/', views.login_view, name='api-login'),
-    path('logout/', views.logout_view, name='api-logout'),
-    path('session/', views.session_view, name='api-session'),
-    path('whoami/', views.whoami_view, name='api-whoami'),
+    path('snv/<str:variant_id>', bvl.snv_metadata, name='snv_metadata'),
+    path('annotations/<str:variant_id>', bvl.snv_annotations, name='snv_annotations'),
+    path('genomic_population_frequencies/<str:variant_id>', bvl.genomic_population_frequencies, name='genomic_population_frequencies'),
+    path('search', bvl.snv_search, name='search'),
+    path('user/', access.profile_view_json, name='profile'),
+#    path('csrf/', views.get_csrf, name='api-csrf'),
+#    path('login/', views.login_view, name='api-login'),
+#    path('logout/', views.logout_view, name='api-logout'),
+#    path('session/', views.session_view, name='api-session'),
+#    path('whoami/', views.whoami_view, name='api-whoami'),
 ]
 
 urlpatterns = [
-    path('', views.index, name='index'),
+    path('', access.index, name='index'),
     path('admin/', admin.site.urls),
-    path('api/', include(api_urls)),
     path('accounts/', include('allauth.urls')),
-    path('accounts/profile/', views.profile_view, name='profile'),
-    path('api/user/', views.profile_view_json, name='profile'),
     path('tracking/', include('tracking.urls')),
+    path('accounts/profile/', access.profile_view_redirect, name='profile'),
+    path('api/', include(api_urls)),
 ]

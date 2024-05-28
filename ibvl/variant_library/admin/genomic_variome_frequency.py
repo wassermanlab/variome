@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import GenomicVariomeFrequency
+from ..models import GenomicVariomeFrequency
 
 
 class GenomicVariomeFrequencyAdmin(admin.ModelAdmin):

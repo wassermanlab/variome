@@ -7,7 +7,7 @@ import os
 
 DOMAIN = os.environ.get('DOMAIN', 'http://localhost:3000')
 @login_required
-def profile_view(request):
+def profile_view_redirect(request):
     # do redirect to app
     return redirect(f'{DOMAIN}/')
 #    return render(request, 'profile.html', {

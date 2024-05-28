@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import VariantTranscript
+from ..models import VariantTranscript
 
 
 class VariantTranscriptAdmin(admin.ModelAdmin):

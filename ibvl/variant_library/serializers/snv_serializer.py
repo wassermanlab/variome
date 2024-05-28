@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from ibvl.models import (
+from ..models import (
     SNV,
     Variant
 )
-from ibvl.serializers import (
+from ..serializers import (
     VariantSerializer
 )
 

@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from django.contrib.auth.decorators import login_required
-from ibvl.models import (
+
+from ..models import (
     Variant,
     SNV
 )
-from ibvl.serializers import (
+from ..serializers import (
     SNVSerializer
 )
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ibvl.models import Gene
+from ..models import Gene
 
 class GeneSerializer(serializers.ModelSerializer):
     """

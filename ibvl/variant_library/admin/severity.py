@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import Severity
+from ..models import Severity
 
 
 class SeverityAdmin(admin.ModelAdmin):

@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from ibvl.models import (
+from ..models import (
     VariantTranscript
 )
 
-from ibvl.serializers import (
+from ..serializers import (
     TranscriptSerializer,
     VariantSerializer
 )

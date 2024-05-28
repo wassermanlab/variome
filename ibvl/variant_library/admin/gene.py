@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import Gene
+from ..models import Gene
 
 
 class GeneAdmin(admin.ModelAdmin):

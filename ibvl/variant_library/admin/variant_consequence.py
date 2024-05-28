@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ibvl.models import VariantConsequence
+from ..models import VariantConsequence
 
 
 class VariantConsequenceAdmin(admin.ModelAdmin):
