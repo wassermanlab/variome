@@ -9,8 +9,6 @@ import './App.css';
 import theme from './styles/theme.jsx';
 import Api from './Api.jsx';
 
-import Login from './pages/login.jsx'
-import Signup from './pages/register.jsx'
 import Profile from './pages/profile.jsx'
 import Logout from './pages/logout.jsx'
 
@@ -58,9 +56,6 @@ function AppRouter() {
               </Routes>
             </AppLayoutWithNavigation>
           } />
-
-          <Route path="/login" exact element={<Login />} />
-          <Route path="/signup" exact element={<Signup />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

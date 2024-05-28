@@ -1,4 +1,5 @@
 import * as React from "react";
+import _ from "lodash";
 import { styled, useTheme } from "@mui/material/styles";
 import {
   Box,
@@ -125,6 +126,12 @@ export default function AppLayoutWithNavigation({ user, children }) {
   const theme = useTheme();
   const [navDrawerOpen, setNavDrawerOpen] = React.useState(false);
 
+  var loginUrl = "";
+  if (_.isString(_.get(import.meta, "env.VITE_LOGIN_PATH"))) {
+    var urlObj = new URL(import.meta.env.VITE_LOGIN_PATH, config.backend_root);
+    loginUrl = urlObj.toString();
+  }
+
   const accountMenuAnchorEl = useRef(null);
   const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
 
@@ -197,7 +204,8 @@ export default function AppLayoutWithNavigation({ user, children }) {
                 {user ? user.email : ""}
               </Button>}
 
-              {!user && <PlainLink to={config.backend_root + "accounts/microsoft/login/?process=login"} >
+
+              {!user && <PlainLink to={loginUrl} >
                   Login
                 </PlainLink>}
               
