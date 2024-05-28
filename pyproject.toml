@@ -1,0 +1,43 @@
+[project]
+name = "variome"
+version = "0.1.0"
+description = "Portal for the Wasserman lab BVL"
+authors = [
+    { name = "Brad W" },
+    { name = "Brittany H" },
+    { name = "Stephanie Q"}
+]
+dependencies = [
+    "django==4",
+    "sqlalchemy>=2.0.30",
+    "sqlalchemy-utils>=0.41.2",
+    "natsort>=8.4.0",
+    "pandas>=2.2.2",
+    "numpy>=1.26.4",
+    "psycopg2-binary>=2.9.9",
+    "dj-database-url>=2.1.0",
+    "django-allauth[socialaccount]>=0.63.2",
+    "djangorestframework>=3.15.1",
+    "django-extensions>=3.2.3",
+    "django-cors-headers>=4.3.1",
+    "django-tracking2>=0.5.1",
+]
+readme = "README.md"
+requires-python = ">= 3.11"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "python-dotenv>=1.0.1",
+    "black>=24.4.2",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["variome"]
