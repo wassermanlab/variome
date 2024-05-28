@@ -6,7 +6,7 @@ from .transcript import Transcript
 class VariantTranscript(models.Model):
     variant = models.ForeignKey(Variant, on_delete=models.CASCADE, db_column='variant')
     transcript = models.ForeignKey(Transcript, on_delete=models.CASCADE, db_column='transcript')
-    hgvsc = models.CharField(max_length=255, blank=True)
+    hgvsc = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         db_table = "variants_transcripts"
