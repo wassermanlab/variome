@@ -3,7 +3,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
+from django.core.exceptions import ObjectDoesNotExist
 import os
+
+from ..models import UserProfile
 
 DOMAIN = os.environ.get('DOMAIN', 'http://localhost:3000')
 @login_required
@@ -22,6 +25,12 @@ def profile_view_json(request):
         return JsonResponse({
             'user':None
         }, status=401)
+        
+    try:
+        access_count = request.user.profile.access_count
+        can_access_variants = request.user.profile.can_access_variants
+    except ObjectDoesNotExist:
+        request.user.profile = UserProfile.objects.create(user=request.user)
     user_json = {
         'user':{
         'username': request.user.username,
