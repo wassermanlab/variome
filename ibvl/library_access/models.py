@@ -20,7 +20,7 @@ class UserProfile(models.Model):
         one_day_ago = timestamp_now - datetime.timedelta(days=1)
         total_page_views = 0
         for visitor in self.user.visit_history.all():
-            pageViews = visitor.pageviews.filter(url__contains='/snv/', view_time__gte=one_day_ago)
+            pageViews = visitor.pageviews.filter(url__contains='/api/variant/', view_time__gte=one_day_ago)
             total_page_views += len(pageViews)
         return total_page_views
 

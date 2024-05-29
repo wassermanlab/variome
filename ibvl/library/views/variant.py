@@ -22,10 +22,13 @@ from django.contrib.auth.decorators import login_required
 
 from django.http import Http404
 from django.http.response import JsonResponse
+
+from ibvl.library_access.decorators import access_count_gate
     
 
 @api_view(['GET'])
 @login_required
+@access_count_gate()
 def variant(request, id ):
     """_summary_
 

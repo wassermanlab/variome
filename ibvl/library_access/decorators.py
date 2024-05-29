@@ -8,7 +8,7 @@ def access_count_gate():
             limit = request.user.profile.accesses_per_day
             count = request.user.profile.access_count
             if count > limit:
-                return HttpResponseForbidden()
+                return HttpResponseForbidden(status=429)
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator

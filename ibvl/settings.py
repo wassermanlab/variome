@@ -93,11 +93,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 ]
-TRACK_AJAX_REQUESTS = False
+TRACK_AJAX_REQUESTS = True
 TRACK_PAGEVIEWS = True
 TRACK_ANONYMOUS_USERS = False
-TRACK_IGNORE_URLS = ['^(?!api\/snv\/).*$'] # ignore everything other than api/snv
-TRACK_IGNORE_STATUS_CODES = [ 400, 404, 403, 405, 410, 500]
+TRACK_IGNORE_URLS = ['^(?!api\/variant\/).*$'] # ignore everything other than api/variant
+TRACK_IGNORE_STATUS_CODES = [ 400, 404, 403, 405, 410, 429, 500]
 
 ROOT_URLCONF = 'ibvl.urls'
 
