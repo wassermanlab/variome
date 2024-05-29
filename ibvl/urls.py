@@ -21,9 +21,10 @@ from .variant_library_access import views as access
 from .views import backend_home_page
 
 api_urls = [
-    path('snv/<str:variant_id>', bvl.snv_metadata, name='snv_metadata'),
-    path('annotations/<str:variant_id>', bvl.snv_annotations, name='snv_annotations'),
-    path('genomic_population_frequencies/<str:variant_id>', bvl.genomic_population_frequencies, name='genomic_population_frequencies'),
+    path('variant/<str:id>', bvl.variant, name='variant'),
+#    path('snv/<str:variant_id>', bvl.snv_metadata, name='snv_metadata'),
+#    path('annotations/<str:variant_id>', bvl.snv_annotations, name='snv_annotations'),
+#    path('genomic_population_frequencies/<str:variant_id>', bvl.genomic_population_frequencies, name='genomic_population_frequencies'),
     path('search', bvl.snv_search, name='search'),
     path('user/', access.profile_view_json, name='profile'),
 #    path('csrf/', views.get_csrf, name='api-csrf'),

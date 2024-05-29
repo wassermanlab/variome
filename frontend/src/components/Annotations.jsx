@@ -68,7 +68,7 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
             <Grid item xs={12}>
                 <TableContainer >
 
-                    {variantAnnotations.map(geneAnnotations => {
+                {_.size(variantAnnotations) > 0 ? variantAnnotations.map(geneAnnotations => {
                         return (
                             <Card key={geneAnnotations.gene}>
                                 <h3>{geneAnnotations.gene}</h3>
@@ -77,7 +77,7 @@ export default function Annotations({ variantAnnotations, gene, filter }) {
                             </Card>
 
                         )
-                    })}
+                    }): <Typography>(No annotations found)</Typography>}
                     {/*}
                                 <Table aria-label="simple table" sx={{ minWidth: 800 }}>
                                     <colgroup>

@@ -3,39 +3,15 @@ from django.contrib.auth.decorators import login_required
 
 from ..models import (
     Variant,
-    Gene,
-    Transcript,
-    VariantTranscript,
-    VariantAnnotation,
-    VariantConsequence,
-)
-from ..serializers import (
-    VariantTranscriptSerializer,
-    VariantConsequenceSerializer,
-    VariantAnnotationSerializer,
+    VariantTranscript
 )
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
-from django.http import Http404
-from django.http.response import JsonResponse
-
-
-@api_view(["GET"])
-@login_required
-def snv_annotations(request, variant_id, **kwargs):
+def snv_annotations(variant_id, database=None):
     """ gets the annotations for a variant's transcripts, organized by gene name """
     errors = []
     transcripts_by_gene = []
-    database = request.GET.get(
-        "transcript_database", None
-    )  # E for Ensembl or R for Refseq
     
-
-    json = kwargs.get("JSON", False)
-
     try:
 
         values_names = {
@@ -72,7 +48,7 @@ def snv_annotations(request, variant_id, **kwargs):
 
         if len(transcripts) == 0:
             raise VariantTranscript.DoesNotExist
-
+        print("transcripts", transcripts)
         transcripts = [
             {values_names[key]: value for key, value in transcript.items()}
             for transcript in transcripts
@@ -96,13 +72,7 @@ def snv_annotations(request, variant_id, **kwargs):
         errors.append("Variant ID was not found: " + variant_id)
 
     except VariantTranscript.DoesNotExist:
-        pass
+        return None
 #        errors.append("No Transcripts were found for variant: " + variant_id)
 
-    if request.method == "GET":
-        data_out = {"annotations": transcripts_by_gene, "errors": errors}
-
-        if json:
-            return JsonResponse(data_out)
-        else:
-            return Response(data_out)
+    return {"annotations": transcripts_by_gene, "errors": errors}

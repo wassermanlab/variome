@@ -23,8 +23,8 @@ def snv_search(request, **kwargs):
     """
     json_content = kwargs.get('JSON', False)
     query_params = request.query_params
-    if 'variant_id' in query_params:
-        variant_id = query_params['variant_id']
+    if 'query' in query_params:
+        variant_id = query_params['query']
     else:
         return Response({"errors":["missing variant_id parameter"]})
 #    variant_id = json.loads(request.body)["variant_id"]
@@ -32,7 +32,7 @@ def snv_search(request, **kwargs):
     try:
         # Get all relevant information from the database 
         #variant = Variant.objects.get(variant_id=variant_id)
-        variants = Variant.objects.filter(variant_id__startswith=variant_id).values_list('variant_id', flat=True)
+        variants = Variant.objects.filter(variant_id__startswith=variant_id).values('variant_id','id')
     except Variant.DoesNotExist:
         variants = None
 

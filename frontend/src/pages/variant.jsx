@@ -26,7 +26,7 @@ import Annotations from '../components/Annotations';
 import config from '../config.json';
 import Api from '../Api';
 
-export default function SNV() {
+export default function Variant() {
     let params = useParams();
     const varId = params.varId
 
@@ -43,8 +43,10 @@ export default function SNV() {
     } catch (e) { }
 
     const [loading, setLoading] = useState(true);
+    const [variant, setVariant] = useState({});
     const [variantMetadata, setVariantMetadata] = useState({});
-    const [popFrequencies, setPopFrequencies] = useState({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
+    const [gnomadFrequencies, setGnomadFrequencies] = useState({});
+    const [ibvlFrequencies, setIbvlFrequencies] = useState({});
     const [variantAnnotations, setVariantAnnotations] = useState([]);
     const [error, setError] = useState(null);
     const [transcriptsFilter, setTranscriptsFilter] = useState(startingTranscriptFilter);
@@ -59,32 +61,19 @@ export default function SNV() {
     useEffect(() => {
         setError(null)
         setVariantMetadata({});
-        setPopFrequencies({ genomic_gnomad_freq: {}, genomic_ibvl_freq: {} });
+        setGnomadFrequencies({});
+        setIbvlFrequencies({});
         setVariantAnnotations([]);
-        const fetchSNVData = async () => {
-            const json = await Api.get("snv/" + varId);
-            setVariantMetadata(json);
-            console.log('snv data', json);
-        }
-
-        const fetchFreqData = async () => {
-            const json = await Api.get("genomic_population_frequencies/" + varId);
-            setPopFrequencies(json);
-            console.log('freq data', json);
-        }
-
-        const fetchAnnData = async () => {
-            const { annotations, errors } = await Api.get("annotations/" + varId, {});
-            if (errors && errors.length > 0) {
-                setError(errors[0]);
-                return;
-            }
-            setVariantAnnotations(annotations);
-            console.log('annotations data', annotations);
-        }
-
         setLoading(true);
-        Promise.all([fetchSNVData(), fetchFreqData(), fetchAnnData()]).then(() => {
+        Api.get("variant/" + varId).then(({variant, snv, ibvlFrequencies, gnomadFrequencies, annotations}) => {
+            setVariant(variant);
+            setVariantMetadata(snv);
+            setGnomadFrequencies(gnomadFrequencies);
+            setIbvlFrequencies(ibvlFrequencies);
+            setVariantAnnotations(annotations);
+            setLoading(false);
+        }).catch((error) => {
+            setError(error);
             setLoading(false);
         });
 
@@ -131,17 +120,17 @@ export default function SNV() {
                     <Grid container spacing={2} className="flex-container">
                         {/* Variant ID Block */}
                         <Grid item xs={12} md={6} className="flex-item ">
-                            <VariantDetails varId={varId} variantMetadata={variantMetadata} ibvlFrequencies={popFrequencies.genomic_ibvl_freq} />
+                            <VariantDetails variant={variant} variantMetadata={variantMetadata} ibvlFrequencies={ibvlFrequencies} />
                         </Grid>
 
                         {/* Reference Box */}
                         <Grid item xs={12} md={6} className="flex-item">
-                            <References varId={varId} variantMetadata={variantMetadata} />
+                            <References varId={variant.variant_id} variantMetadata={variantMetadata} />
                         </Grid>
 
                         {/* Pop Frequencies Box */}
                         <Grid item xs={12} className="gridItem">
-                            <PopFrequencies varId={varId} popFrequencies={popFrequencies} />
+                            <PopFrequencies varId={varId} ibvlFrequencies={ibvlFrequencies} gnomadFrequencies={gnomadFrequencies} />
                         </Grid>
 
                         {/* Annotations Box */}

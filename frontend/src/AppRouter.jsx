@@ -14,7 +14,7 @@ import Logout from './pages/logout.jsx'
 
 
 import Home from './pages/home.jsx';
-import SNV from './pages/snv.jsx';
+import Variant from './pages/variant.jsx';
 import About from './pages/about.jsx';
 import TermsOfUse from './pages/terms.jsx';
 import FAQ from './pages/faq.jsx';
@@ -50,7 +50,7 @@ function AppRouter() {
                 <Route path="/terms" exact element={<TermsOfUse />} />
                 <Route path="/faq" exact element={<FAQ />} />
                 <Route path="/contact" exact element={<Contact />} />
-                {user && <Route path="/snv/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<SNV />} />}
+                {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant />} />}
                 {user && <Route path="/profile" element={<Profile user={user} />} />}
                 {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
               </Routes>

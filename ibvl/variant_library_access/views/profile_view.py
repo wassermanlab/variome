@@ -30,7 +30,10 @@ def profile_view_json(request):
         access_count = request.user.profile.access_count
         can_access_variants = request.user.profile.can_access_variants
     except ObjectDoesNotExist:
-        request.user.profile = UserProfile.objects.create(user=request.user)
+        new_profile = UserProfile.objects.create(user=request.user)
+        request.user.profile = new_profile
+        access_count = new_profile.access_count
+        can_access_variants = new_profile.can_access_variants
     user_json = {
         'user':{
         'username': request.user.username,
@@ -41,8 +44,8 @@ def profile_view_json(request):
         'is_active': request.user.is_active,
         'date_joined': request.user.date_joined,
         'last_login': request.user.last_login,
-        'variant_access_count': request.user.profile.access_count,
-        'can_access_variants': request.user.profile.can_access_variants,
+        'variant_access_count': access_count,
+        'can_access_variants': can_access_variants,
         'csrf_token': get_token(request),
         }
         

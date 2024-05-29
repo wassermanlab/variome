@@ -4,7 +4,6 @@ from ..models import (
     Variant
 )
 
-
 class VariantSerializer(serializers.ModelSerializer):
     """
     """

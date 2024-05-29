@@ -10,22 +10,22 @@ import Api from '../Api';
 import config from '../config.json';
 
 export default function Search(props) {
-    const [options, setOptions] = React.useState([])
+    const [results, setResults] = React.useState([])
 
     const navigate = useNavigate();
     const getData = async (searchTerm) => {
         const response = await Api.get("search",
             {
-                "variant_id": searchTerm
+                "query": searchTerm
             });
-        setOptions(_.get(response, "variants", []));
+        setResults(_.get(response, "variants", []));
     };
 
     const onInputChange = (event, value, reason) => {
         if (value) {
             getData(value);
         } else {
-            setOptions([]);
+            setResults([]);
         }
     }
 
@@ -52,7 +52,7 @@ export default function Search(props) {
             </Select>*/}
             <Autocomplete
                 id="navbar-search"
-                options={options}
+                options={results}
                 onInputChange={onInputChange}
                 onChange={onChange}
                 renderInput={(params) =>
@@ -60,7 +60,7 @@ export default function Search(props) {
                         {...params}
                         //label="Search variants"
                         placeholder="Search variants"
-                        variant={props.variant}
+                        variant={props.variant.variant_id}
                         InputProps={{
                             ...params.InputProps,
                             startAdornment: (

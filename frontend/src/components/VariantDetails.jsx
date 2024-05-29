@@ -1,17 +1,22 @@
 import React from 'react';
+import _ from "lodash";
 
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
+export default function VariantDetails({variantMetadata, ibvlFrequencies, variant}) {
+//    console.log({variantMetadata, ibvlFrequencies, varId})
 
-export default function VariantDetails({variantMetadata, ibvlFrequencies, varId}) {
-    console.log({variantMetadata, ibvlFrequencies, varId})
+    var alleleFrequency = "-"
+    if (_.isNumber(_.get(ibvlFrequencies, 'af_tot'))){
+        alleleFrequency = Number(ibvlFrequencies.af_tot).toFixed(4)
+    }
     const variantDetailsList = [
         {
             title: 'Type',
-            val: variantMetadata["var_type"],
+            val: variant["var_type"],
         },
         {
             title: 'Position',
@@ -19,15 +24,15 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varId}
         },
         {
             title: 'Site Quality',
-            val: ibvlFrequencies?.quality,
+            val: _.get(ibvlFrequencies,'quality','-'),
         },
         {
             title: 'Allele Frequency',
-            val: Number(ibvlFrequencies?.af_tot).toFixed(4)
+            val: alleleFrequency
         },
         {
             title: 'Filter',
-            val: '-'
+            val: _.get(variant,'filter','-')
         }
     ]
 
@@ -42,7 +47,7 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varId}
                                     on which version of the database is currently being used -- need to
                                     figure this out a little bit more, as we will have a separate database
                                     for each reference genome */}
-                                { varId } (hg38)
+                                { variant.variant_id } (hg38)
                             </Typography>
                         </Grid>
                         {variantDetailsList.map((item, index) => (

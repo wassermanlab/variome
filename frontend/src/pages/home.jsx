@@ -84,7 +84,7 @@ export default function Home({user}) {
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1"><Link to="/snv/22-50623773-C-A" color="primary">22-50623773-C-A</Link></Typography>
+                                                <Typography variant="body1"><Link to="/variant/1" color="primary">22-50623773-C-A</Link></Typography>
                                             </Grid>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>

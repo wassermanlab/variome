@@ -17,36 +17,34 @@ function createData(name, total, xx, xy, af_popmax, gnomad) {
 }
 
 
-export default function PopFrequencies(props) {
-    const ibvlFreq = props.popFrequencies.genomic_ibvl_freq;
-    const gnomadFreq = props.popFrequencies.genomic_gnomad_freq;
+export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
     var rows = []
     
-    if (ibvlFreq && gnomadFreq) {
+    if (ibvlFrequencies && gnomadFrequencies) {
         rows = [
             createData(
                 'Allele Number', 
-                Math.trunc(ibvlFreq["an_tot"]), 
-                Math.trunc(ibvlFreq["an_xx"]),  
-                Math.trunc(ibvlFreq["an_xy"]),  
+                Math.trunc(ibvlFrequencies["an_tot"]), 
+                Math.trunc(ibvlFrequencies["an_xx"]),  
+                Math.trunc(ibvlFrequencies["an_xy"]),  
                 '-',
-                Math.trunc(gnomadFreq["an_tot"]), 
+                Math.trunc(gnomadFrequencies["an_tot"]), 
             ),
             createData(
                 'Allele Count', 
-                Math.trunc(ibvlFreq["ac_tot"]), 
-                Math.trunc(ibvlFreq["ac_xx"]),  
-                Math.trunc(ibvlFreq["ac_xy"]),  
+                Math.trunc(ibvlFrequencies["ac_tot"]), 
+                Math.trunc(ibvlFrequencies["ac_xx"]),  
+                Math.trunc(ibvlFrequencies["ac_xy"]),  
                 '-',
-                Math.trunc(gnomadFreq["ac_tot"]),
+                Math.trunc(gnomadFrequencies["ac_tot"]),
             ),
             createData(
                 'Allele Frequency',
-                Number(ibvlFreq["af_tot"]).toFixed(4), 
-                Number(ibvlFreq["af_xx"]).toFixed(4),  
-                Number(ibvlFreq["af_xy"]).toFixed(4), 
+                Number(ibvlFrequencies["af_tot"]).toFixed(4), 
+                Number(ibvlFrequencies["af_xx"]).toFixed(4),  
+                Number(ibvlFrequencies["af_xy"]).toFixed(4), 
                 '-', 
-                Number(gnomadFreq["af_tot"]).toFixed(4),
+                Number(gnomadFrequencies["af_tot"]).toFixed(4),
             ),
             createData(
                 'Allele Frequency Popmax',
@@ -58,11 +56,11 @@ export default function PopFrequencies(props) {
             ),
             createData(
                 'No. of Homozygotes',
-                Math.trunc(ibvlFreq["hom_tot"]), 
-                Math.trunc(ibvlFreq["hom_xx"]),  
-                Math.trunc(ibvlFreq["hom_xy"]), 
+                Math.trunc(ibvlFrequencies["hom_tot"]), 
+                Math.trunc(ibvlFrequencies["hom_xx"]),  
+                Math.trunc(ibvlFrequencies["hom_xy"]), 
                 '-', 
-                Math.trunc(gnomadFreq["hom_tot"]),
+                Math.trunc(gnomadFrequencies["hom_tot"]),
             ),
         ];
     }
