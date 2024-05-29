@@ -22,7 +22,7 @@ class SNV(models.Model):
     splice_ai = models.DecimalField(decimal_places=5, max_digits=10, null=True)
 
     class Meta:
-        db_table = "snvs"
+        verbose_name_plural = 'SNVs'
 
     def __str__(self):
         return self.variant.variant_id

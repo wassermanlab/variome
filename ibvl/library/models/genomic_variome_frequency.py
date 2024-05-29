@@ -19,7 +19,6 @@ class GenomicVariomeFrequency(models.Model):
     quality = models.DecimalField(decimal_places=3, max_digits=12)
 
     class Meta:
-        db_table = "genomic_variome_frequencies"
         verbose_name_plural = 'Genomic Variome Frequencies'
 
     def __str__(self):

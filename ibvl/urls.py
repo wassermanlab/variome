@@ -16,16 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .variant_library import views as bvl
-from .variant_library_access import views as access
+from .library import views as library
+from .library_access import views as access
 from .views import backend_home_page
 
 api_urls = [
-    path('variant/<str:id>', bvl.variant, name='variant'),
+    path('variant/<str:id>', library.variant, name='variant'),
 #    path('snv/<str:variant_id>', bvl.snv_metadata, name='snv_metadata'),
 #    path('annotations/<str:variant_id>', bvl.snv_annotations, name='snv_annotations'),
 #    path('genomic_population_frequencies/<str:variant_id>', bvl.genomic_population_frequencies, name='genomic_population_frequencies'),
-    path('search', bvl.snv_search, name='search'),
+    path('search', library.snv_search, name='search'),
     path('user/', access.profile_view_json, name='profile'),
 #    path('csrf/', views.get_csrf, name='api-csrf'),
 #    path('login/', views.login_view, name='api-login'),

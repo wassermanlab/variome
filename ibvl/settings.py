@@ -76,8 +76,9 @@ INSTALLED_APPS = [
     'django_extensions',
     'corsheaders',
     'tracking',
-    'ibvl.apps.IbvlConfig',
-    'ibvl.apps.AccessConfig'
+    'ibvl',
+    'ibvl.library',
+    'ibvl.library_access'
 ]
 
 MIDDLEWARE = [

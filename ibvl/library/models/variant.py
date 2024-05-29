@@ -14,7 +14,7 @@ class Variant(models.Model):
     filter = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
-        db_table = "variants"
+        verbose_name_plural = "Variants"
 
     def __str__(self):
         return self.variant_id

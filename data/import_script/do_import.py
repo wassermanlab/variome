@@ -54,6 +54,7 @@ maps_load_dir = ""
 model_import_actions = {
     "genes": {
         "name": "genes",
+        "table": "library_gene",
         "pk_lookup_col": "short_name",
         "fk_map": {},
         "filters": {
@@ -62,90 +63,98 @@ model_import_actions = {
     },
     "transcripts": {
         "name": "transcripts",
+        "table": "library_transcript",
         "pk_lookup_col": "transcript_id",
         "fk_map": {"gene": "genes"}
     },
     "variants": {
         "name": "variants",
+        "table":"library_variant",
         "pk_lookup_col": "variant_id",
         "fk_map": {}
     },
     "variants_transcripts": {
         "name": "variants_transcripts",
+        "table": "library_varianttranscript",
         "pk_lookup_col": ["transcript", "variant"],
         "fk_map": {"transcript": "transcripts", "variant": "variants"}
     },
     "variants_annotations": {
         "name": "variants_annotations",
+        "table": "library_variantannotation",
         "pk_lookup_col": None,
         "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"},
         "filters":{
             "hgvsp": lambda x: x.replace("%3D","=") if x is not None else None
         }
     },
-    "severities":{
-        "name":"severities",
-        "pk_lookup_col": None,
-        "fk_map": {},
-        },
+#    "severities":{
+#        "name":"severities",
+#        "pk_lookup_col": None,
+#        "fk_map": {},
+#        },
     "variants_consequences": {
         "name": "variants_consequences",
+        "table": "library_variantconsequence",
         "pk_lookup_col": None,
         "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"}
     },
-    "sv_consequences": {
-        "name": "sv_consequences",
-        "pk_lookup_col": None,
-        "fk_map": {"gene": "genes", "variant": "variants"}
-    },
+#    "sv_consequences": {
+#        "name": "sv_consequences",
+#        "pk_lookup_col": None,
+#        "fk_map": {"gene": "genes", "variant": "variants"}
+#    },
     "snvs": {
         "name": "snvs",
+        "table": "library_snv",
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"},
         "filters":{
             "dbsnp_id": lambda x: x.split('&')[0] if x is not None else None
         }
-    },
-    "svs": {
-        "name": "svs",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
-    "svs_ctx": {
-        "name": "svs_ctx",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
-    "str": {
-        "name": "str",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
-    "mts": {
-        "name": "mts",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
+     },
+    # "svs": {
+    #     "name": "svs",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+    # },
+    # "svs_ctx": {
+    #     "name": "svs_ctx",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+    # },
+    # "str": {
+    #     "name": "str",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+    # },
+    # "mts": {
+    #     "name": "mts",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+    # },
     "genomic_variome_frequencies": {
         "name": "genomic_variome_frequencies",
+        "table":"library_genomicvariomefrequency",
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"}
     },
     "genomic_gnomad_frequencies": {
         "name": "genomic_gnomad_frequencies",
+        "table": "library_genomicgnomadfrequency",
         "pk_lookup_col": None,
         "fk_map": {"variant": "variants"}
     },
-    "mt_ibvl_frequencies": {
-        "name": "mt_ibvl_frequencies",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
-    "mt_gnomad_frequencies": {
-        "name": "mt_gnomad_frequencies",
-        "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
-    },
+    # "mt_ibvl_frequencies": {
+    #     "name": "mt_ibvl_frequencies",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+    # },
+    # "mt_gnomad_frequencies": {
+    #     "name": "mt_gnomad_frequencies",
+    #     "pk_lookup_col": None,
+    #     "fk_map": {"variant": "variants"}
+#    },
 }
 
 
@@ -200,14 +209,15 @@ def resolve_PK(referencedModel, name):
 
 def get_table(model):
     global tables
-    if model in tables:
-        return tables[model]
+    table_name = model_import_actions[model]["table"]
+    if table_name in tables:
+        return tables[table_name]
     else:
         if isinstance(schema, str) and len(schema) > 0:
-            table = Table(model, metadata, schema=schema)
+            table = Table(table_name, metadata, schema=schema)
         else:
-            table = Table(model, metadata, autoload_with=engine)
-        tables[model] = table
+            table = Table(table_name, metadata, autoload_with=engine)
+        tables[table_name] = table
         return table
     
 def inject(model, data, map_key):

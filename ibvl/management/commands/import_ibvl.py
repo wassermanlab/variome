@@ -5,7 +5,7 @@ from io import StringIO
 import pandas as pd
 
 import data.import_script.orchestrate as import_orchestrate
-from ibvl.models import (
+from ibvl.library.models import (
     Gene,
     GenomicGnomadFrequency,
     GenomicVariomeFrequency,

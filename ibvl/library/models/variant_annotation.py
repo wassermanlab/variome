@@ -17,7 +17,6 @@ class VariantAnnotation(models.Model):
     impact = models.CharField(max_length=20, blank=True, default='', choices=IMPACT_CHOICES)
 
     class Meta:
-        db_table = "variants_annotations"
         verbose_name_plural = 'Variant Annotations'
 
     #def __str__(self):

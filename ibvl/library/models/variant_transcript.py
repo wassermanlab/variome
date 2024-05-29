@@ -9,7 +9,6 @@ class VariantTranscript(models.Model):
     hgvsc = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
-        db_table = "variants_transcripts"
         verbose_name_plural = 'Variant Transcripts'
 
     def __str__(self):

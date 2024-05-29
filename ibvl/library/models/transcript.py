@@ -60,7 +60,7 @@ class Transcript(models.Model):
     biotype = models.CharField(max_length=60, blank=True, default='', choices=BIOTYPE_CHOICES)
 
     class Meta:
-        db_table = "transcripts"
+        verbose_name_plural = 'Transcripts'
 
     def __str__(self):
         return self.transcript_id
