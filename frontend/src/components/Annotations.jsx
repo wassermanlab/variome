@@ -1,141 +1,188 @@
-import React, { useState } from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import _ from 'lodash';
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Checkbox,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  Grid,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 
-export default function Annotations({ variantAnnotations, gene, filter }) {
+import _ from "lodash";
 
-    function TranscriptsAnnotationsTable({ transcripts: filteredTranscripts, gene }) {
+export default function Annotations({ variantAnnotations, gene }) {
 
-        var impactColors = {
-            'HIGH': 'red',
-            'MODERATE': 'yellow',
-            'LOW': 'green',
-            'MODIFIER': 'black'
-        }
-        filteredTranscripts = _.filter(filteredTranscripts, filter)
+  const FILTER_KEY = "transcript-filter";
 
-        
-        var columns = _.without(_.keys(filteredTranscripts[0]), 'gene', 'database');
-        return (
-            <Box sx={{ overflowX: 'scroll', maxWidth: '100vw' }} >
+  var defaultTranscriptFilter = { biotype: "protein_coding" };
+  var startingTranscriptFilter = defaultTranscriptFilter;
 
-                <Table aria-label={"annotations for gene " + gene}  >
-                    <TableHead>
-                        <TableRow>
-                            {columns.map((column, index) => (
-                                <TableCell key={index} align="center" sx={{ borderBottom: 'none', fontWeight: 'bold', padding: '0em 0.5em', textTransform: 'capitalize' }}>{column}</TableCell>
-                            ))}
-                        </TableRow>
+  try {
+    var savedFilter = JSON.parse(localStorage.getItem(FILTER_KEY));
+    if (_.isObject(savedFilter)) {
+      startingTranscriptFilter = savedFilter;
+    }
+  } catch (e) {}
 
-                    </TableHead>
-                    <TableBody>
-                        {filteredTranscripts.map((transcript, index) => {
-                            var color = impactColors[_.get(transcript,'impact')];
-                            var coloredDot = <></>
-                            if (color){
-                                coloredDot = <span style={{ cursor:'default',fontSize:'8px', verticalAlign:'middle', padding:'0.5em', color }}>&#11044;</span>
-                            }
-                            return (
-                                <TableRow key={index}>
-                                    {columns.map((column, index) => (
-                                        <TableCell align="center" key={index}>
-                                            {column === 'consequence'? coloredDot : ''}
-                                            {transcript[column]}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
+  const [filter, setFilter] = useState(
+    startingTranscriptFilter
+  );
 
-                            )
-                        })}
-                    </TableBody>
-                </Table>
-            </Box>
-        );
+  useEffect(() => {
+    localStorage.setItem(FILTER_KEY, JSON.stringify(filter));
+  }, [filter]);
+
+  function ProteinCodingBiotypeFilterCheckbox() {
+    function isChecked() {
+      var iss = _.isEqual(filter, defaultTranscriptFilter);
+      console.log(
+        _.toPairs(filter),
+        _.toPairs(defaultTranscriptFilter)
+      );
+      return iss;
     }
 
     return (
+      <Checkbox
+        checked={isChecked()}
+        onChange={(event) => {
+          if (event.target.checked) {
+            setFilter(defaultTranscriptFilter);
+          } else {
+            setFilter({});
+          }
+        }}
+      />
+    );
+  }
+
+  function TranscriptsAnnotationsTable({
+    transcripts: filteredTranscripts,
+    gene
+  }) {
+    var impactColors = {
+      HIGH: "red",
+      MODERATE: "yellow",
+      LOW: "green",
+      MODIFIER: "black"
+    };
+    filteredTranscripts = _.filter(filteredTranscripts, filter);
+
+    var columns = _.without(_.keys(filteredTranscripts[0]), "gene", "database");
+    return (
+      <Box sx={{ overflowX: "scroll", maxWidth: "100vw" }}>
+        <Table aria-label={"annotations for gene " + gene}>
+          <TableHead>
+            <TableRow>
+              {columns.map((column, index) => (
+                <TableCell
+                  key={index}
+                  align="center"
+                  sx={{
+                    borderBottom: "none",
+                    fontWeight: "bold",
+                    padding: "0em 0.5em",
+                    textTransform: "capitalize"
+                  }}
+                >
+                  {column}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredTranscripts.map((transcript, index) => {
+              var color = impactColors[_.get(transcript, "impact")];
+              var coloredDot = <></>;
+              if (color) {
+                coloredDot = (
+                  <span
+                    style={{
+                      cursor: "default",
+                      fontSize: "8px",
+                      verticalAlign: "middle",
+                      padding: "0.5em",
+                      color
+                    }}
+                  >
+                    &#11044;
+                  </span>
+                );
+              }
+              return (
+                <TableRow key={index}>
+                  {columns.map((column, index) => (
+                    <TableCell align="center" key={index}>
+                      {column === "consequence" ? coloredDot : ""}
+                      {transcript[column]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Box>
+    );
+  }
+
+  return _.size(variantAnnotations) > 0 ? (
+    <Grid item xs={12} className="gridItem">
+      <Paper sx={{ overflowY: "auto", padding: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center"
+          }}
+        >
+          <Typography variant="h4" sx={{ marginRight: "1em" }}>
+            Transcript Annotations
+          </Typography>
+
+          <FormControlLabel
+            sx={{
+              marginLeft: "0.5em",
+              padding: "0.5em",
+              border: "1px dotted rgba(0,0,0,0.2)"
+            }}
+            control={<ProteinCodingBiotypeFilterCheckbox />}
+            label="Only Protein-coding Biotypes"
+          />
+        </Box>
         <Grid container>
-            <Grid item xs={12}>
-                <TableContainer >
-
-                {_.size(variantAnnotations) > 0 ? variantAnnotations.map(geneAnnotations => {
-                        return (
-                            <Card key={geneAnnotations.gene}>
-                                <h3>{geneAnnotations.gene}</h3>
-                                {geneAnnotations.transcripts && geneAnnotations.transcripts.length > 0 ?
-                                    <TranscriptsAnnotationsTable transcripts={geneAnnotations.transcripts} gene={geneAnnotations.gene} /> : <></>}
-                            </Card>
-
-                        )
-                    }): <Typography>(No annotations found)</Typography>}
-                    {/*}
-                                <Table aria-label="simple table" sx={{ minWidth: 800 }}>
-                                    <colgroup>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                        <col style={{ width: '10%'}}/>
-                                    </colgroup>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Gene</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Transcript</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Impact</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Biotype</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSc</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>HGVSp</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Polyphen</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SIFT</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>CADD</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>SpliceAI</TableCell>
-                                            <TableCell align="center" sx={{ borderBottom: 'none', fontWeight: 'bold' }}>Other Annotations</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    {Object.keys(variantAnnotations).map((key, index) => (
-                                        <TableBody key={index}>
-                                            <TableRow key={key}>
-                                                <TableCell 
-                                                    colSpan={9} 
-                                                    sx={{ fontWeight: 'bold', borderBottom: 'none' }}
-                                                >
-                                                    {(key.charAt(0).toUpperCase() + key.slice(1)).split("_variant").join("").replace(/_/g, ' ')}
-                                                </TableCell>
-                                            </TableRow>
-                                            {variantAnnotations[key].map((annotation, index) => (
-                                                <TableRow key={index}>
-                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.gene.short_name}</TableCell>
-                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.transcript_id}</TableCell>
-                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.impact}</TableCell>
-                                                    <TableCell align="center">{annotation.transcript.variant_transcript.transcript.biotype}</TableCell>
-                                                    <TableCell align="center">{annotation.transcript.variant_transcript.hgvsc}</TableCell>
-                                                    <TableCell align="center">{(annotation.annotations.hgvsp === "nan" || typeof annotation.annotations.hgvsp == 'undefined') ? "-" : annotation.annotations.hgvsp}</TableCell>
-                                                    <TableCell align="center">{(annotation.annotations.polyphen === "nan" || typeof annotation.annotations.polyphen == 'undefined') ? "-" : annotation.annotations.polyphen}</TableCell>
-                                                    <TableCell align="center">{(annotation.annotations.sift === "nan" || typeof annotation.annotations.sift == 'undefined') ? "-" : annotation.annotations.sift}</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                    <TableCell align="center">-</TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    ))} 
-                                </Table>{*/}
-                </TableContainer>
-            </Grid>
+          <Grid item xs={12}>
+            <TableContainer>
+              {variantAnnotations.map((geneAnnotations) => {
+                return (
+                  <Card key={geneAnnotations.gene}>
+                    <h3>{geneAnnotations.gene}</h3>
+                    {geneAnnotations.transcripts &&
+                    geneAnnotations.transcripts.length > 0 ? (
+                      <TranscriptsAnnotationsTable
+                        transcripts={geneAnnotations.transcripts}
+                        gene={geneAnnotations.gene}
+                      />
+                    ) : (
+                      <></>
+                    )}
+                  </Card>
+                );
+              })}
+            </TableContainer>
+          </Grid>
         </Grid>
-    )
+      </Paper>
+    </Grid>
+  ) : null;
 }

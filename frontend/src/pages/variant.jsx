@@ -1,159 +1,143 @@
-import React, { useEffect, useState } from 'react';
-import _ from 'lodash';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid'
-import CircularProgress from '@mui/material/CircularProgress';
-import Container from '@mui/material/Container';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
-import { useParams } from 'react-router-dom'
-import './styles.css'; // Import CSS file
+import React, { useEffect, useState } from "react";
+import _ from "lodash";
+import {
+  Box,
+  Card,
+  CardContent,
+  Checkbox,
+  CircularProgress,
+  Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  Paper,
+  Radio,
+  RadioGroup,
+  Typography,
+} from "@mui/material";
 
-import VariantDetails from '../components/VariantDetails';
-import References from '../components/References';
-import PopFrequencies from '../components/PopFrequencies';
-import Annotations from '../components/Annotations';
+import { useParams } from "react-router-dom";
+import "./styles.css"; // Import CSS file
 
-import config from '../config.json';
-import Api from '../Api';
+import VariantDetails from "../components/VariantDetails";
+import References from "../components/References";
+import PopFrequencies from "../components/PopFrequencies";
+import Annotations from "../components/Annotations";
+
+import Api from "../Api";
 
 export default function Variant() {
-    let params = useParams();
-    const varId = params.varId
+  let params = useParams();
+  const varId = params.varId;
 
-    const FILTER_KEY = 'transcript-filter';
+  const [loading, setLoading] = useState(true);
+  const [variant, setVariant] = useState({});
+  const [variantMetadata, setVariantMetadata] = useState({});
+  const [gnomadFrequencies, setGnomadFrequencies] = useState({});
+  const [ibvlFrequencies, setIbvlFrequencies] = useState({});
+  const [variantAnnotations, setVariantAnnotations] = useState([]);
+  const [error, setError] = useState(null);
 
-    var defaultTranscriptFilter = { biotype: 'protein_coding' };
-    var startingTranscriptFilter = defaultTranscriptFilter;
+  console.log("var id ", varId);
+  // Get Variant metadata
+  useEffect(() => {
+    setError(null);
+    setVariant(null);
+    setVariantMetadata(null);
+    setGnomadFrequencies(null);
+    setIbvlFrequencies(null);
+    setVariantAnnotations(null);
+    setLoading(true);
 
-    try {
-        var savedFilter = JSON.parse(localStorage.getItem(FILTER_KEY));
-        if (_.isObject(savedFilter)) {
-            startingTranscriptFilter = savedFilter;
+    Api.get("variant/" + varId)
+      .then(
+        ({ variant, snv, ibvlFrequencies, gnomadFrequencies, annotations }) => {
+          setVariant(variant);
+          setVariantMetadata(snv);
+          setGnomadFrequencies(gnomadFrequencies);
+          setIbvlFrequencies(ibvlFrequencies);
+          setVariantAnnotations(annotations);
+          setLoading(false);
         }
-    } catch (e) { }
-
-    const [loading, setLoading] = useState(true);
-    const [variant, setVariant] = useState({});
-    const [variantMetadata, setVariantMetadata] = useState({});
-    const [gnomadFrequencies, setGnomadFrequencies] = useState({});
-    const [ibvlFrequencies, setIbvlFrequencies] = useState({});
-    const [variantAnnotations, setVariantAnnotations] = useState([]);
-    const [error, setError] = useState(null);
-    const [transcriptsFilter, setTranscriptsFilter] = useState(startingTranscriptFilter);
-
-    const [transcriptDatabase, setTranscriptDatabase] = useState('E');
-
-    useEffect(() => {
-        localStorage.setItem(FILTER_KEY, JSON.stringify(transcriptsFilter));
-    }, [transcriptsFilter])
-    console.log("var id ", varId)
-    // Get Variant metadata
-    useEffect(() => {
-        setError(null)
-        setVariantMetadata({});
-        setGnomadFrequencies({});
-        setIbvlFrequencies({});
-        setVariantAnnotations([]);
-        setLoading(true);
-        Api.get("variant/" + varId).then(({variant, snv, ibvlFrequencies, gnomadFrequencies, annotations}) => {
-            setVariant(variant);
-            setVariantMetadata(snv);
-            setGnomadFrequencies(gnomadFrequencies);
-            setIbvlFrequencies(ibvlFrequencies);
-            setVariantAnnotations(annotations);
-            setLoading(false);
-        }).catch((error) => {
-            setError(error);
-            setLoading(false);
-        });
-
-    }, [varId])
-
-
-    function ProteinCodingBiotypeFilterCheckbox() {
-
-        function isChecked() {
-            var iss = _.isEqual(transcriptsFilter, defaultTranscriptFilter);
-            console.log(_.toPairs(transcriptsFilter), _.toPairs(defaultTranscriptFilter));
-            return iss;
+      )
+      .catch(({ status, statusText, errors, message }) => {
+        console.log("variant fetch err", message);
+        if (status == 429) {
+          setError(
+            "Variant requests are limited on a 24-hour basis. Please try again later"
+          );
+        } else {
+          setError("abc");
         }
+        setLoading(false);
+      });
+  }, [varId]);
 
-        return <Checkbox checked={isChecked()}
-            onChange={(event) => {
-                if (event.target.checked) {
-                    setTranscriptsFilter(defaultTranscriptFilter);
-                } else {
-                    setTranscriptsFilter({});
-                }
-            }} />
-    }
-    return (
-        <Container maxWidth="xl">
 
-            {error && (
-                <Paper elevation={3} sx={{ p: 2, textAlign: 'center', marginTop: 2, marginBottom: 2, color: 'red' }}>
-                    <strong>{error}</strong>
-                </Paper>
-            )}
+  return (
+    <Container maxWidth="xl">
+      {error && (
+        <Paper
+          elevation={3}
+          sx={{
+            p: 2,
+            textAlign: "center",
+            marginTop: 2,
+            marginBottom: 2,
+            color: "red"
+          }}
+        >
+          <strong>{error}</strong>
+        </Paper>
+      )}
 
-            {loading ? (
-                <Dialog
-                    disableEscapeKeyDown={true}
-                    open={loading}
-                    sx={{ textAlign: "center" }}
-                >
-                    <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
-                    <DialogContent><CircularProgress /></DialogContent>
-                </Dialog>
-            ) :
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Grid container spacing={2} className="flex-container">
-                        {/* Variant ID Block */}
-                        <Grid item xs={12} md={6} className="flex-item ">
-                            <VariantDetails variant={variant} variantMetadata={variantMetadata} ibvlFrequencies={ibvlFrequencies} />
-                        </Grid>
+      {loading ? (
+        <Dialog
+          disableEscapeKeyDown={true}
+          open={loading}
+          sx={{ textAlign: "center" }}
+        >
+          <DialogTitle id="LoadingBarTitle">Loading...</DialogTitle>
+          <DialogContent>
+            <CircularProgress />
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          <Grid container spacing={2} className="flex-container">
+            {/* Variant ID Block */}
+            <Grid item xs={12} md={6} className="flex-item ">
+              <VariantDetails
+                variant={variant}
+                variantMetadata={variantMetadata}
+                ibvlFrequencies={ibvlFrequencies}
+              />
+            </Grid>
 
-                        {/* Reference Box */}
-                        <Grid item xs={12} md={6} className="flex-item">
-                            <References varId={variant.variant_id} variantMetadata={variantMetadata} />
-                        </Grid>
+            {/* Reference Box */}
+            <Grid item xs={12} md={6} className="flex-item">
+              <References variant={variant} variantMetadata={variantMetadata} />
+            </Grid>
 
-                        {/* Pop Frequencies Box */}
-                        <Grid item xs={12} className="gridItem">
-                            <PopFrequencies varId={varId} ibvlFrequencies={ibvlFrequencies} gnomadFrequencies={gnomadFrequencies} />
-                        </Grid>
+            {/* Pop Frequencies Box */}
+            <Grid item xs={12} className="gridItem">
+              <PopFrequencies
+                varId={varId}
+                ibvlFrequencies={ibvlFrequencies}
+                gnomadFrequencies={gnomadFrequencies}
+              />
+            </Grid>
 
-                        {/* Annotations Box */}
-                        <Grid item xs={12} className="gridItem">
-                            <Paper sx={{ overflowY: 'auto', padding: 2 }} >
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                    <Typography variant="h4" sx={{ marginRight: '1em' }}>Transcript Annotations</Typography>
-
-                                    <FormControlLabel
-                                        sx={{ marginLeft: '0.5em', padding: '0.5em', border: '1px dotted rgba(0,0,0,0.2)' }}
-                                        control={<ProteinCodingBiotypeFilterCheckbox />}
-                                        label="Only Protein-coding Biotypes" />
-                                </Box>
-                                <Annotations
-                                    varId={varId}
-                                    variantAnnotations={variantAnnotations}
-                                    filter={transcriptsFilter} />
-                            </Paper>
-                        </Grid>
-                    </Grid>
-
-                </Box>
-            }
-        </Container>
-    )
+            {/* Annotations Box */}
+           
+                <Annotations
+                  varId={varId}
+                  variantAnnotations={variantAnnotations}
+                />
+          </Grid>
+        </Box>
+      )}
+    </Container>
+  );
 }

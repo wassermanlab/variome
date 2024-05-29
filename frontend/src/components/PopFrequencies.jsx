@@ -19,6 +19,10 @@ function createData(name, total, xx, xy, af_popmax, gnomad) {
 
 export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
     var rows = []
+
+    if (!ibvlFrequencies && !gnomadFrequencies) {
+        return null;
+    }
     
     if (ibvlFrequencies && gnomadFrequencies) {
         rows = [

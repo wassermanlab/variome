@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import _ from "lodash";
 import { styled, useTheme } from "@mui/material/styles";
 import {
@@ -38,10 +39,7 @@ import {
 } from "@mui/icons-material";
 
 import Link from "./components/Link";
-import { useState, useRef } from "react";
-
-import config from "./config";
-import Search from "./components/Search";
+import VariomeToolbar from "./components/VariomeToolbar";
 
 const drawerWidth = 240;
 
@@ -93,68 +91,12 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   justifyContent: "flex-end"
 }));
 
-const AssemblyPicker = () => {
-  const [assembly, setAssembly] = useState("");
-
-  const handleChange = (event) => {
-    setAssembly(event.target.value);
-  };
-
-  return (
-    <Select
-      value={assembly}
-      onChange={handleChange}
-      displayEmpty
-      inputProps={{ "aria-label": "Select Assembly" }}
-      style={{ color: "black", marginLeft: "20px" }}
-    //variant="standard"
-    >
-      {/* TODO: Update the choices for this select once we add SV and Mt */}
-      {/* TODO: Make this functional -- currently only one SNV assembly so it does nothing */}
-      <MenuItem value="" disabled>
-        Select Assembly
-      </MenuItem>
-      <MenuItem value="GRCh37 – SNV and Mt">GRCh37 – SNV and Mt</MenuItem>
-      {/*<MenuItem value="GRCh37 – SV">GRCh37 – SV</MenuItem>*/}
-      <MenuItem value="GRCh38 – SNV and Mt">GRCh38 – SNV and Mt</MenuItem>
-      {/*<MenuItem value="GRCh38 – SV">GRCh38 – SV</MenuItem>*/}
-    </Select>
-  );
-};
 
 export default function AppLayoutWithNavigation({ user, children }) {
   const theme = useTheme();
   const [navDrawerOpen, setNavDrawerOpen] = React.useState(false);
 
-  var loginUrl = "";
-  if (_.isString(_.get(import.meta, "env.VITE_LOGIN_PATH"))) {
-    var urlObj = new URL(import.meta.env.VITE_LOGIN_PATH, config.backend_root);
-    loginUrl = urlObj.toString();
-  }
 
-  const accountMenuAnchorEl = useRef(null);
-  const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
-
-  const openAccountMenu = (event) => {
-    console.log(event.currentTarget);
-    setAccountMenuAnchorEl(event.currentTarget);
-    setTimeout(() => {
-      setAccountMenuOpen(true);
-    }, 2000);
-  };
-  const closeAccountMenu = () => {
-    setAccountMenuOpen(false);
-  };
-
-  const FlexBox = styled(Box)({
-    display: "flex",
-    alignItems: "center",
-    gap: "16px"
-  });
-
-  const PlainLink = (props) => (
-    <Link {...props} color="inherit" underline="none" />
-  );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -167,64 +109,7 @@ export default function AppLayoutWithNavigation({ user, children }) {
           color: theme.palette.text.primary
         })}
       >
-        <Toolbar>
-          <IconButton
-            aria-label="open drawer"
-            onClick={() => setNavDrawerOpen(true)}
-            edge="start"
-            sx={{ mr: 2, ...(navDrawerOpen && { display: "none" }) }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ display: { xs: "none", sm: "block" } }}
-          >
-            <PlainLink to="/">He Kākano</PlainLink>
-          </Typography>
-
-          <FlexBox sx={{ flexGrow: "1" }}>
-            {user && (
-              <>
-                <AssemblyPicker />
-                <Search variant="standard" width="200px" />
-              </>
-            )}
-          </FlexBox>
-          <FlexBox>
-            <FlexBox >
-
-              { user && <Button id="account-menu-button"
-                onClick={() => setAccountMenuOpen(true)}
-                ref={accountMenuAnchorEl}
-              >
-                <Person sx={{margin:'10px'}}/>
-                {user ? user.email : ""}
-              </Button>}
-
-
-              {!user && <PlainLink to={loginUrl} >
-                  Login
-                </PlainLink>}
-              
-                <Menu
-                  id="basic-menu"
-                  anchorEl={() => accountMenuAnchorEl.current}
-                  open={accountMenuOpen}
-                  onClose={closeAccountMenu}
-                  MenuListProps={{
-                    "aria-labelledby": "account-menu-button"
-                  }}
-                >
-                  <PlainLink to="/profile" ><MenuItem onClick={closeAccountMenu} >Profile</MenuItem></PlainLink>
-                  <PlainLink to="/logout"><MenuItem onClick={closeAccountMenu}>Logout </MenuItem> </PlainLink>
-                </Menu>
-              
-            </FlexBox> 
-          </FlexBox>
-        </Toolbar>
+        <VariomeToolbar user={user} navDrawerOpen={navDrawerOpen} setNavDrawerOpen={setNavDrawerOpen}></VariomeToolbar>
       </TopBar>
       <Drawer
         sx={{

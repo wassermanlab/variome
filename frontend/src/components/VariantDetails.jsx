@@ -6,25 +6,28 @@ import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
-export default function VariantDetails({variantMetadata, ibvlFrequencies, variant}) {
-//    console.log({variantMetadata, ibvlFrequencies, varId})
+export default function VariantDetails({ variantMetadata, ibvlFrequencies, variant }) {
+    //    console.log({variantMetadata, ibvlFrequencies, varId})
 
+    if (!variant){
+        return null;
+    }
     var alleleFrequency = "-"
-    if (_.isNumber(_.get(ibvlFrequencies, 'af_tot'))){
+    if (_.isNumber(_.get(ibvlFrequencies, 'af_tot'))) {
         alleleFrequency = Number(ibvlFrequencies.af_tot).toFixed(4)
     }
     const variantDetailsList = [
         {
             title: 'Type',
-            val: variant["var_type"],
+            val: _.get(variant,"var_type", "-"),
         },
         {
             title: 'Position',
-            val: variantMetadata["pos"],
+            val: _.get(variantMetadata, "pos", "-"),
         },
         {
             title: 'Site Quality',
-            val: _.get(ibvlFrequencies,'quality','-'),
+            val: _.get(ibvlFrequencies, 'quality', '-'),
         },
         {
             title: 'Allele Frequency',
@@ -32,7 +35,7 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varian
         },
         {
             title: 'Filter',
-            val: _.get(variant,'filter','-')
+            val: _.get(variant, 'filter', '-')
         }
     ]
 
@@ -42,15 +45,15 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varian
                 <CardContent>
                     <Grid container>
                         <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 'light'}}>
+                            <Typography variant="h4" sx={{ fontWeight: 'light' }}>
                                 {/* TODO: Get the reference genome information from the database based 
                                     on which version of the database is currently being used -- need to
                                     figure this out a little bit more, as we will have a separate database
                                     for each reference genome */}
-                                { variant.variant_id } (hg38)
+                                {variant.variant_id} (hg38)
                             </Typography>
                         </Grid>
-                        {variantDetailsList.map((item, index) => (
+                        {variant? variantDetailsList.map((item, index) => (
                             <Grid container key={index}>
                                 <Grid item xs={3}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
@@ -63,7 +66,8 @@ export default function VariantDetails({variantMetadata, ibvlFrequencies, varian
                                     </Typography>
                                 </Grid>
                             </Grid>
-                        ))}
+                        )) : <>
+                        </>}
                     </Grid>
                 </CardContent>
             </Card>

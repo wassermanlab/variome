@@ -26,19 +26,11 @@ const Root = styled('div')(({ theme }) => ({
 
 export default function Profile({user}) {
 
-  console.log("user", user);
-
   return (
     <Container maxWidth="xl">
-      <Box sx={{ display: 'flex' }}>
-        <Grid container direction="row" justifyContent="center" alignItems="center" spacing={2}>
-          <Grid item xs={7}>
-            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-              Profile
-            </Typography>
-          </Grid>
-        </Grid>
-      </Box>
+      <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+        Profile
+      </Typography>
 
       <p>&nbsp;</p>
       <Grid container spacing={7}>
@@ -57,9 +49,38 @@ export default function Profile({user}) {
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
-            label='Name'
-            placeholder='Full Name'
-            value={user.name} 
+            label='email'
+            value={user.email} 
+            InputProps={{
+              readOnly: true, 
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label='First Name'
+            value={user.first_name} 
+            InputProps={{
+              readOnly: true, 
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label='Last Name'
+            value={user.last_name} 
+            InputProps={{
+              readOnly: true, 
+            }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label='Variant Access Count'
+            value={user.variant_access_count} 
             InputProps={{
               readOnly: true, 
             }}
