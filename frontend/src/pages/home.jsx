@@ -52,7 +52,7 @@ export default function Home({user}) {
                     <Grid item xs={7}>
                         {/* BH TODO: Pick a better font for this */}
                         <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            Welcome to the He Kākano Database
+                            Welcome to He Kākano
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
@@ -114,23 +114,16 @@ export default function Home({user}) {
                                             The Project
                                         </Typography>
                                         <Typography variant="h5" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
-                                            "The Indigenous Background Variant Library (IBVL) is a database of the genetic
-                                            diversity of Indigenous populations from Canada. It is one of the results of 
-                                            the 4 phase Silent Genomes Project. The main objective of the project is to 
-                                            reduce health care disparities and improve diagnostic success for children with
-                                            genetic diseases from Indigenous populations"
+                                            
                                         </Typography>
                                         <Typography variant="body1" sx={{ fontWeight: 'light' }}>
-                                            <b>Laura Arbour</b>, MD, MSc, FRCPC, FCCMG (Project Lead)
                                         </Typography>
                                         <Typography variant="body1" sx={{ fontWeight: 'light' }}>
-                                            <b>Nadine R. Caron</b>, MD, MPH, FRCSC (Co-Lead)
                                         </Typography>
                                         <Typography variant="body1" sx={{ fontWeight: 'light' }}>
-                                            <b>Wyeth W. Wasserman</b>, PhD (Co-Lead)
                                         </Typography>
                                         
-                                        <Link href="https://www.bcchr.ca/silent-genomes-project" target="_blank" rel="noopener noreferrer">
+                                        <Link href="/" target="_blank" rel="noopener noreferrer">
                                             <Button size="large" sx={{ marginTop: '20px', fontWeight: 'bold', border: '1px solid grey' }}>
                                                 Learn More
                                             </Button>
@@ -162,7 +155,7 @@ export default function Home({user}) {
             }}
         >
             <Box sx={{ display: 'flex', justifyContent:'center', alignItems: 'center', p: 2, flexWrap:'wrap', gap:'30px'}}>
-                <img src="/ubclogo.jpg" alt="Variome Logo" style={{ width: 200 }} />
+                <img src="/temp-logo.svg" alt="Variome Logo" style={{ width: 200 }} />
                 <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     Variome
                 </Typography>
