@@ -17,6 +17,17 @@ def profile_view_redirect(request):
 #        'user': request.user,
 #    })
 
+def profile_view_stub(request):
+    user_json = {
+        'user': {
+            'username': 'demo',
+            'email': 'demo@example.com',
+            'csrf_token': get_token(request),
+            'variant_access_count': 10,
+            'can_access_variants': True,
+        }
+    }
+    return JsonResponse(user_json, safe=False)
 
 @login_required
 def profile_view_json(request):
