@@ -37,7 +37,6 @@ api_urls = [
 urlpatterns = [
     path('', backend_home_page, name='backend_home_page'),
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
     path('tracking/', include('tracking.urls')),
     path('accounts/profile/', access.profile_view_redirect, name='profile'),
     path('api/', include(api_urls)),

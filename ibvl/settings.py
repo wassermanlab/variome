@@ -47,11 +47,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = is_development
 
-# fixes issue described at
-# https://github.com/pennersr/django-allauth/issues/1740#issuecomment-407741980
-# not needed as long as sign-up is handled externally
-ACCOUNT_EMAIL_VERIFICATION = "none"
-
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
@@ -67,10 +62,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.microsoft',
     'django.contrib.staticfiles',
     'rest_framework',
     'django_extensions',
@@ -91,7 +82,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "allauth.account.middleware.AccountMiddleware",
 ]
 TRACK_AJAX_REQUESTS = True
 TRACK_PAGEVIEWS = True
@@ -119,11 +109,7 @@ TEMPLATES = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
-
-    # `allauth` specific authentication methods, such as login by email
-    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 if (MICROSOFT_CLIENT_ID and MICROSOFT_AUTH_SECRET and MICROSOFT_TENANT):
