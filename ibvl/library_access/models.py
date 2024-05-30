@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from tracking.models import Visitor
 from django.db import models
+from django.utils import timezone
 import datetime
 import time
 
@@ -16,8 +17,8 @@ class UserProfile(models.Model):
 
     @property
     def access_count(self):
-        timestamp_now = datetime.datetime.now()
-        one_day_ago = timestamp_now - datetime.timedelta(days=1)
+        timestamp_now = timezone.now()
+        one_day_ago = timestamp_now - timezone.timedelta(days=1)
         total_page_views = 0
         for visitor in self.user.visit_history.all():
             pageViews = visitor.pageviews.filter(url__contains='/api/variant/', view_time__gte=one_day_ago)

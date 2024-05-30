@@ -48,7 +48,7 @@ def snv_annotations(variant_id, database=None):
 
         if len(transcripts) == 0:
             raise VariantTranscript.DoesNotExist
-        print("transcripts", transcripts)
+#        print("transcripts", transcripts)
         transcripts = [
             {values_names[key]: value for key, value in transcript.items()}
             for transcript in transcripts

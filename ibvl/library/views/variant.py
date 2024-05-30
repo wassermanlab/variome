@@ -48,7 +48,7 @@ def variant(request, id ):
     except Variant.DoesNotExist:
         raise Http404
     
-    print(f"variant_type: {variant.var_type}")
+#    print(f"variant_type: {variant.var_type}")
     
     snv = None
     gnomadFrequences = None
