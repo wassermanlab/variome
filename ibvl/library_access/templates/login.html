@@ -1,0 +1,19 @@
+{% load static %}
+
+<html>
+    <head>
+        <link type="text/css" rel="stylesheet" href="{% static 'login.css' %}">
+    </head>
+    <body>
+    <div class="login-box">
+    <h1>Variome Login</h1>
+    <p>
+    <a href="{% url 'django_auth_adfs:login' %}">Login</a>
+    <p>
+        <br/><br/><br/>
+    <a href="{% url 'django_auth_adfs:login-no-sso' %}">Login (no SSO)</a>
+    <p>
+        <a href="{% url 'django_auth_adfs:logout' %}">Logout</a>
+    </div>
+    </body>
+</html>

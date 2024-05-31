@@ -29,13 +29,13 @@ def profile_view_stub(request):
     }
     return JsonResponse(user_json, safe=False)
 
-@login_required
+#@login_required
 def profile_view_json(request):
     
     if not request.user.is_authenticated:
         return JsonResponse({
             'user':None
-        }, status=401)
+        })
         
     try:
         access_count = request.user.profile.access_count

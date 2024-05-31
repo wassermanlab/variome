@@ -8,7 +8,7 @@ authors = [
     { name = "Stephanie Q"}
 ]
 dependencies = [
-    "django==4",
+    "django==4.2",
     "sqlalchemy>=2.0.30",
     "sqlalchemy-utils>=0.41.2",
     "natsort>=8.4.0",
@@ -20,6 +20,7 @@ dependencies = [
     "django-extensions>=3.2.3",
     "django-cors-headers>=4.3.1",
     "django-tracking2>=0.5.1",
+    "django-auth-adfs>=1.14.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
