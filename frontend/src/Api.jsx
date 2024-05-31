@@ -85,6 +85,7 @@ const Api = {
   get: async (path, query) => {
     try {
       var json = await cachedFetch(API_URL_BASE + path, query);
+//      console.log('api get', path, query, json)
     } catch (response) {
       return Promise.reject(response);
     }

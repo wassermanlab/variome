@@ -56,6 +56,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
     var urlObj = new URL(import.meta.env.VITE_LOGIN_PATH, config.backend_root);
     loginUrl = urlObj.toString();
   }
+  console.log("loginUrl", loginUrl);
 
 
   return <Toolbar>

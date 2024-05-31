@@ -6,9 +6,22 @@ import path from 'path'
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
-_.defaults(process.env, {
-  VITE_LOGIN_PATH:'/accounts/microsoft/login/'
-});
+const IS_DEVELOPMENT = process.env.ENVIRONMENT === 'development'
+
+if (IS_DEVELOPMENT) {
+  
+  _.defaults(process.env, {
+    VITE_LOGIN_PATH:'/admin/login',
+    VITE_LOGOUT_PATH:'/admin/logout'
+  });
+
+} else {
+  _.defaults(process.env, {
+    VITE_LOGIN_PATH:'/oauth2/login',
+    VITE_LOGOUT_PATH:'/oauth2/logout'
+  });
+
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
