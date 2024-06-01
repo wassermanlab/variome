@@ -55,20 +55,19 @@ def variant(request, id ):
     variomeFrequencies = None
     annotations = None
     
-    if variant.var_type == 'SNV':
-        try:
-            snv = SNV.objects.get(variant=variant)
-            snv = SNVSerializer(snv).data
-        except SNV.DoesNotExist:
-            errors.append(f"SNV for variant {variant} not found")
-            snv = None 
-        try:
-            annotationsResult = snv_annotations(variant.variant_id) 
-            annotations = annotationsResult["annotations"]
-            errors.append(annotationsResult["errors"])
-            
-        except Exception as e:
-            errors.append(f"Error getting annotations: {e}")
+    try:
+        snv = SNV.objects.get(variant=variant)
+        snv = SNVSerializer(snv).data
+    except SNV.DoesNotExist:
+        errors.append(f"SNV for variant {variant} not found")
+        snv = None 
+    try:
+        annotationsResult = snv_annotations(variant.variant_id) 
+        annotations = annotationsResult["annotations"]
+        errors.append(annotationsResult["errors"])
+        
+    except Exception as e:
+        errors.append(f"Error getting annotations: {e}")
     
     try:
         gnomadFrequenciesObject = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
