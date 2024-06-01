@@ -15,13 +15,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
+  Typography
 } from "@mui/material";
 
 import _ from "lodash";
 
 export default function Annotations({ variantAnnotations, gene }) {
-
   const FILTER_KEY = "transcript-filter";
 
   var defaultTranscriptFilter = { biotype: "protein_coding" };
@@ -34,34 +33,38 @@ export default function Annotations({ variantAnnotations, gene }) {
     }
   } catch (e) {}
 
-  const [filter, setFilter] = useState(
-    startingTranscriptFilter
-  );
+  const [filter, setFilter] = useState(startingTranscriptFilter);
 
   useEffect(() => {
     localStorage.setItem(FILTER_KEY, JSON.stringify(filter));
   }, [filter]);
 
-  function ProteinCodingBiotypeFilterCheckbox() {
-    function isChecked() {
-      var iss = _.isEqual(filter, defaultTranscriptFilter);
-      console.log(
-        _.toPairs(filter),
-        _.toPairs(defaultTranscriptFilter)
-      );
-      return iss;
-    }
-
+  function AnnotationsFilter({
+    isCheckedFn,
+    filterSetFn,
+    filterUnsetFn,
+    label
+  }) {
     return (
-      <Checkbox
-        checked={isChecked()}
-        onChange={(event) => {
-          if (event.target.checked) {
-            setFilter(defaultTranscriptFilter);
-          } else {
-            setFilter({});
-          }
+      <FormControlLabel
+        sx={{
+          marginLeft: "0.5em",
+          padding: "0.5em",
+          border: "1px dotted rgba(0,0,0,0.2)"
         }}
+        control={
+          <Checkbox
+            checked={isCheckedFn()}
+            onChange={(event) => {
+              if (event.target.checked) {
+                setFilter(filterSetFn);
+              } else {
+                setFilter(filterUnsetFn);
+              }
+            }}
+          />
+        }
+        label={label}
       />
     );
   }
@@ -76,7 +79,16 @@ export default function Annotations({ variantAnnotations, gene }) {
       LOW: "green",
       MODIFIER: "black"
     };
-    filteredTranscripts = _.filter(filteredTranscripts, filter);
+    filteredTranscripts = _.filter(
+      filteredTranscripts,
+      (transcriptCandidate) => {
+        return _.every(filter, (value, key) => {
+          return _.isArray(value)
+            ? _.includes(value, transcriptCandidate[key])
+            : transcriptCandidate[key] === value;
+        });
+      }
+    );
 
     var columns = _.without(_.keys(filteredTranscripts[0]), "gene", "database");
     return (
@@ -138,6 +150,7 @@ export default function Annotations({ variantAnnotations, gene }) {
 
   return _.size(variantAnnotations) > 0 ? (
     <Grid item xs={12} className="gridItem">
+      <pre>{JSON.stringify(filter, null, 2)}</pre>
       <Paper sx={{ overflowY: "auto", padding: 2 }}>
         <Box
           sx={{
@@ -150,14 +163,29 @@ export default function Annotations({ variantAnnotations, gene }) {
             Transcript Annotations
           </Typography>
 
-          <FormControlLabel
-            sx={{
-              marginLeft: "0.5em",
-              padding: "0.5em",
-              border: "1px dotted rgba(0,0,0,0.2)"
+          <AnnotationsFilter
+            label="Protein-coding Biotype"
+            filterSetFn={(oldfilter) => {
+              return { ...oldfilter, biotype: ["protein_coding"] };
             }}
-            control={<ProteinCodingBiotypeFilterCheckbox />}
-            label="Only Protein-coding Biotypes"
+            filterUnsetFn={(oldfilter) => {
+              return _.omit(oldfilter, "biotype");
+            }}
+            isCheckedFn={() => {
+              return _.includes(_.get(filter, "biotype"), "protein_coding");
+            }}
+          />
+          <AnnotationsFilter
+            label="High or Moderate Impact"
+            filterSetFn={(oldfilter) => {
+              return { ...oldfilter, impact: ["HIGH", "MODERATE"] };
+            }}
+            filterUnsetFn={(oldfilter) => {
+              return _.omit(oldfilter, "impact");
+            }}
+            isCheckedFn={() => {
+              return _.get(filter, "impact");
+            }}
           />
         </Box>
         <Grid container>
