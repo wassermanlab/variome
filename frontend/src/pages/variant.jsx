@@ -68,7 +68,7 @@ export default function Variant() {
             "Variant requests are limited on a 24-hour basis. Please try again later"
           );
         } else {
-          setError("abc");
+          setError("Sorry, something went wrong");
         }
         setLoading(false);
       });

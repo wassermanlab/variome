@@ -20,10 +20,8 @@ import dj_database_url
 
 dotenv.load_dotenv()
 
-
 IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
-print("domain is", DOMAIN)
 DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -39,12 +37,37 @@ AUTH_RELYING_PARTY_ID = os.environ.get("AUTH_RELYING_PARTY_ID", False)
 AUTH_AUDIENCE = os.environ.get("AUTH_AUDIENCE", False)
 AUTH_CA_BUNDLE = os.environ.get("AUTH_CA_BUNDLE", False)
 
-IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
-
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = os.environ.get("TZ") or "America/Vancouver"
+TIME_ZONE = os.environ.get("TZ", False)
 USE_I18N = True
-USE_TZ = True
+
+#admins receive technical bug reports / stack traces
+#ADMINS = [("Admin Name", "admin@example.com")]
+ADMINS = []
+
+#managers are emailed alerts pertaining to data access limits (potential data abuse)
+#MANAGERS = [("Manager Name", "manager@example.com")]
+MANAGERS = []
+
+# internal alert emails
+EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", "[He Kākano] ")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", "variome-admin-alerts-noreply@example.com")
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", False)
+EMAIL_PORT = os.environ.get("EMAIL_PORT", 25)
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", False)
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", False)
+EMAIL_SSL_CERTFILE = os.environ.get("EMAIL_SSL_CERTFILE", False)
+EMAIL_SSL_KEYFILE = os.environ.get("EMAIL_SSL_KEYFILE", False)
+
+if EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    print(f"using smtp email backend at {EMAIL_HOST}")
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    print("using console email backend")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
