@@ -1,15 +1,14 @@
 from django.contrib.auth.models import User
-from tracking.models import Visitor
 from django.db import models
 from django.utils import timezone
-import datetime
-import time
+import pghistory
 
 import os
 
 #default limit for how many variants a user can access in a 24 hr period
 ACCESSES_PER_DAY = os.getenv('ACCESSES_PER_DAY', 100)
 
+@pghistory.track()
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     accesses_per_day = models.IntegerField(default=ACCESSES_PER_DAY)
@@ -32,3 +31,10 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name_plural = 'Profiles'
         db_table = 'user_profile'
+        
+@pghistory.track()
+class LibraryUser(User):
+    class Meta:
+        proxy = True
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
