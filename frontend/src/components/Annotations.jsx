@@ -150,7 +150,7 @@ export default function Annotations({ variantAnnotations, gene }) {
 
   return _.size(variantAnnotations) > 0 ? (
     <Grid item xs={12} className="gridItem">
-      <pre>{JSON.stringify(filter, null, 2)}</pre>
+{/*}      <pre>{JSON.stringify(filter, null, 2)}</pre>{*/}
       <Paper sx={{ overflowY: "auto", padding: 2 }}>
         <Box
           sx={{
