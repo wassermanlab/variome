@@ -23,8 +23,8 @@ def snv_annotations(variant_id, database=None):
             "transcript__transcript_type": "database",
             "hgvsc": "hgvsc",
             "annotation__hgvsp": "hgvsp",
-            "annotation__polyphen": "polyphen",
-            "annotation__sift": "sift",
+#            "annotation__polyphen": "polyphen",
+#            "annotation__sift": "sift",
             "variant__snv__cadd_intr": "cadd intr",
             "variant__snv__cadd_score": "cadd score",
         }

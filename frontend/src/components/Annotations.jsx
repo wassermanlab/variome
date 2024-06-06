@@ -91,6 +91,13 @@ export default function Annotations({ variantAnnotations, gene }) {
     );
 
     var columns = _.without(_.keys(filteredTranscripts[0]), "gene", "database");
+
+    var columnLabelMap = {
+      "hgvsc": "HGVSC",
+      "hgvsp": "HGVSP",
+      "cadd intr": "CADD Intr",
+      "cadd score": "CADD Score",
+    }
     return (
       <Box sx={{ overflowX: "scroll", maxWidth: "100vw" }}>
         <Table aria-label={"annotations for gene " + gene}>
@@ -107,7 +114,8 @@ export default function Annotations({ variantAnnotations, gene }) {
                     textTransform: "capitalize"
                   }}
                 >
-                  {column}
+                  {/*}if not found in columnLabelMap, use column name{*/}
+                  {_.get(columnLabelMap, column, column)}
                 </TableCell>
               ))}
             </TableRow>
