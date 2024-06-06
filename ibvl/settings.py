@@ -41,13 +41,17 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.environ.get("TZ", False)
 USE_I18N = True
 
+admin_email = os.environ.get("ADMIN_EMAIL", False)
+manager_email = os.environ.get("MANAGER_EMAIL", False)
 #admins receive technical bug reports / stack traces
 #ADMINS = [("Admin Name", "admin@example.com")]
-ADMINS = []
+if admin_email:
+    ADMINS = [("Admin", admin_email)]
 
 #managers are emailed alerts pertaining to data access limits (potential data abuse)
 #MANAGERS = [("Manager Name", "manager@example.com")]
-MANAGERS = []
+if manager_email:
+    MANAGERS = [("Manager", manager_email)]
 
 # internal alert emails
 EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", "[He Kākano] ")
