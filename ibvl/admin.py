@@ -5,8 +5,7 @@ from django.conf import settings
 
 admin.site.site_url = settings.SITE_URL
 
-from django.contrib import admin
-""" 
+"""
 class VariomeAdminSite(admin.AdminSite):
     site_header = 'My administration'
     site_title = 'My site admin'

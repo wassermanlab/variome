@@ -120,6 +120,7 @@ if IS_DEVELOPMENT:
     AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
         'django.contrib.auth.backends.ModelBackend'
     ]
+    LOGIN_URL = "/"
     
 if not IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
     INSTALLED_APPS.append("django_auth_adfs")

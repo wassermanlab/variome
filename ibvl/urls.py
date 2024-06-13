@@ -26,14 +26,13 @@ from .views import backend_home_page
 api_urls = [
     path('variant/<str:id>', library.variant, name='variant'),
     path('search', library.snv_search, name='search'),
-    path('user/', access.profile_view_json, name='profile'), # REAL AUTH
-#    path('user/', access.profile_view_stub, name='profile'), # FAKE / DEMO AUTH
+    path('user/', access.profile_view_json, name='profile')
 
 ]
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tracking/', include('tracking.urls')),
+    path('tracking/', access.tracking_dashboard, name='tracking_dashboard'),
     path('accounts/profile/', access.profile_view_redirect, name='profile'),
     path('api/', include(api_urls)),
 ]
@@ -44,7 +43,8 @@ def redirect_to_login(request):
 
 if settings.IS_DEVELOPMENT:
     urlpatterns = urlpatterns + [
-        path('', backend_home_page, name='backend_home_page')
+        path('', backend_home_page, name='backend_home_page'),
+        path('accounts/logout', access.logout_view, name='logout')
     ]
 if not settings.IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
     urlpatterns = urlpatterns + [
