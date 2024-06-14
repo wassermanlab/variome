@@ -15,5 +15,6 @@ class VariantAdmin(admin.ModelAdmin):
     list_display = ('id', 'variant_id', 'var_type')
     list_display_links = ('id', 'variant_id')
     list_filter = (VariantIdFilter, 'var_type')
+    search_fields = ('variant_id',)
 
 admin.site.register(Variant, VariantAdmin)
