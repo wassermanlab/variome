@@ -1,104 +1,155 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Variome Tracking Dashboard</title>
-        
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.css" integrity="sha512-t38vG/f94E72wz6pCsuuhcOPJlHKwPy+PY+n1+tJFzdte3hsIgYE7iEpgg/StngunGszVMrRfvwZinrza0vMTA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-        <style>
-            body{
-                padding:1.5em;
-            }
-            #tracking-filters {
-                float: left;
-                width: 30%;
-            }
-            #tracking-info {
-                
-                float: left;
-                width: 90%;
-            }
-            #tracking-stats {
-                float: left;
-                width: 90%;
-            }
-            .warning {
-                color: red;
-            }
-        </style>
-    </head>
-    <body>
-        <h2>Variome Tracking Dashboard</h2>
-        <div id="tracking-filters">
-            <form method="GET">
-                {{ form.as_table }}
-                <input type="submit" name="submit" value="submit" />
-            </form>
-        </div>
-        <div id="tracking-info">
-            <p>
-                Visitor tracking began on
-                {{ track_start_time|date:"Y-m-d H:i:s" }}
-            </p>
-            {% if warning %}
-            <p class=warning>
-                {{ warning }}
-            </p>
-            {% endif %}
-        </div>
-        <div id="tracking-stats">
-            {% include "tracking/snippets/stats.html" %}
-            
-            <h4>Variant views</h4>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Variant</th>
-                        <th>View Time</th>
-                        <th>Visitor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pageview in pageviews %}
-                    <tr>
-                        <td><a href="{{pageview.variant_url}}" target="_blank">{{ pageview.variant }}</a></td>
-                        <td>{{ pageview.view_time|date:"Y-m-d H:i:s" }}</td>
-                        <td>
-                            <ul>
-                                <li>{{ pageview.visitor.user.first_name }} {{ pageview.visitor.user.last_name }}</li>
-                                <li>{{ pageview.visitor.user.email }}</li>
-                                <li>({{ pageview.visitor.user.username }})</li>
-                            </ul>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-            <!--
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $('.datepicker').datepicker();
-        });
-    -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js" integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <head>
+    <title>Variome Tracking Dashboard</title>
 
-<script>
-//    mdc.textField.MDCTextField.attachTo(document.querySelector('.mdc-text-field'));
-    document.addEventListener('DOMContentLoaded', function() {
-        var elems = document.querySelectorAll('.datepicker');
-        var instances = M.Datepicker.init(elems, options);
-    });
-    var options = {
-        format: 'yyyy-mm-dd',
-        defaultDate: new Date(),
-        setDefaultDate: true
-    };
-    document.addEventListener('DOMContentLoaded', function() {
-        var elems = document.querySelectorAll('select');
-        var instances = M.FormSelect.init(elems, options);
-    });
-  </script>
-    </body>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.css"
+      integrity="sha512-t38vG/f94E72wz6pCsuuhcOPJlHKwPy+PY+n1+tJFzdte3hsIgYE7iEpgg/StngunGszVMrRfvwZinrza0vMTA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      body {
+        padding: 1.5em;
+      }
+      #tracking-filters {
+        float: left;
+        width: 30%;
+      }
+      #tracking-info {
+        float: left;
+        width: 90%;
+      }
+      #tracking-stats {
+        float: left;
+        width: 90%;
+      }
+      .warning {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Variome Tracking Dashboard</h2>
+    <div id="tracking-filters">
+      <form method="GET">
+        {{ form.as_table }}
+        <input type="submit" name="submit" value="submit" />
+      </form>
+    </div>
+    <div id="tracking-info">
+      {% if warning %}
+      <p class="warning">{{ warning }}</p>
+      {% endif %}
+    </div>
+
+    <div id="tracking-stats">
+
+    <h4>Statistics</h4>
+    {% if user_stats %}
+    <table>
+        <thead>
+            <tr>
+                <th></th>
+                <th># Site Visits</th>
+                <th># Site Visits (24h)</th>
+                <th>Avg. Time on Site</th>
+                <th>Avg. # Variant Pages / Site Visit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in user_stats %}
+            <tr>
+                <th>{% firstof user.get_full_name user %}</th>
+                <td>{{ user.visit_count }}</td>
+                <td>{{ user.profile.access_count}}</td>
+                <td>{{ user.time_on_site|default_if_none:"n/a" }}</td>
+                <td>{{ user.pages_per_visit|floatformat|default:"n/a" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+    <p>No registered user stats available</p>
+    {% endif %}
+
+      <h4>Variant views</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>View Time</th>
+            <th>Visitor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pageview in variant_pageviews %}
+          <tr>
+            <td>
+              <a href="{{pageview.variant_url}}" target="_blank"
+                >{{ pageview.variant }}</a
+              >
+            </td>
+            <td>{{ pageview.view_time|date:"Y-m-d H:i:s" }}</td>
+            <td>
+              <ul>
+                <li>
+                  {{ pageview.visitor.user.first_name }} 
+                  {{ pageview.visitor.user.last_name }}
+                </li>
+                <li>{{ pageview.visitor.user.email }}</li>
+                <li>({{ pageview.visitor.user.username }})</li>
+              </ul>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  <canvas id="myChart"></canvas>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js"
+      integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
+
+    <script>
+
+      document.addEventListener("DOMContentLoaded", function () {
+        M.AutoInit();
+      });
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const ctx = document.getElementById('myChart');
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+          datasets: [{
+            label: '# of Votes',
+            data: [12, 19, 3, 5, 2, 3],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    </script>
+  </body>
 </html>

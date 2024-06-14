@@ -29,15 +29,15 @@ input_formats = [
 class DashboardForm(forms.Form):
     start = forms.DateTimeField(required=True, input_formats=input_formats, widget=forms.DateTimeInput(attrs={'type': 'date'}))
     end = forms.DateTimeField(required=True, input_formats=input_formats, widget=forms.DateTimeInput(attrs={'type': 'date'}))
+    variant = forms.CharField(required=False, widget=forms.TextInput(attrs={'type': 'text'}))
     user = forms.ModelMultipleChoiceField(queryset=LibraryUser.objects.all(), required=False)
-
 
 @permission_required('library_access.view_tracking_dashboard')
 def tracking_dashboard(request):
     "Counts, aggregations and more!"
     end_time = now()
     start_time = end_time - timedelta(days=7)
-    defaults = {'start': start_time, 'end': end_time, 'user': None  }
+    defaults = {'start': start_time.strftime('%Y-%m-%d'), 'end': end_time.strftime('%Y-%m-%d'), 'user': None  }
 
     form = DashboardForm(data=request.GET or defaults)
     if form.is_valid():
@@ -47,53 +47,52 @@ def tracking_dashboard(request):
         # add one day to end_time
         end_time += timedelta(days=1)
 
-    # determine when tracking began
-    try:
-        obj = Visitor.objects.order_by('start_time')[0]
-        track_start_time = obj.start_time
-    except (IndexError, Visitor.DoesNotExist):
-        track_start_time = now()
-
     selected_users = form.cleaned_data['user']
+    
+    # Stephanie TODO
+    # if selected_users is empty or None, don't filter the user_stats at all
+    # because we want to show ALL users that accessed any variant (or one particular variant if specified)
 
-    # queries take `date` objects (for now)
     user_stats = Visitor.objects.user_stats(start_time, end_time)
     filtered_user_stats = []
     for u in user_stats:
-#        print('u', u.id, u.profile.access_count)
-#        print('selected_users', selected_users)
         if u.id in selected_users.values_list('id', flat=True):
             filtered_user_stats.append(u)
     user_stats = filtered_user_stats
     
-    for u in user_stats:
-        lu = LibraryUser.objects.get(id=u.id)
-        print(lu)
-        print(lu.profile.access_count)
-    visitor_stats = Visitor.objects.stats(start_time, end_time)
-    if TRACK_PAGEVIEWS:
-        pageview_stats = Pageview.objects.stats(start_time, end_time)
-    else:
-        pageview_stats = None
-        
-        
-    pageviews = Pageview.objects.filter(
+    # Stephanie TODO
+    # use Variant model to find the variant object using target_variant_id (it is the variant_id property)
+    # find the id (pk) of that object
+    # IF found, then add it to the filter query for variant_pageviews 
+    #    hint: (change url__contains='api/variant' to url__contains='api/variant/{id}')
+    # then, Variant Views in the page should only be ones that match this variant.
+    target_variant_id = form.cleaned_data['variant']
+    print("find the variant with variant_id = ", target_variant_id)
+    
+    variant_pageviews = Pageview.objects.filter(
         view_time__range=(start_time, end_time), 
         url__contains='api/variant',
         visitor__user__in=selected_users).order_by('-view_time')
     
-    for pageview in pageviews:
+    for pageview in variant_pageviews:
         id = pageview.url.split('/')[-1]
         pageview.variant = Variant.objects.get(id=id).variant_id
         pageview.variant_url = f"{settings.SITE_URL}/variant/{id}"
-
+        
+    # Stephanie TODO
+    # user_stats is kind of a black box from the tracking library
+    # you could calculate more stats (eg, counting how many pageviews in variant_pageviews, by user and total)
+    # you can add that data to a new object on this context dictionary and add it to the table under Statistics in tracking/dashboard.html
+    # or add a new table below that one
+    # charts:
+    # I added the "getting started" chart for charts.js to the bottom of the template, so that can be a starting point
+    # https://www.chartjs.org/docs/latest/getting-started/
+    # you can access the data from context below or add your own, and set it up under data.datasets as in the example
+    
     context = {
         'form': form,
-        'pageviews': pageviews,
-        'track_start_time': track_start_time,
+        'variant_pageviews': variant_pageviews,
         'warning': None,
         'user_stats': user_stats,
-        'visitor_stats': visitor_stats,
-        'pageview_stats': pageview_stats,
     }
     return render(request, 'tracking/dashboard.html', context)
