@@ -79,7 +79,7 @@ def tracking_dashboard(request):
         pageview.variant = Variant.objects.get(id=id).variant_id
         pageview.variant_url = f"{settings.SITE_URL}/variant/{id}"
         
-    # Stephanie TODO
+    # Stephanie 
     # user_stats is kind of a black box from the tracking library
     # you could calculate more stats (eg, counting how many pageviews in variant_pageviews, by user and total)
     # you can add that data to a new object on this context dictionary and add it to the table under Statistics in tracking/dashboard.html
