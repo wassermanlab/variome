@@ -35,49 +35,68 @@
     <h2>Variome Tracking Dashboard</h2>
     <div id="tracking-filters">
       <form method="GET">
-        {{ form.as_table }}
+        <!-- Placeholder for form -->
+        <table>
+          <tr>
+            <th><label for="id_start">Start date:</label></th>
+            <td><input type="date" name="start" required id="id_start"></td>
+          </tr>
+          <tr>
+            <th><label for="id_end">End date:</label></th>
+            <td><input type="date" name="end" required id="id_end"></td>
+          </tr>
+          <tr>
+            <th><label for="id_variant">Variant:</label></th>
+            <td><input type="text" name="variant" id="id_variant"></td>
+          </tr>
+          <tr>
+            <th><label for="id_user">User:</label></th>
+            <td><select name="user" id="id_user" multiple>
+              <!-- Example user options -->
+              <option value="1">User One</option>
+              <option value="2">User Two</option>
+            </select></td>
+          </tr>
+        </table>
         <input type="submit" name="submit" value="submit" />
       </form>
     </div>
-    <div id="tracking-info">
-      {% if warning %}
-      <p class="warning">{{ warning }}</p>
-      {% endif %}
-    </div>
 
     <div id="tracking-stats">
-
-    <h4>Statistics</h4>
-    {% if user_stats %}
-    <table>
+      <h4>Statistics</h4>
+      <table>
         <thead>
-            <tr>
-                <th></th>
-                <th># Site Visits</th>
-                <th># Site Visits (24h)</th>
-                <th>Avg. Time on Site</th>
-                <th>Avg. # Variant Pages / Site Visit</th>
-            </tr>
+          <tr>
+            <th>User</th>
+            <th># Site Visits</th>
+            <th># Site Visits (24h)</th>
+            <th>Avg. Time on Site</th>
+            <th>Avg. # Variant Pages / Site Visit</th>
+            <th># Variants Queried</th>
+          </tr>
         </thead>
         <tbody>
-            {% for user in user_stats %}
-            <tr>
-                <th>{% firstof user.get_full_name user %}</th>
-                <td>{{ user.visit_count }}</td>
-                <td>{{ user.profile.access_count}}</td>
-                <td>{{ user.time_on_site|default_if_none:"n/a" }}</td>
-                <td>{{ user.pages_per_visit|floatformat|default:"n/a" }}</td>
-            </tr>
-            {% endfor %}
+          <!-- Example user statistics -->
+          <tr>
+            <th>User One</th>
+            <td>10</td>
+            <td>2</td>
+            <td>5m</td>
+            <td>3</td>
+            <td>7</td>
+          </tr>
+          <tr>
+            <th>User Two</th>
+            <td>15</td>
+            <td>3</td>
+            <td>10m</td>
+            <td>4</td>
+            <td>10</td>
+          </tr>
         </tbody>
-    </table>
+      </table>
 
-    {% else %}
-    <p>No registered user stats available</p>
-    {% endif %}
-
-      <h4>Variant views</h4>
-
+      <h4>Variant Views</h4>
       <table>
         <thead>
           <tr>
@@ -87,31 +106,67 @@
           </tr>
         </thead>
         <tbody>
-          {% for pageview in variant_pageviews %}
+          <!-- Example variant views -->
           <tr>
-            <td>
-              <a href="{{pageview.variant_url}}" target="_blank"
-                >{{ pageview.variant }}</a
-              >
-            </td>
-            <td>{{ pageview.view_time|date:"Y-m-d H:i:s" }}</td>
+            <td><a href="#" target="_blank">Variant 1</a></td>
+            <td>2024-06-19 12:00:00</td>
             <td>
               <ul>
-                <li>
-                  {{ pageview.visitor.user.first_name }} 
-                  {{ pageview.visitor.user.last_name }}
-                </li>
-                <li>{{ pageview.visitor.user.email }}</li>
-                <li>({{ pageview.visitor.user.username }})</li>
+                <li>User One</li>
+                <li>userone@example.com</li>
+                <li>(userone)</li>
               </ul>
             </td>
           </tr>
-          {% endfor %}
+          <tr>
+            <td><a href="#" target="_blank">Variant 2</a></td>
+            <td>2024-06-19 14:00:00</td>
+            <td>
+              <ul>
+                <li>User Two</li>
+                <li>usertwo@example.com</li>
+                <li>(usertwo)</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Variant/Gene Access Details</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Variant/Gene</th>
+            <th># of Users Accessed</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Example variant access details -->
+          <tr>
+            <td>Variant 1</td>
+            <td>2</td>
+            <td>
+              <ul>
+                <li>User One (userone@example.com)</li>
+                <li>User Two (usertwo@example.com)</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>Variant 2</td>
+            <td>1</td>
+            <td>
+              <ul>
+                <li>User Two (usertwo@example.com)</li>
+              </ul>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
-  <canvas id="myChart"></canvas>
+    <canvas id="myChart"></canvas>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js"
       integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q=="
@@ -119,37 +174,13 @@
       referrerpolicy="no-referrer"
     ></script>
 
-
     <script>
-
       document.addEventListener("DOMContentLoaded", function () {
         M.AutoInit();
       });
     </script>
 
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const ctx = document.getElementById('myChart');
 
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-          datasets: [{
-            label: '# of Votes',
-            data: [12, 19, 3, 5, 2, 3],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    </script>
   </body>
 </html>
