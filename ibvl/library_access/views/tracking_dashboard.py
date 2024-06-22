@@ -9,6 +9,7 @@ from tracking.models import Visitor, Pageview
 from tracking.settings import TRACK_PAGEVIEWS
 from ibvl.library.models import Variant
 from ibvl.library_access.models import LibraryUser
+import json
 
 log = logging.getLogger(__file__)
 
@@ -89,12 +90,22 @@ def tracking_dashboard(request):
             'users': users
         })
 
+    # Prepare data for charts
+    user_labels = json.dumps([stat['user'].get_full_name() for stat in enriched_user_stats])
+    site_visits_data = json.dumps([stat['visit_count'] for stat in enriched_user_stats])
+    time_on_site_data = json.dumps([stat['time_on_site'] for stat in enriched_user_stats])
+    variants_queried_data = json.dumps([stat['variants_queried_count'] for stat in enriched_user_stats])
+
     context = {
         'form': form,
         'variant_pageviews': variant_pageviews,
         'warning': None,
         'user_stats': enriched_user_stats,
         'variant_access_details': variant_access_details,
+        'user_labels': user_labels,
+        'site_visits_data': site_visits_data,
+        'time_on_site_data': time_on_site_data,
+        'variants_queried_data': variants_queried_data,
     }
 
     return render(request, 'tracking/dashboard.html', context)
