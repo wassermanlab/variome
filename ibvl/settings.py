@@ -33,6 +33,7 @@ SECRET_KEY = (
 AUTH_SERVER = os.environ.get("AUTH_SERVER", False)
 AUTH_CLIENT_ID = os.environ.get("AUTH_CLIENT_ID", False)
 AUTH_CLIENT_SECRET = os.environ.get("AUTH_CLIENT_SECRET", False)
+AUTH_TENANT_ID = os.environ.get("AUTH_TENANT_ID", False)
 AUTH_RELYING_PARTY_ID = os.environ.get("AUTH_RELYING_PARTY_ID", False)
 AUTH_AUDIENCE = os.environ.get("AUTH_AUDIENCE", False)
 AUTH_CA_BUNDLE = os.environ.get("AUTH_CA_BUNDLE", False)
@@ -124,23 +125,29 @@ if IS_DEVELOPMENT:
     
 if not IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
     INSTALLED_APPS.append("django_auth_adfs")
-#    MIDDLEWARE.append("django_auth_adfs.middleware.LoginRequiredMiddleware")
-    AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
+    MIDDLEWARE.append("django_auth_adfs.middleware.LoginRequiredMiddleware")
+    AUTHENTICATION_BACKENDS = [
         'django_auth_adfs.backend.AdfsAuthCodeBackend',
-    ]
+    ] + AUTHENTICATION_BACKENDS
 
     AUTH_ADFS = {
-        "SERVER": AUTH_SERVER,
+        "AUDIENCE": AUTH_CLIENT_ID,
         "CLIENT_ID": AUTH_CLIENT_ID,
-        "GROUP_TO_FLAG_MAPPING": {
-            "is_staff": ["admingroup", "superusergroup"],
-            "is_superuser": "superusergroup",
+        "CLIENT_SECRET": AUTH_CLIENT_SECRET,
+        "GROUPS_CLAIM": "groups",
+        "CLAIM_MAPPING": {
+            "first_name": "given_name",
+            "last_name": "family_name",
+            "email": "upn",
         },
+        "USERNAME_CLAIM": "upn",
+        "GROUP_TO_FLAG_MAPPING": {
+            "is_staff": [os.getenv("ADMINGROUP"), os.getenv("SUPERUSERGROUP")],
+            "is_superuser": os.getenv("SUPERUSERGROUP"),
+        },
+        "TENANT_ID": AUTH_TENANT_ID,
+        "RELYING_PARTY_ID": AUTH_CLIENT_ID,
     }
-    if AUTH_RELYING_PARTY_ID:
-        AUTH_ADFS["RELYING_PARTY_ID"] = AUTH_RELYING_PARTY_ID
-    if AUTH_AUDIENCE:
-        AUTH_ADFS["AUDIENCE"] = AUTH_AUDIENCE
     if AUTH_CA_BUNDLE:
         AUTH_ADFS["CA_BUNDLE"] = AUTH_CA_BUNDLE
     
