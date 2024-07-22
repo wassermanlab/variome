@@ -12,45 +12,21 @@
     <style>
       body {
         padding: 1.5em;
-        font-family: Arial, sans-serif;
       }
       #tracking-filters {
         float: left;
-        width: 25%;
-        margin-right: 2%;
+        width: 30%;
+      }
+      #tracking-info {
+        float: left;
+        width: 90%;
       }
       #tracking-stats {
         float: left;
-        width: 73%;
+        width: 90%;
       }
       .warning {
         color: red;
-      }
-      .chart-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-      }
-      .chart-container canvas {
-        flex: 0 1 48%;
-        max-width: 48%;
-        margin-bottom: 2em;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 2em;
-      }
-      th, td {
-        padding: 0.75em;
-        text-align: left;
-        border: 1px solid #ddd;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
-      h4 {
-        margin-top: 2em;
       }
     </style>
   </head>
@@ -58,6 +34,7 @@
     <h2>Variome Tracking Dashboard</h2>
     <div id="tracking-filters">
       <form method="GET">
+        <!-- Placeholder for form -->
         <table>
           <tr>
             <th><label for="id_start">Start date:</label></th>
@@ -82,7 +59,9 @@
             </td>
           </tr>
         </table>
-        <button type="submit" class="btn waves-effect waves-light">Submit</button>
+        <button type="submit" class="btn waves-effect waves-light">
+          Submit
+        </button>
       </form>
     </div>
 
@@ -166,7 +145,7 @@
       </table>
     </div>
 
-    <div class="chart-container">
+    <div>
       <canvas id="siteVisitsChart"></canvas>
       <canvas id="timeOnSiteChart"></canvas>
       <canvas id="variantsQueriedChart"></canvas>
@@ -197,35 +176,25 @@
         const timeOnSiteData = JSON.parse('{{ time_on_site_data|escapejs }}');
         const variantsQueriedData = JSON.parse('{{ variants_queried_data|escapejs }}');
 
-        const chartOptions = {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom'
-            }
-          }
-        };
-
         const siteVisitsChart = new Chart(siteVisitsCtx, {
           type: 'bar',
           data: {
             labels: userLabels,
             datasets: [{
-              label: '# Site Visits',
+              label: 'Number of Site Visits',
               data: siteVisitsData,
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
               borderWidth: 1
             }]
           },
-          options: chartOptions
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
         });
 
         const timeOnSiteChart = new Chart(timeOnSiteCtx, {
@@ -233,14 +202,20 @@
           data: {
             labels: userLabels,
             datasets: [{
-              label: 'Avg. Time on Site (minutes)',
+              label: 'Average Time on Site (minutes)',
               data: timeOnSiteData,
               backgroundColor: 'rgba(153, 102, 255, 0.2)',
               borderColor: 'rgba(153, 102, 255, 1)',
               borderWidth: 1
             }]
           },
-          options: chartOptions
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
         });
 
         const variantsQueriedChart = new Chart(variantsQueriedCtx, {
@@ -248,14 +223,20 @@
           data: {
             labels: userLabels,
             datasets: [{
-              label: '# Variants Queried',
+              label: 'Number of Variants Queried',
               data: variantsQueriedData,
               backgroundColor: 'rgba(255, 159, 64, 0.2)',
               borderColor: 'rgba(255, 159, 64, 1)',
               borderWidth: 1
             }]
           },
-          options: chartOptions
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
         });
       });
     </script>
