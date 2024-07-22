@@ -70,7 +70,7 @@ export default function Home({user}) {
                                             Variant Search
                                         </Typography>
                                         {/* TODO: Remove the arrow in the dropdown bar before anything has been typed */}
-                                        <Search variant="outlined" width="100%" marginLeft="0px"/>
+                                        <Search inputElementId="home-variant-search" variant="outlined" width="100%" marginLeft="0px"/>
                                     </Grid>
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
