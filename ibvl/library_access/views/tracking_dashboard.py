@@ -56,6 +56,10 @@ def tracking_dashboard(request):
         pageview.variant_url = f"{settings.SITE_URL}/variant/{id}"
 
     user_stats = Visitor.objects.user_stats(start_time, end_time)
+    for u in user_stats:
+        print("this is a user:", u)
+        print("the type is", type(u))
+        print("this is the user's email", u.email)
     user_stats = [u for u in user_stats if u.user in selected_users]
 
     enriched_user_stats = []
