@@ -27,7 +27,7 @@ class DashboardForm(forms.Form):
 
 @permission_required('library_access.view_tracking_dashboard')
 def tracking_dashboard(request):
-    "Counts, aggregations and more!"
+    "Counts, aggregations and more!"python manage.py runserver
     end_time = now()
     start_time = end_time - timedelta(days=7)
     defaults = {'start': start_time.strftime('%Y-%m-%d'), 'end': end_time.strftime('%Y-%m-%d'), 'user': None}
