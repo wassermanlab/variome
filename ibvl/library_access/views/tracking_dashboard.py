@@ -30,7 +30,12 @@ def tracking_dashboard(request):
     "Counts, aggregations and more!"
     end_time = now()
     start_time = end_time - timedelta(days=7)
-    defaults = {'start': start_time.strftime('%Y-%m-%d'), 'end': end_time.strftime('%Y-%m-%d'), 'user': None}
+    defaults = {
+        'start': start_time.strftime('%Y-%m-%d'), 
+        'end': end_time.strftime('%Y-%m-%d'), 
+        'user': None,
+        'variant': ''
+        }
 
     form = DashboardForm(data=request.GET or defaults)
     if form.is_valid():
@@ -65,19 +70,16 @@ def tracking_dashboard(request):
     enriched_user_stats = []
     for user_stat in user_stats:
         user = user_stat
-        visit_count = user_stat.visit_count
-        access_count = Pageview.objects.filter(visitor__user=user).count()
+        UserHitsInTimeFrame = Pageview.objects.filter(visitor__user=user, view_time__gte=start_time)
+        page_views = UserHitsInTimeFrame.count()
         time_on_site = user_stat.time_on_site
-        pages_per_visit = access_count / visit_count if visit_count else 0
-        variants_queried_count = Pageview.objects.filter(visitor__user=user).values('url').distinct().count()
+        page_views_unique = UserHitsInTimeFrame.values('url').distinct().count()
 
         enriched_user_stats.append({
             'user': user,
-            'visit_count': visit_count,
-            'access_count': access_count,
+            'page_views': page_views,
             'time_on_site': time_on_site,
-            'pages_per_visit': pages_per_visit,
-            'variants_queried_count': variants_queried_count
+            'page_views_unique': page_views_unique
         })
 
     variant_access_details = []
@@ -97,12 +99,11 @@ def tracking_dashboard(request):
 
     # Prepare data for charts
     user_labels = json.dumps([stat['user'].get_full_name() for stat in enriched_user_stats])
-    site_visits_data = json.dumps([stat['visit_count'] for stat in enriched_user_stats])
     
     timedeltas = [stat['time_on_site'].total_seconds() for stat in enriched_user_stats]
     print("timedeltas", timedeltas)
     time_on_site_data = json.dumps(timedeltas)
-    variants_queried_data = json.dumps([stat['variants_queried_count'] for stat in enriched_user_stats])
+    variants_queried_data = json.dumps([stat['page_views_unique'] for stat in enriched_user_stats])
 
     context = {
         'form': form,
@@ -111,9 +112,9 @@ def tracking_dashboard(request):
         'user_stats': enriched_user_stats,
         'variant_access_details': variant_access_details,
         'user_labels': user_labels,
-        'site_visits_data': site_visits_data,
         'time_on_site_data': time_on_site_data,
         'variants_queried_data': variants_queried_data,
+        
     }
 
     return render(request, 'tracking/dashboard.html', context)

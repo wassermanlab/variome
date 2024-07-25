@@ -69,7 +69,7 @@
           </tr>
           <tr>
             <th><label for="id_variant">Variant:</label></th>
-            <td><input type="text" name="variant" id="id_variant" value="{{ form.variant.value }}"></td>
+            <td><input type="text" name="variant" id="id_variant" value="{{ form.variant.value }}" placeholder="eg. 2-12341234-A-T"></td>
           </tr>
           <tr>
             <th><label for="id_user">User:</label></th>
@@ -92,22 +92,18 @@
         <thead>
           <tr>
             <th>User</th>
-            <th># Site Visits</th>
-            <th># Site Visits (24h)</th>
+            <th># Variant Views</th>
+            <th># Unique Variant Views</th>
             <th>Avg. Time on Site</th>
-            <th>Avg. # Variant Pages / Site Visit</th>
-            <th># Variants Queried</th>
           </tr>
         </thead>
         <tbody>
           {% for stat in user_stats %}
           <tr>
             <th>{{ stat.user.get_full_name }}</th>
-            <td>{{ stat.visit_count }}</td>
-            <td>{{ stat.access_count }}</td>
+            <td>{{ stat.page_views }}</td>
+            <td>{{ stat.page_views_unique }}</td>
             <td>{{ stat.time_on_site }}</td>
-            <td>{{ stat.pages_per_visit }}</td>
-            <td>{{ stat.variants_queried_count }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -193,7 +189,6 @@
         const variantsQueriedCtx = document.getElementById('variantsQueriedChart').getContext('2d');
 
         const userLabels = JSON.parse('{{ user_labels|escapejs }}');
-        const siteVisitsData = JSON.parse('{{ site_visits_data|escapejs }}');
         const timeOnSiteData = JSON.parse('{{ time_on_site_data|escapejs }}');
         const variantsQueriedData = JSON.parse('{{ variants_queried_data|escapejs }}');
 
@@ -213,20 +208,6 @@
           }
         };
 
-        const siteVisitsChart = new Chart(siteVisitsCtx, {
-          type: 'bar',
-          data: {
-            labels: userLabels,
-            datasets: [{
-              label: '# Site Visits',
-              data: siteVisitsData,
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              borderColor: 'rgba(75, 192, 192, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: chartOptions
-        });
 
         const timeOnSiteChart = new Chart(timeOnSiteCtx, {
           type: 'bar',
