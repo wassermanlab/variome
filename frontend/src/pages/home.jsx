@@ -70,7 +70,7 @@ export default function Home({user}) {
                                             Variant Search
                                         </Typography>
                                         {/* TODO: Remove the arrow in the dropdown bar before anything has been typed */}
-                                        <Search variant="outlined" width="100%" marginLeft="0px"/>
+                                        <Search inputElementId="home-variant-search" variant="outlined" width="100%" marginLeft="0px"/>
                                     </Grid>
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
@@ -131,11 +131,12 @@ export default function Home({user}) {
                                         
                                     </Grid>
                                     <Grid item xs={6}>
+                                        
                                         <Box
                                             component="img"
                                             alt="Temporary Logo"
                                             src="/temp-logo.svg"
-                                            style={{ width: '200px', marginLeft: '80px', marginTop: '20px'  }}
+                                            style={{ width: '200px', marginLeft: '80px', marginTop: '20px', opacity:'0.2'  }}
                                         />
                                     </Grid>
                                 </Grid>
@@ -155,7 +156,7 @@ export default function Home({user}) {
             }}
         >
             <Box sx={{ display: 'flex', justifyContent:'center', alignItems: 'center', p: 2, flexWrap:'wrap', gap:'30px'}}>
-                <img src="/temp-logo.svg" alt="Variome Logo" style={{ width: 200 }} />
+                <img src="/university-logo.png" alt="Variome Logo" style={{ width: "400px" }} />
                 <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     Variome
                 </Typography>
