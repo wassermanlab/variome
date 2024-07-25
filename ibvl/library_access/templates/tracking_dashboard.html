@@ -94,8 +94,8 @@
         <thead>
           <tr>
             <th>User</th>
-            <th># Variant Views</th>
-            <th># Unique Variant Views</th>
+            <th># Unique Views</th>
+            <th># Views in 24h</th>
             <th>Avg. Time on Site</th>
           </tr>
         </thead>
@@ -103,8 +103,8 @@
           {% for stat in user_stats %}
           <tr>
             <th>{{ stat.user.get_full_name }}</th>
-            <td>{{ stat.page_views }}</td>
             <td>{{ stat.page_views_unique }}</td>
+            <td>{{ stat.24_hrs}}</td>
             <td>{{ stat.time_on_site }}</td>
           </tr>
           {% endfor %}
@@ -113,13 +113,6 @@
 
       <h4>Variant Views</h4>
       <table>
-        <thead>
-          <tr>
-            <th>Variant</th>
-            <th>View Time</th>
-            <th>Visitor</th>
-          </tr>
-        </thead>
         <tbody>
           {% for pageview in variant_pageviews %}
           <tr>
@@ -128,8 +121,6 @@
             <td>
               <ul>
                 <li>{{ pageview.visitor.user.get_full_name }}</li>
-                <li>{{ pageview.visitor.user.email }}</li>
-                <li>({{ pageview.visitor.user.username }})</li>
               </ul>
             </td>
           </tr>
@@ -137,12 +128,11 @@
         </tbody>
       </table>
 
-      <h4>Variant Access Details</h4>
+      <h4>Variant Details</h4>
       <table>
         <thead>
           <tr>
-            <th>Variant/Gene</th>
-            <th># of Users Accessed</th>
+            <th>Variant</th>
             <th>Users</th>
           </tr>
         </thead>
@@ -150,9 +140,10 @@
           {% for detail in variant_access_details %}
           <tr>
             <td>{{ detail.name }}</td>
-            <td>{{ detail.user_count }}</td>
             <td>
+              
               <ul>
+                <li>{{ detail.user_count }} Users:</li>
                 {% for user in detail.users %}
                 <li>{{ user.get_full_name }} ({{ user.email }})</li>
                 {% endfor %}
