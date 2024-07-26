@@ -9,7 +9,7 @@ import TextField from '@mui/material/TextField';
 import Api from '../Api';
 import config from '../config.json';
 
-export default function Search(props) {
+export default function Search({width, marginLeft, inputElementId, variant}) {
     const [results, setResults] = React.useState([])
 
     const navigate = useNavigate();
@@ -39,7 +39,7 @@ export default function Search(props) {
     return (
         <React.Fragment>
             <Autocomplete
-                id="navbar-search"
+                id={inputElementId}
                 options={results}
                 onInputChange={onInputChange}
                 getOptionLabel={(option) => option.variant_id}
@@ -50,7 +50,7 @@ export default function Search(props) {
                         {...params}
                         //label="Search variants"
                         placeholder="Search variants"
-                        variant={props.variant.variant_id}
+                        variant={variant.variant_id}
                         InputProps={{
                             ...params.InputProps,
                             startAdornment: (
@@ -59,7 +59,7 @@ export default function Search(props) {
                         }}
                     />}
                 }
-                sx={{ width: props.width, marginLeft: props.marginLeft }}
+                sx={{ width, marginLeft }}
             />
         </React.Fragment>
     );

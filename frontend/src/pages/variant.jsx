@@ -14,7 +14,7 @@ import {
   Paper,
   Radio,
   RadioGroup,
-  Typography,
+  Typography
 } from "@mui/material";
 
 import { useParams } from "react-router-dom";
@@ -53,6 +53,7 @@ export default function Variant() {
     Api.get("variant/" + varId)
       .then(
         ({ variant, snv, ibvlFrequencies, gnomadFrequencies, annotations }) => {
+          console.log("variant", variant);
           setVariant(variant);
           setVariantMetadata(snv);
           setGnomadFrequencies(gnomadFrequencies);
@@ -74,6 +75,39 @@ export default function Variant() {
       });
   }, [varId]);
 
+  useEffect(() => {
+    if (variant && variant.variant_id) {
+      const QUERY = `
+    query getVariant($variantId: String!) {
+      variant(variantId: $variantId, dataset: gnomad_r4) {
+        exome {
+          ac
+          an
+        }
+        genome {
+          ac
+          an
+        }
+      }
+    }
+    `;
+
+      fetch("https://gnomad.broadinstitute.org/api", {
+        method: "POST",
+        body: JSON.stringify({
+          query: QUERY,
+          variables: {
+            variantId: variant.variant_id
+          }
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+        .then((response) => response.json())
+        .then((data) => console.log(data.data));
+    }
+  }, [variant]);
 
   return (
     <Container maxWidth="xl">
@@ -130,11 +164,11 @@ export default function Variant() {
             </Grid>
 
             {/* Annotations Box */}
-           
-                <Annotations
-                  varId={varId}
-                  variantAnnotations={variantAnnotations}
-                />
+
+            <Annotations
+              varId={varId}
+              variantAnnotations={variantAnnotations}
+            />
           </Grid>
         </Box>
       )}

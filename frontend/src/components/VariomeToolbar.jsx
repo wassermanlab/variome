@@ -81,7 +81,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
       {user && (
         <>
           <AssemblyPicker />
-          <Search variant="standard" width="200px" />
+          <Search inputElementId="navigation-bar-search" variant="standard" width="200px" />
         </>
       )}
     </FlexBox>
