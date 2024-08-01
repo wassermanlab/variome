@@ -35,6 +35,7 @@ urlpatterns = [
     path('tracking/', access.tracking_dashboard, name='tracking_dashboard'),
     path('accounts/profile/', access.profile_view_redirect, name='profile'),
     path('api/', include(api_urls)),
+    path('oauth2/', include('django_auth_adfs.urls')),
 ]
 
 def redirect_to_login(request):
@@ -52,4 +53,3 @@ if not settings.IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
         path('accounts/login/', access.login, name='login'),
         path('oauth2/', include('django_auth_adfs.urls'))
     ]
-
