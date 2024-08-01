@@ -11,8 +11,16 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/system';
+import _ from 'lodash';
 
 function createData(name, total, xx, xy, af_popmax, gnomad) {
+    if (_.isNumber(gnomad)) {
+        if ( !_.isInteger(gnomad) ) {
+            gnomad = gnomad.toFixed(4);
+        }
+    } else if (!_.isString(gnomad)) {
+        gnomad = '...'
+    }
     return { name, total, xx, xy, af_popmax, gnomad };
 }
 
@@ -32,7 +40,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 Math.trunc(ibvlFrequencies["an_xx"]),  
                 Math.trunc(ibvlFrequencies["an_xy"]),  
                 '-',
-                Math.trunc(gnomadFrequencies["an_tot"]), 
+                gnomadFrequencies["an_tot"], 
             ),
             createData(
                 'Allele Count', 
@@ -40,7 +48,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 Math.trunc(ibvlFrequencies["ac_xx"]),  
                 Math.trunc(ibvlFrequencies["ac_xy"]),  
                 '-',
-                Math.trunc(gnomadFrequencies["ac_tot"]),
+                gnomadFrequencies["ac_tot"],
             ),
             createData(
                 'Allele Frequency',
@@ -48,7 +56,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 Number(ibvlFrequencies["af_xx"]).toFixed(4),  
                 Number(ibvlFrequencies["af_xy"]).toFixed(4), 
                 '-', 
-                Number(gnomadFrequencies["af_tot"]).toFixed(4),
+                gnomadFrequencies["af_tot"],
             ),
             createData(
                 'Allele Frequency Popmax',
@@ -64,7 +72,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 Math.trunc(ibvlFrequencies["hom_xx"]),  
                 Math.trunc(ibvlFrequencies["hom_xy"]), 
                 '-', 
-                Math.trunc(gnomadFrequencies["hom_tot"]),
+                gnomadFrequencies["hom_tot"],
             ),
         ];
     }
@@ -94,7 +102,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                                         <TableRow>
                                             <TableCell sx={{ borderBottom: 'none' }}/>
                                             <TableCell colSpan={3} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#b3eca4', 0.25) }}>IBVL</TableCell>
-                                            <TableCell colSpan={1} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#ffbcbc', 0.25) }}>gnomAD</TableCell>
+                                            <TableCell colSpan={1} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#ffbcbc', 0.25) }}>gnomAD v4</TableCell>
                                         </TableRow>
                                         {/* BH TODO: Change the font of the headings in this table */}
                                         <TableRow>

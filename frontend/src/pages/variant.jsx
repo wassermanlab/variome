@@ -51,17 +51,15 @@ export default function Variant() {
     setLoading(true);
 
     Api.get("variant/" + varId)
-      .then(
-        ({ variant, snv, ibvlFrequencies, gnomadFrequencies, annotations }) => {
-          console.log("variant", variant);
-          setVariant(variant);
-          setVariantMetadata(snv);
-          setGnomadFrequencies(gnomadFrequencies);
-          setIbvlFrequencies(ibvlFrequencies);
-          setVariantAnnotations(annotations);
-          setLoading(false);
-        }
-      )
+      .then(({ variant, snv, ibvlFrequencies, annotations }) => {
+        console.log("variant", variant);
+        setVariant(variant);
+        setVariantMetadata(snv);
+        //          setGnomadFrequencies(gnomadFrequencies);
+        setIbvlFrequencies(ibvlFrequencies);
+        setVariantAnnotations(annotations);
+        setLoading(false);
+      })
       .catch(({ status, statusText, errors, message }) => {
         console.log("variant fetch err", message);
         if (status == 429) {
@@ -83,29 +81,55 @@ export default function Variant() {
         exome {
           ac
           an
+          homozygote_count
         }
         genome {
           ac
           an
+          homozygote_count
         }
       }
     }
     `;
 
-      fetch("https://gnomad.broadinstitute.org/api", {
-        method: "POST",
-        body: JSON.stringify({
+      //    console.log(QUERY);
+
+      var body = JSON.stringify(
+        {
           query: QUERY,
           variables: {
             variantId: variant.variant_id
           }
-        }),
+        },
+        null,
+        2
+      );
+
+      //    console.log(body);
+
+      fetch("https://gnomad.broadinstitute.org/api", {
+        method: "POST",
+        body,
         headers: {
           "Content-Type": "application/json"
         }
       })
         .then((response) => response.json())
-        .then((data) => console.log(data.data));
+        .then((data) => {
+          var variant = _.get(data, "data.variant", {});
+          console.log("variant", variant);
+          var ac_tot =
+            _.get(variant, "exome.ac", 0) + _.get(variant, "genome.ac", 0);
+          var an_tot =
+            _.get(variant, "exome.an", 0) + _.get(variant, "genome.an", 0);
+          var af_tot = ac_tot / an_tot;
+          var hom_tot =
+            _.get(variant, "exome.homozygote_count", 0) +
+            _.get(variant, "genome.homozygote_count", 0);
+
+          //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
+          setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot });
+        });
     }
   }, [variant]);
 
