@@ -156,7 +156,13 @@ export default function Home({user}) {
             }}
         >
             <Box sx={{ display: 'flex', justifyContent:'center', alignItems: 'center', p: 2, flexWrap:'wrap', gap:'30px'}}>
-                <img src="/university-logo.png" alt="Variome Logo" style={{ width: "400px" }} />
+                    
+                <Box
+                    component="img"
+                    alt="Temporary Logo"
+                    src="/temp-logo.svg"
+                    style={{ width: '200px', opacity:'0.2'  }}
+                />
                 <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     Variome
                 </Typography>
