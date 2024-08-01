@@ -34,8 +34,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('tracking/', access.tracking_dashboard, name='tracking_dashboard'),
     path('accounts/profile/', access.profile_view_redirect, name='profile'),
-    path('api/', include(api_urls)),
-    path('oauth2/', include('django_auth_adfs.urls')),
+    path('api/', include(api_urls))
 ]
 
 def redirect_to_login(request):
@@ -47,7 +46,7 @@ if settings.IS_DEVELOPMENT:
         path('', backend_home_page, name='backend_home_page'),
         path('accounts/logout', access.logout_view, name='logout')
     ]
-if not settings.IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
+if not settings.IS_DEVELOPMENT or os.getenv("AUTH_TENANT_ID", False):
     urlpatterns = urlpatterns + [
         path('', redirect_to_login, name='redirect_to_login'),
         path('accounts/login/', access.login, name='login'),
