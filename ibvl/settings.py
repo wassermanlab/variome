@@ -82,6 +82,8 @@ DEBUG = IS_DEVELOPMENT
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", DOMAIN]
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -117,13 +119,7 @@ MIDDLEWARE = [
 ]
 AUTHENTICATION_BACKENDS = []
 
-if IS_DEVELOPMENT:
-    AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
-        'django.contrib.auth.backends.ModelBackend'
-    ]
-    LOGIN_URL = "/"
-    
-if not IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
+if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
     INSTALLED_APPS.append("django_auth_adfs")
     MIDDLEWARE.append("django_auth_adfs.middleware.LoginRequiredMiddleware")
     AUTHENTICATION_BACKENDS = [
@@ -150,9 +146,18 @@ if not IS_DEVELOPMENT or os.getenv("AUTH_AZUREAD", False):
     }
     if AUTH_CA_BUNDLE:
         AUTH_ADFS["CA_BUNDLE"] = AUTH_CA_BUNDLE
-    
+
+    LOGIN_URL = "django_auth_adfs:login"
+    LOGIN_REDIRECT_URL = f"{os.getenv('URL_PREFIX')}admin/"
+
     CUSTOM_FAILED_RESPONSE_VIEW = 'ibvl.library_access.views.login_failed'
-    
+
+else:
+    AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
+        'django.contrib.auth.backends.ModelBackend'
+    ]
+    LOGIN_URL = "/"
+
 TRACK_AJAX_REQUESTS = True
 TRACK_PAGEVIEWS = True
 TRACK_ANONYMOUS_USERS = False
