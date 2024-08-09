@@ -148,7 +148,7 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
         AUTH_ADFS["CA_BUNDLE"] = AUTH_CA_BUNDLE
 
     LOGIN_URL = "django_auth_adfs:login"
-    LOGIN_REDIRECT_URL = f"{os.getenv('URL_PREFIX')}admin/"
+    LOGIN_REDIRECT_URL = f"/{os.getenv('URL_PREFIX')}admin/"
 
     CUSTOM_FAILED_RESPONSE_VIEW = 'ibvl.library_access.views.login_failed'
 
@@ -249,8 +249,10 @@ else:
     
 
 # Authentication
-CSRF_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
