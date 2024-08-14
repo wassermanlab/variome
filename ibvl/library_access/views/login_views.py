@@ -4,7 +4,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.urls import reverse
 from django.views import View
-from django.contrib.auth.views import LoginView
 from django.conf import settings
 
 
@@ -27,6 +26,5 @@ class LoginRedirectView(View):
 
     def get(self, request, *args, **kwargs):
         """redirect Logins to the url set in LOGIN_URL in settings.py"""
-        # next = request.GET.get(LoginView.redirect_field_name, "/")
         next = request.headers["referer"]
         return redirect(reverse(settings.LOGIN_URL) + f"?next={next}")
