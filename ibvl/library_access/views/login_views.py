@@ -27,5 +27,6 @@ class LoginRedirectView(View):
 
     def get(self, request, *args, **kwargs):
         """redirect Logins to the url set in LOGIN_URL in settings.py"""
-        next = request.GET.get(LoginView.redirect_field_name, reverse("/admin"))
+        # next = request.GET.get(LoginView.redirect_field_name, "/")
+        next = request.headers["referer"]
         return redirect(reverse(settings.LOGIN_URL) + f"?next={next}")

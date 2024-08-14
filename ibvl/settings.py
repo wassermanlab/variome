@@ -144,7 +144,8 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
         "TENANT_ID": AUTH_TENANT_ID,
         "RELYING_PARTY_ID": AUTH_CLIENT_ID,
         "LOGIN_EXEMPT_URLS": [
-            "api/user"
+            "api/user",
+            "accounts/login"
         ]
     }
     if AUTH_CA_BUNDLE:

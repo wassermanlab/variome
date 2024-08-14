@@ -45,6 +45,7 @@ if os.getenv("AUTH_AZUREAD", False).lower() == 'true':
     urlpatterns.extend([
         path('', redirect_to_login, name='redirect_to_login'),
         path('accounts/login/', access.LoginRedirectView.as_view(), name='login'),
+        path('accounts/logout', access.logout_view, name='logout'),
         path('oauth2/', include('django_auth_adfs.urls'))
     ])
 else:
