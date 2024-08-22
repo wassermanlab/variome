@@ -52,10 +52,10 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
   );
 
   var loginUrl = "";
-  if (_.isString(_.get(import.meta, "env.VITE_LOGIN_PATH"))) {
-    var urlObj = new URL(import.meta.env.VITE_LOGIN_PATH, config.backend_root);
-    loginUrl = urlObj.toString();
-  }
+
+  var urlObj = new URL("accounts/login", config.backend_root);
+  loginUrl = urlObj.toString();
+
   console.log("loginUrl", loginUrl);
 
 
@@ -98,7 +98,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
           </Button></>}
 
 
-        {!user && <PlainLink to={loginUrl} >
+        {!user && <PlainLink reloadDocument to={loginUrl} >
           Login
         </PlainLink>}
 
