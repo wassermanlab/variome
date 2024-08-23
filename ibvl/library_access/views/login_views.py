@@ -10,6 +10,10 @@ from django.conf import settings
 def login(request):
     return render(request, 'login.html')
 
+# for development
+def admin_login(request):
+    return redirect('/admin/login')
+
 
 def login_failed(request):
     return JsonResponse({
@@ -19,7 +23,7 @@ def login_failed(request):
 
 def logout_view(request):
     logout(request)
-    return HttpResponse('Logged out')
+    return HttpResponse(f'Logged out <br/><br/><a href="{settings.SITE_URL}">Back to Home</a>')
 
 
 class LoginRedirectView(View):

@@ -41,7 +41,7 @@ def redirect_to_login(request):
     response = redirect('accounts/login/')
     return response
 
-if os.getenv("AUTH_AZUREAD", False).lower() == 'true':
+if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
     urlpatterns.extend([
         path('', redirect_to_login, name='redirect_to_login'),
         path('accounts/login/', access.LoginRedirectView.as_view(), name='login'),
@@ -51,6 +51,6 @@ if os.getenv("AUTH_AZUREAD", False).lower() == 'true':
 else:
     urlpatterns.extend([
         path('', backend_home_page, name='backend_home_page'),
-        path('accounts/login/', access.login, name='login'),
+        path('accounts/login/', access.admin_login, name='login'),
         path('accounts/logout', access.logout_view, name='logout')
     ])
