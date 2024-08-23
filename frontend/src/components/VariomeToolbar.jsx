@@ -59,7 +59,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
   console.log("loginUrl", loginUrl);
 
 
-  return <Toolbar>
+  return <Toolbar >
     <IconButton
       aria-label="open drawer"
       onClick={() => setNavDrawerOpen(true)}
@@ -77,16 +77,15 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
       <PlainLink to="/">He Kākano</PlainLink>
     </Typography>
 
-    <FlexBox sx={{ flexGrow: "1" }}>
+    <FlexBox sx={{ flexGrow:"1" }}>
       {user && (
         <>
-          <AssemblyPicker />
-          <Search inputElementId="navigation-bar-search" variant="standard" width="200px" />
+          <AssemblyPicker sx={{flexShrink:"2"}} />
+          <Search inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw"}}/>
         </>
       )}
     </FlexBox>
-    <FlexBox>
-      <FlexBox >
+    <FlexBox sx={{ justifyContent:"end", flexGrow:"1"}}>
 
         {user && <>
           <Button id="account-menu-button"
@@ -115,7 +114,6 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
           <PlainLink to="/logout"><MenuItem onClick={closeAccountMenu}>Logout </MenuItem> </PlainLink>
         </Menu>
 
-      </FlexBox>
     </FlexBox>
   </Toolbar>
 }
