@@ -52,14 +52,14 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
   );
 
   var loginUrl = "";
-  if (_.isString(_.get(import.meta, "env.VITE_LOGIN_PATH"))) {
-    var urlObj = new URL(import.meta.env.VITE_LOGIN_PATH, config.backend_root);
-    loginUrl = urlObj.toString();
-  }
+
+  var urlObj = new URL("accounts/login", config.backend_root);
+  loginUrl = urlObj.toString();
+
   console.log("loginUrl", loginUrl);
 
 
-  return <Toolbar>
+  return <Toolbar >
     <IconButton
       aria-label="open drawer"
       onClick={() => setNavDrawerOpen(true)}
@@ -77,16 +77,15 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
       <PlainLink to="/">He Kākano</PlainLink>
     </Typography>
 
-    <FlexBox sx={{ flexGrow: "1" }}>
+    <FlexBox sx={{ flexGrow:"1" }}>
       {user && (
         <>
-          <AssemblyPicker />
-          <Search inputElementId="navigation-bar-search" variant="standard" width="200px" />
+          <AssemblyPicker sx={{flexShrink:"2"}} />
+          <Search inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw"}}/>
         </>
       )}
     </FlexBox>
-    <FlexBox>
-      <FlexBox >
+    <FlexBox sx={{ justifyContent:"end", flexGrow:"1"}}>
 
         {user && <>
           <Button id="account-menu-button"
@@ -98,7 +97,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
           </Button></>}
 
 
-        {!user && <PlainLink to={loginUrl} >
+        {!user && <PlainLink reloadDocument to={loginUrl} >
           Login
         </PlainLink>}
 
@@ -115,7 +114,6 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
           <PlainLink to="/logout"><MenuItem onClick={closeAccountMenu}>Logout </MenuItem> </PlainLink>
         </Menu>
 
-      </FlexBox>
     </FlexBox>
   </Toolbar>
 }

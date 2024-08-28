@@ -4,22 +4,18 @@ An implementation of the Wasserman Lab IBVL portal
 ## Dev Environment Setup
 1. Create an environment for the backend and activate if you did not do it yet
 ```
-cd path/to/variome-repo
-python3 -m venv variome-env
-source variome-env/bin/activate
+install rye for dependency management:
+https://rye.astral.sh/guide/installation/
+
+git clone git@github.com:wassermanlab/variome.git
+cd variome
+rye sync
 ```
 
-2. Install requirements
+2. Set up the database
 ```
-pip install -r requirements.txt
-
-```
-
-
-3. Set up the database
-```
-brew install postgresql
-brew services start postgresql 
+brew install postgresql (if necessary)
+brew services start postgresql (if necessary) 
 psql
 
 CREATE DATABASE variome;
@@ -27,13 +23,14 @@ CREATE USER variome WITH PASSWORD 'variome';
 GRANT ALL PRIVILEGES on DATABASE variome to variome;
 ```
 
-4. Set up configuration files (.env)
+3. Set up configuration files (.env)
 ```
 cp .env-sample .env
+(edit .env DB to match with your database environment, set timezone)
 
 ```
 
-5. Load the data and create a superuser account
+4. Load the data and create a superuser account
 ```
 python manage.py migrate
 python manage.py import_ibvl
@@ -41,7 +38,7 @@ python manage.py createsuperuser
 ```
 
 
-6. (for frontend) make config.json file in frontend/src/ that contains the following. Replace 8000 with the port number of the Django app, if necessary
+5. (for frontend) make config.json file in frontend/src/ that contains the following. Replace 8000 with the port number of the Django app, if necessary
 ```
 {
     "backend_url":"http://localhost:8000/api/",
@@ -52,7 +49,7 @@ python manage.py createsuperuser
 
 ## Run the Django app
 ```
-source variome-env/bin/activate
+rye sync
 python manage.py runserver
 ```
 

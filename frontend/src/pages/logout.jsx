@@ -16,16 +16,15 @@ export default function Logout({user, setUser}){
 
 
     var logoutUrl = "";
-    if (_.isString(_.get(import.meta, "env.VITE_LOGOUT_PATH"))) {
-      var urlObj = new URL(import.meta.env.VITE_LOGOUT_PATH, config.backend_root);
-      logoutUrl = urlObj.toString();
-    }
+
+    var urlObj = new URL("accounts/logout", config.backend_root);
+    logoutUrl = urlObj.toString();
 
     return (
         <div>
             <h1>Logout</h1>
             <p>Are you sure you want to logout?</p>
-            <Link to={logoutUrl} underline="none"><Button >Yes</Button></Link>
+            <Link reloadDocument to={logoutUrl} underline="none"><Button >Yes</Button></Link>
             <Link to="/" underline="none"><Button>No</Button></Link>
         </div>
     )

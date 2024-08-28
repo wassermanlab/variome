@@ -5,7 +5,7 @@ import {
 
 import React, { useState } from "react";
 
-export default function AssemblyPicker() {
+export default function AssemblyPicker({sx}) {
 
     const [assembly, setAssembly] = useState("GRCh38");
 
@@ -19,7 +19,7 @@ export default function AssemblyPicker() {
             onChange={handleChange}
             displayEmpty
             inputProps={{ "aria-label": "Select Assembly" }}
-            style={{ color: "black", marginLeft: "20px" }}
+            style={{ color: "black", marginLeft: "20px",...sx }}
         //variant="standard"
         >
             {/* TODO: Update the choices for this select once we add SV and Mt */}
