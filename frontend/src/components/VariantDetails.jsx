@@ -13,7 +13,7 @@ export default function VariantDetails({ variantMetadata, ibvlFrequencies, varia
         return null;
     }
     var alleleFrequency = "-"
-    if (_.isNumber(_.get(ibvlFrequencies, 'af_tot'))) {
+    if (!_.isNaN((Number(_.get(ibvlFrequencies, 'af_tot'))))) {
         alleleFrequency = Number(ibvlFrequencies.af_tot).toFixed(4)
     }
     const variantDetailsList = [

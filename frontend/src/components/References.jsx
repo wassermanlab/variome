@@ -5,33 +5,34 @@ import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import { OpenInNew as LinkIcon } from '@mui/icons-material';
 
 
 export default function References({variant, variantMetadata}) {
     const referencesList = variantMetadata ? [
         {
             ref: 'dbSNP',
-            val: (variantMetadata.dbsnp_id === "nan" || typeof variantMetadata.dbsnp_id == 'undefined') ? "Search dbSNP" : variantMetadata.dbsnp_id,
-            link: (variantMetadata.dbsnp_url === "nan" || typeof variantMetadata.dbsnp_url == 'undefined') ?  "https://www.ncbi.nlm.nih.gov/snp/" : variantMetadata.dbsnp_url,
+            val: _.isEmpty(variantMetadata.dbsnp_id) ? "(Search)" : variantMetadata.dbsnp_id,
+            link: _.isEmpty(variantMetadata.dbsnp_url) ?  "https://www.ncbi.nlm.nih.gov/snp/" : variantMetadata.dbsnp_url,
         },
         {
             ref: 'UCSC',
-            val: 'Search UCSC',
-            link: (variantMetadata.ucsc_url === "nan" || typeof variantMetadata.ucsc_url == 'undefined') ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ucsc_url,
+            val: _.isEmpty(variantMetadata.ucsc_url) ? 'Search UCSC': <LinkIcon/>,
+            link: _.isEmpty(variantMetadata.ucsc_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ucsc_url,
         },
         {
             ref: 'Ensembl',
-            val: 'Search Ensembl',
-            link: (variantMetadata.ensembl_url === "nan" || typeof variantMetadata.ensembl_url == 'undefined') ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ensemble_url,
+            val: _.isEmpty(variantMetadata.ensembl_url) ? '(Search)' : <LinkIcon/>,
+            link: _.isEmpty(variantMetadata.ensembl_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ensembl_url,
         },
         {
             ref: 'ClinVar',
-            val: (variantMetadata.clinvar_vcv === "nan" || typeof variantMetadata.clinvar_vcv == 'undefined') ? "Search ClinVar" : Math.trunc(variantMetadata.clinvar_vcv),
-            link: (variantMetadata.clinvar_url === "nan" || typeof variantMetadata.clinvar_url == 'undefined') ?  "https://www.ncbi.nlm.nih.gov/clinvar/" : variantMetadata.clinvar_url,
+            val: _.isEmpty(variantMetadata.clinvar_vcv) ? "(Search)" : <><LinkIcon/> {variantMetadata.clinvar_vcv}</>,
+            link: _.isEmpty(variantMetadata.clinvar_url) ?  "https://www.ncbi.nlm.nih.gov/clinvar/" : variantMetadata.clinvar_url,
         },
         {
             ref: 'gnomAD',
-            val: (variantMetadata.gnomad_url === "nan" || typeof variantMetadata.gnomad_url == 'undefined') ? "Search gnomAD" : variantMetadata.variant.variant_id,
+            val: _.isEmpty(variantMetadata.gnomad_url) ? "(Search)" : <><LinkIcon/> {variantMetadata.variant.variant_id} </>,
             link: (variantMetadata.gnomad_url === "nan" || typeof variantMetadata.gnomad_url == 'undefined') ?  "https://gnomad.broadinstitute.org/" : variantMetadata.gnomad_url,
         }
     ] : [];
@@ -48,7 +49,7 @@ export default function References({variant, variantMetadata}) {
                             </Typography>
                         </Grid>
                         {referencesList.map((item, index) => (
-                            <Grid container key={index} alignItems="center">
+                            <Grid container key={index} alignItems="center" sx={{margin:"2px"}}>
                                 <Grid item xs={3}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
                                         {item.ref}
@@ -56,7 +57,7 @@ export default function References({variant, variantMetadata}) {
                                 </Grid>
                                 <Grid item xs={9}>
                                     <Typography variant="subtitle1">
-                                        <Link color="primary" href={item.link} target="_blank">{item.val}</Link>
+                                        <Link color="primary" href={item.link} target="_blank" sx={{display:"flex", gap:"4px"}}>{item.val}</Link>
                                     </Typography>
                                 </Grid>
                             </Grid>
