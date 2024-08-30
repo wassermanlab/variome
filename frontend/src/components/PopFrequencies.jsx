@@ -57,7 +57,9 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 Number(ibvlFrequencies["af_xy"]).toFixed(4), 
                 '-', 
                 gnomadFrequencies["af_tot"],
-            ),
+            ),/*
+            // hidden because unable to determine how to format
+            // does not belong in "IBVL" columns
             createData(
                 'Allele Frequency Popmax',
                 '-', 
@@ -65,7 +67,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                 '-', 
                 '-', 
                 '-',
-            ),
+            ),*/
             createData(
                 'No. of Homozygotes',
                 Math.trunc(ibvlFrequencies["hom_tot"]), 
