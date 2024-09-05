@@ -1,239 +1,311 @@
+{% load static %}
+
 <!DOCTYPE html>
-<html>
-<head>
+<html lang="en-US">
+  <head>
     <title>Variome Tracking Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.css" integrity="sha512-t38vG/f94E72wz6pCsuuhcOPJlHKwPy+PY+n1+tJFzdte3hsIgYE7iEpgg/StngunGszVMrRfvwZinrza0vMTA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <meta charset="UTF-8" />
+    <meta name="description" content="variome analytics dashboard" />
+    <meta name="keywords" content="variome, analytics, dashboard" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.css"
+          integrity="sha512-t38vG/f94E72wz6pCsuuhcOPJlHKwPy+PY+n1+tJFzdte3hsIgYE7iEpgg/StngunGszVMrRfvwZinrza0vMTA=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
     <style>
-        body {
-            padding: 2em;
-            font-family: 'Roboto', sans-serif;
-            background-color: #f5f5f5;
-        }
-        .flex-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        #tracking-filters {
-            width: 48%;
-        }
-        .chart-container {
-            width: 48%;
-        }
-        .chart-container canvas {
-            width: 100%;
-        }
-        .clear-fix::after {
-            content: "";
-            clear: both;
-            display: table;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 3em;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        th, td {
-            padding: 1em;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #163647;
-            color: white;
-        }
-        td ul {
-            padding-left: 20px;
-        }
-        h2, h4, h5 {
-            margin: 0 0 1em 0;
-            color: #163647;
-        }
-        .btn {
-            background-color: #71A7B0;
-        }
+      body {
+        padding: 2em;
+        font-family: "Roboto", sans-serif;
+        background-color: #f5f5f5;
+      }
+      .panel {
+        width: 48%;
+      }
+      .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      #tracking-filters {
+        width: 48%;
+      }
+      .chart-container {
+        width: 48%;
+      }
+      .chart-container canvas {
+        width: 100%;
+      }
+      .clear-fix::after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 3em;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      th,
+      td {
+        padding: 1em;
+        text-align: left;
+        border: 1px solid #ddd;
+      }
+      th {
+        background-color: #163647;
+        color: white;
+      }
+      td ul {
+        padding-left: 20px;
+      }
+      h2,
+      h4,
+      h5 {
+        margin: 0 0 1em 0;
+        color: #163647;
+      }
+      .btn {
+        background-color: #71a7b0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h4>Variome Tracking Dashboard</h4>
-    <div class="flex-container">
-        <div id="tracking-filters">
-            <form method="GET">
-                <table>
-                    <tr>
-                        <th><label for="id_start">Start date:</label></th>
-                        <td><input type="date" name="start" required id="id_start" value="{{ form.start.value }}"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="id_end">End date:</label></th>
-                        <td><input type="date" name="end" required id="id_end" value="{{ form.end.value }}"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="id_variant">Variant:</label></th>
-                        <td><input type="text" name="variant" id="id_variant" value="{{ form.variant.value }}" placeholder="eg. 2-12341234-A-T"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="id_user">User:</label></th>
-                        <td>
-                            <select name="user" id="id_user" multiple >
-                                {% for user in form.user.field.queryset %}
-                                <option value="{{ user.id }}" {% if user.id|floatformat:"0" in form.user.value %}selected{% endif %}>{{ user.get_full_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                    </tr>
-                </table>
-                <button type="submit" class="btn waves-effect waves-light">Submit</button>
-            </form>
-        </div>
 
-        <div class="chart-container">
-            <canvas id="variantViewsChart"></canvas>
-        </div>
+    <div id="react-root">
+
+      <h4>React Component</h4>
     </div>
-
+    <div class="flex-container">
+      <div id="tracking-filters">
+        <form method="get">
+          <table>
+            <tr>
+              <th>
+                <label for="id_start">Start date:</label>
+              </th>
+              <td>
+                <input type="date"
+                       name="start"
+                       required
+                       id="id_start"
+                       value="{{ form.start.value }}" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_end">End date:</label>
+              </th>
+              <td>
+                <input type="date"
+                       name="end"
+                       required
+                       id="id_end"
+                       value="{{ form.end.value }}" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_variant">Variant:</label>
+              </th>
+              <td>
+                <input type="text"
+                       name="variant"
+                       id="id_variant"
+                       value="{{ form.variant.value }}"
+                       placeholder="eg. 2-12341234-A-T" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_user">User:</label>
+              </th>
+              <td>
+                <select name="user" id="id_user" multiple>
+                  {% for user in form.user.field.queryset %}
+                    {% if user.id in form.user.value %}
+                      <option value="{{ user.id }}" selected>{{ user.get_full_name }}</option>
+                    {% else %}
+                      <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </td>
+            </tr>
+          </table>
+          <button type="submit" class="btn waves-effect waves-light">Submit</button>
+        </form>
+      </div>
+      <div class="chart-container">
+        <canvas id="variantViewsChart"></canvas>
+      </div>
+    </div>
     &nbsp;
     <div class="clear-fix">
       <h5>Variant Views</h5>
       <table>
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>View Time</th>
+            <th>User</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pageview in variant_pageviews %}
+            <tr>
+              <td>
+                <a href="{{ pageview.variant_url }}" target="_blank">{{ pageview.variant }}</a>
+              </td>
+              <td>{{ pageview.view_time }}</td>
+              <td>
+                <ul>
+                  <li>{{ pageview.visitor.user.get_full_name }}</li>
+                </ul>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-container clear-fix">
+      <canvas id="lineGraphChart"></canvas>
+    </div>
+    <div class="flex-container">
+      <div class="panel">
+        <h5>User Details</h5>
+        <table>
           <thead>
-              <tr>
-                  <th>Variant</th>
-                  <th>View Time</th>
-                  <th>User</th>
-              </tr>
+            <tr>
+              <th>User</th>
+              <th># Unique Views</th>
+              <th># Views in 24h</th>
+              <th>Avg. Time on Site</th>
+            </tr>
           </thead>
           <tbody>
-              {% for pageview in variant_pageviews %}
+            {% for stat in user_stats %}
               <tr>
-                  <td><a href="{{ pageview.variant_url }}" target="_blank">{{ pageview.variant }}</a></td>
-                  <td>{{ pageview.view_time }}</td>
-                  <td>
-                      <ul>
-                          <li>{{ pageview.visitor.user.get_full_name }}</li>
-                      </ul>
-                  </td>
+                <td>{{ stat.user.get_full_name }}</td>
+                <td>{{ stat.page_views_unique }}</td>
+                <td>{{ stat.24_hrs }}</td>
+                <td>{{ stat.time_on_site }}</td>
               </tr>
-              {% endfor %}
+            {% endfor %}
           </tbody>
-      </table>
-  </div>
-  
-    <div class="chart-container clear-fix">
-        <canvas id="lineGraphChart"></canvas>
+        </table>
+      </div>
+      <div class="panel">
+        <h5>Variant Details</h5>
+        <table>
+          <thead>
+            <tr>
+              <th>Variant</th>
+              <th>Users</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for detail in variant_access_details|dictsort:"user_count"|slice:":-1" %}
+              <tr>
+                <td>{{ detail.name }}</td>
+                <td>
+                  <ul>
+                    <li>
+                      {{ detail.user_count }} Users:
+                      <span style="cursor: pointer" title="Hover for more info">ⓘ
+                        <ul>
+                          {% for user in detail.users %}<li>{{ user.get_full_name }} ({{ user.email }})</li>{% endfor %}
+                        </ul>
+                      </span>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-
-    <div class="flex-container">
-        <div style="width: 48%;">
-            <h5>User Details</h5>
-            <table>
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th># Unique Views</th>
-                        <th># Views in 24h</th>
-                        <th>Avg. Time on Site</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in user_stats %}
-                    <tr>
-                        <td>{{ stat.user.get_full_name }}</td>
-                        <td>{{ stat.page_views_unique }}</td>
-                        <td>{{ stat.24_hrs}}</td>
-                        <td>{{ stat.time_on_site }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div style="width: 48%;">
-            <h5>Variant Details</h5>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Variant</th>
-                        <th>Users</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for detail in variant_access_details|dictsort:"user_count"|slice:":-1" %}
-                    <tr>
-                        <td>{{ detail.name }}</td>
-                        <td>
-                            <ul>
-                                <li>{{ detail.user_count }} Users:
-                                    <span style="cursor: pointer;" title="Hover for more info">ⓘ
-                                        <ul>
-                                            {% for user in detail.users %}
-                                            <li>{{ user.get_full_name }} ({{ user.email }})</li>
-                                            {% endfor %}
-                                        </ul>
-                                    </span>
-                                </li>
-                            </ul>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js" integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js"
+            integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            M.AutoInit();
-        });
+      document.addEventListener("DOMContentLoaded", function () {
+        M.AutoInit();
+      });
     </script>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const variantViewsCtx = document.getElementById('variantViewsChart').getContext('2d');
-            const lineGraphCtx = document.getElementById('lineGraphChart').getContext('2d');
+      document.addEventListener("DOMContentLoaded", function () {
+        const variantViewsCtx = document
+          .getElementById("variantViewsChart")
+          .getContext("2d");
+        const lineGraphCtx = document
+          .getElementById("lineGraphChart")
+          .getContext("2d");
 
-            const userLabels = JSON.parse('{{ user_labels|escapejs }}');
-            const timeOnSiteData = JSON.parse('{{ time_on_site_data|escapejs }}');
-            const variantsQueriedData = JSON.parse('{{ variants_queried_data|escapejs }}');
+        const userLabels = JSON.parse("{{ user_labels|escapejs }}");
+        const timeOnSiteData = JSON.parse("{{ time_on_site_data|escapejs }}");
+        const variantsQueriedData = JSON.parse(
+          "{{ variants_queried_data|escapejs }}"
+        );
 
-            const chartOptions = {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                }
-            };
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom"
+            }
+          }
+        };
 
-            const variantViewsChart = new Chart(variantViewsCtx, {
-                type: 'bar',
-                data: {
-                    labels: userLabels,
-                    datasets: [{
-                        label: '# Variant Views',
-                        data: variantsQueriedData,
-                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: chartOptions
-            });
-
+        const variantViewsChart = new Chart(variantViewsCtx, {
+          type: "bar",
+          data: {
+            labels: userLabels,
+            datasets: [
+              {
+                label: "# Variant Views",
+                data: variantsQueriedData,
+                backgroundColor: "rgba(153, 102, 255, 0.2)",
+                borderColor: "rgba(153, 102, 255, 1)",
+                borderWidth: 1
+              }
+            ]
+          },
+          options: chartOptions
         });
+      });
     </script>
-</body>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js" integrity="sha512-YFI6ChaPQ5hH9o8Q4n5ZzDHrhrwZ3dhgZSQ2JC/pgmYuD0QtG0iwQgfFa1J+o4jvklsKBupcHz5Tx1yqa25FFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.development.min.js" integrity="sha512-aTIGujEp0xIZSXrXXFjXL3YiozmMRYjKmll3rLYTmUIGaaidsrQNn+ii04E+VwlpIUNZOF3UBoXRmNQBEdD/qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.js" integrity="sha512-o6Cj+KIaXQJQdNiWDdqOGJOQzVXeWnvZFabeQNpX8z2wRxb54vrS1ixEA8XW5psUqw4C71v1fmXch1K9AeIPPQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- prod deps -->
+    <!--
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" integrity="sha512-QVs8Lo43F9lSuBykadDb0oSXDL/BbZ588urWVCRwSIoewQv/Ewg1f84mK3U790bZ0FfhFa1YSQUmIhG+pIRKeg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" integrity="sha512-6a1107rTlA4gYpgHAqbwLAtxmWipBdJFcq8y5S/aTge3Bp+VAklABm2LO+Kg51vOWR9JMZq1Ovjl5tpluNpTeQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js" integrity="sha512-8M1WWEzuftS49rfh63fHz354qx+Pzvp3kcQVVTOxIdFSzjYC3I3vk5zgN0guAook97MQIZTfEdl9pUQTov9V6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    -->
+
+    <script type="text/babel" src="{% static 'tracking_dashboard.js' %}" ></script>
+
+    <script type="text/babel">
+      ReactDOM.createRoot(document.getElementById('react-root')).render(<TrackingDashboard />);
+    </script>
+
+
+  </body>
 </html>

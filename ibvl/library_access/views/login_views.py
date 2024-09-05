@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views import View
 from django.conf import settings
 
-
+# unused? verify
 def login(request):
     return render(request, 'login.html')
 
