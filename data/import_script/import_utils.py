@@ -73,6 +73,7 @@ def log_output(s):
     output_logger.info(s)
     if (verbose):
         print(s)
+    return s
 
 
 def report_counts(counts):
@@ -83,7 +84,7 @@ def report_counts(counts):
             * counts["success"]
             / (counts["success"] + counts["fail"])
         )
-    log_output(
+    return log_output(
         str(percent_success)
         + "% success. Count: "
         + str(counts["success"])

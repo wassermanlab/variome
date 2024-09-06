@@ -591,6 +591,9 @@ def start(db_engine):
             log_output("\nmodels left still: " + str(leftover_models) + "\n")
         
         persist_and_unload_maps()
-    log_output("finished importing IBVL. Time Taken: " + str(datetime.now() - now))
-    report_counts(counts)
+    final_log = log_output("finished importing IBVL. Time Taken: " + str(datetime.now() - now))
+    final_result = report_counts(counts)
+    print(final_log)
+    print(final_result)
+    
     cleanup(None, None)
