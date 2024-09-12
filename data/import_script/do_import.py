@@ -86,7 +86,8 @@ model_import_actions = {
         "fk_map": {"DO_COMPOUND_FK": "for variants_transcripts"},
         "filters":{
             "hgvsp": lambda x: x.replace("%3D","=") if x is not None else None
-        }
+        },
+        "include": lambda obj: obj["transcript"] is not None
     },
 #    "severities":{
 #        "name":"severities",
@@ -137,13 +138,15 @@ model_import_actions = {
         "name": "genomic_variome_frequencies",
         "table":"library_genomicvariomefrequency",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
+        "fk_map": {"variant": "variants"},
+        "fill_na": 0
     },
     "genomic_gnomad_frequencies": {
         "name": "genomic_gnomad_frequencies",
         "table": "library_genomicgnomadfrequency",
         "pk_lookup_col": None,
-        "fk_map": {"variant": "variants"}
+        "fk_map": {"variant": "variants"},
+        "fill_na": 0
     },
     # "mt_ibvl_frequencies": {
     #     "name": "mt_ibvl_frequencies",
@@ -245,7 +248,7 @@ def inject(model, data, map_key):
 #                                quit() # LATER: comment this out?
     return pk
 
-def import_file(file, file_info, action_info):
+def import_file(file, file_info, action_info, include_fn, fill_na=None):
     name = action_info.get("name")
     fk_map = action_info.get("fk_map")
     pk_lookup_col = action_info.get("pk_lookup_col")
@@ -266,6 +269,9 @@ def import_file(file, file_info, action_info):
             pass
 
     df = readTSV(file, file_info, dtype=types_dict)
+    if fill_na is not None:
+        df.fillna(fill_na, inplace=True)
+    
     df.replace(np.nan, None, inplace=True)
     
     data_list = []
@@ -275,6 +281,8 @@ def import_file(file, file_info, action_info):
         data["id"] = pk
 
         skip = False
+        if not include_fn(row):
+            continue
         for col, filter in filters.items():
             data[col] = filter(data[col])
         for fk_col, fk_model in fk_map.items():
@@ -286,7 +294,10 @@ def import_file(file, file_info, action_info):
                 debug_row = data.copy()
                 v_id = resolve_PK("variants", data["variant"])
                 t_id = resolve_PK("transcripts", data["transcript"])
-                map_key = "-".join([str(t_id), str(v_id)])
+                if v_id is None or t_id is None:
+                    map_key = None
+                else:
+                    map_key = "-".join([str(t_id), str(v_id)])
                 del data["variant"]
                 del data["transcript"]
                 resolved_pk = resolve_PK("variants_transcripts", map_key)
@@ -322,18 +333,22 @@ def import_file(file, file_info, action_info):
             if resolved_pk is not None:
                 data[fk_col] = resolved_pk
             else:
-                log_data_issue(
-                    "Missing "
-                    + fk_col if fk_col is not None else "None"
-                    + " "
-                    + map_key if map_key is not None else "None"
-                    + " referenced from "
-                    + name if name is not None else "None"
-                )
-                if (debug_row is not None):
-                    log_data_issue(debug_row)
-                else:
-                    log_data_issue(data)
+                
+                if map_key is not None:
+                    if map_key == "None-72":
+                        print(1)
+                    log_data_issue(
+                        "Missing "
+                        + (fk_col if fk_col is not None else "None")
+                        + " "
+                        + map_key
+                        + " referenced from "
+                        + (name if name is not None else "None")
+                    )
+                    if (debug_row is not None):
+                        log_data_issue(debug_row)
+                    else:
+                        log_data_issue(data)
                 missingRefCount += 1
                 skip = True
         if skip:
@@ -500,6 +515,10 @@ def start(db_engine):
         model_counts["fail_chunks"] = 0
         model_directory =os.path.join( rootDir, modelName)
 
+        include = lambda x: True
+        
+        if action_info.get("include"):
+            include = action_info.get("include")
 
         if isinstance(start_at_model, str) and modelName != start_at_model and not arrived_at_start_model:
             log_output("Skipping " + modelName +", until "+start_at_model)
@@ -568,6 +587,8 @@ def start(db_engine):
                     targetFile,
                     file_info,
                     action_info,
+                    include_fn = include,
+                    fill_na = action_info.get("fill_na")
                 )
                 if results["success"] == 0:
                     log_output("No rows were imported.")

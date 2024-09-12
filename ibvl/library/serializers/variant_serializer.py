@@ -10,5 +10,5 @@ class VariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Variant
         fields = [
-            "id", "variant_id", "var_type"
+            "id", "variant_id", "var_type", "filter"
         ]
