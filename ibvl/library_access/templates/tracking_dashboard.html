@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
@@ -26,39 +25,45 @@
         flex-wrap: wrap;
         justify-content: space-between;
       }
-      #tracking-filters {
-        width: 48%;
-      }
-      .chart-container {
-        width: 48%;
-      }
       .chart-container canvas {
         width: 100%;
       }
-      .clear-fix::after {
-        content: "";
-        clear: both;
-        display: table;
-      }
-      table {
+      .filters table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 3em;
         background-color: #ffffff;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
-      th,
+      .filters th,
       td {
         padding: 1em;
         text-align: left;
         border: 1px solid #ddd;
       }
-      th {
+      .filters th {
         background-color: #163647;
         color: white;
       }
-      td ul {
+      .filters td ul {
         padding-left: 20px;
+      }
+      .views-table {
+        height:100%;
+        border: 1px solid lime;
+        overflow-y:scroll;
+      }
+      .views-table .row {
+        height:1em;
+        background:white;
+        margin:0;
+        padding:0;
+        display:flex;
+        justify-content: end;
+        gap: 1em;
+      }
+      .views-table .row:hover {
+        background:grey;
       }
       h2,
       h4,
@@ -73,13 +78,11 @@
   </head>
   <body>
     <h4>Variome Tracking Dashboard</h4>
-
     <div id="react-root">
-
       <h4>React Component</h4>
     </div>
-    <div class="flex-container">
-      <div id="tracking-filters">
+    <div class="flex">
+      <div name="tracking-filters" class="filters panel">
         <form method="get">
           <table>
             <tr>
@@ -138,39 +141,27 @@
           <button type="submit" class="btn waves-effect waves-light">Submit</button>
         </form>
       </div>
-      <div class="chart-container">
-        <canvas id="variantViewsChart"></canvas>
+      <div class="views-table panel">
+        <h5>Variant Views</h5>
+        <div>
+          <div></div>
+          <ul style="display:flex; flex-direction:column;">
+            {% for pageview in variant_pageviews %}
+              <li class="row">
+                <div>
+                  <a href="{{ pageview.variant_url }}_asdf" target="_blank">{{ pageview.variant }}</a>
+                </div>
+                <div>{{ pageview.view_time }}</div>
+                <div>{{ pageview.visitor.user.get_full_name }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
       </div>
     </div>
     &nbsp;
-    <div class="clear-fix">
-      <h5>Variant Views</h5>
-      <table>
-        <thead>
-          <tr>
-            <th>Variant</th>
-            <th>View Time</th>
-            <th>User</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for pageview in variant_pageviews %}
-            <tr>
-              <td>
-                <a href="{{ pageview.variant_url }}" target="_blank">{{ pageview.variant }}</a>
-              </td>
-              <td>{{ pageview.view_time }}</td>
-              <td>
-                <ul>
-                  <li>{{ pageview.visitor.user.get_full_name }}</li>
-                </ul>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="chart-container clear-fix">
+    <div class="chart-container" style="border:1px solid red;">
+      chart here
       <canvas id="lineGraphChart"></canvas>
     </div>
     <div class="flex-container">
@@ -186,8 +177,8 @@
             </tr>
           </thead>
           <tbody>
-            {% for stat in user_stats %}
-              <tr>
+            {% for stat in data.user_stats %}
+              <tr>stat
                 <td>{{ stat.user.get_full_name }}</td>
                 <td>{{ stat.page_views_unique }}</td>
                 <td>{{ stat.24_hrs }}</td>
@@ -228,84 +219,86 @@
         </table>
       </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js"
-            integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        M.AutoInit();
-      });
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js" integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q==" crossorigin="anonymous" referrerpolicy="no-referrer">
     </script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+M.AutoInit();
+});
+    </script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const variantViewsCtx = document
-          .getElementById("variantViewsChart")
-          .getContext("2d");
         const lineGraphCtx = document
           .getElementById("lineGraphChart")
           .getContext("2d");
 
-        const userLabels = JSON.parse("{{ user_labels|escapejs }}");
-        const timeOnSiteData = JSON.parse("{{ time_on_site_data|escapejs }}");
         const variantsQueriedData = JSON.parse(
           "{{ variants_queried_data|escapejs }}"
         );
 
-        const chartOptions = {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          },
-          plugins: {
-            legend: {
-              display: true,
-              position: "bottom"
-            }
-          }
-        };
-
-        const variantViewsChart = new Chart(variantViewsCtx, {
-          type: "bar",
+        const variantViewsChart = new Chart(lineGraphCtx, {
+          type: "line",
           data: {
-            labels: userLabels,
             datasets: [
               {
-                label: "# Variant Views",
+//                label: "# Variant Views",
                 data: variantsQueriedData,
-                backgroundColor: "rgba(153, 102, 255, 0.2)",
+//                backgroundColor: "rgba(153, 102, 255, 0.2)",
                 borderColor: "rgba(153, 102, 255, 1)",
                 borderWidth: 1
               }
             ]
           },
-          options: chartOptions
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: "bottom"
+              }
+            }
+          }
         });
       });
     </script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js" integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js" integrity="sha512-YFI6ChaPQ5hH9o8Q4n5ZzDHrhrwZ3dhgZSQ2JC/pgmYuD0QtG0iwQgfFa1J+o4jvklsKBupcHz5Tx1yqa25FFQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.development.min.js" integrity="sha512-aTIGujEp0xIZSXrXXFjXL3YiozmMRYjKmll3rLYTmUIGaaidsrQNn+ii04E+VwlpIUNZOF3UBoXRmNQBEdD/qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.js" integrity="sha512-o6Cj+KIaXQJQdNiWDdqOGJOQzVXeWnvZFabeQNpX8z2wRxb54vrS1ixEA8XW5psUqw4C71v1fmXch1K9AeIPPQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
+            integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js"
+            integrity="sha512-YFI6ChaPQ5hH9o8Q4n5ZzDHrhrwZ3dhgZSQ2JC/pgmYuD0QtG0iwQgfFa1J+o4jvklsKBupcHz5Tx1yqa25FFQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.development.min.js"
+            integrity="sha512-aTIGujEp0xIZSXrXXFjXL3YiozmMRYjKmll3rLYTmUIGaaidsrQNn+ii04E+VwlpIUNZOF3UBoXRmNQBEdD/qQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.js"
+            integrity="sha512-o6Cj+KIaXQJQdNiWDdqOGJOQzVXeWnvZFabeQNpX8z2wRxb54vrS1ixEA8XW5psUqw4C71v1fmXch1K9AeIPPQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
     <!-- prod deps -->
     <!--
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" integrity="sha512-QVs8Lo43F9lSuBykadDb0oSXDL/BbZ588urWVCRwSIoewQv/Ewg1f84mK3U790bZ0FfhFa1YSQUmIhG+pIRKeg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" integrity="sha512-6a1107rTlA4gYpgHAqbwLAtxmWipBdJFcq8y5S/aTge3Bp+VAklABm2LO+Kg51vOWR9JMZq1Ovjl5tpluNpTeQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js" integrity="sha512-8M1WWEzuftS49rfh63fHz354qx+Pzvp3kcQVVTOxIdFSzjYC3I3vk5zgN0guAook97MQIZTfEdl9pUQTov9V6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    -->
-
-    <script type="text/babel" src="{% static 'tracking_dashboard.js' %}" ></script>
-
-    <script type="text/babel">
-      ReactDOM.createRoot(document.getElementById('react-root')).render(<TrackingDashboard />);
+-->
+    <script type="text/javascript">
+      const trackingData = {{data|safe}};
+      console.log("tracking data", trackingData);
     </script>
-
-
+    <script type="text/babel" src="{% static 'tracking_dashboard.js' %}"></script>
+    <script type="text/babel">
+      {% verbatim %}
+      ReactDOM.createRoot(document.getElementById('react-root')).render(<TrackingDashboard initialdata={trackingData} />);
+      {% endverbatim %}
+    </script>
   </body>
 </html>

@@ -5,8 +5,11 @@ import { useState } from "react";
 const useState = React.useState;
 
 
-function TrackingDashboard() {
-  const [data, setData] = useState("hello");
+function TrackingDashboard({initialdata}) {
+  const [data, setData] = useState(initialdata);
+  
 
-  return <div>Tracking Dashboard (react {data})</div>;
+  return <div>Tracking Dashboard (react)
+    <pre>{JSON.stringify(data, null, 2)}</pre>
+  </div>;
 }

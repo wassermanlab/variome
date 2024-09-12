@@ -9,6 +9,8 @@ from tracking.models import Visitor, Pageview
 from tracking.settings import TRACK_PAGEVIEWS
 from ibvl.library.models import Variant
 from ibvl.library_access.models import LibraryUser
+
+
 import json
 
 log = logging.getLogger(__file__)
@@ -27,7 +29,7 @@ class DashboardForm(forms.Form):
 
 @permission_required('library_access.view_tracking_dashboard')
 def tracking_dashboard(request):
-    "Counts, aggregations and more!"
+    "Filterable Variant Views, User Details, Variant Details"
     end_time = now()
     start_time = end_time - timedelta(days=7)
     defaults = {
@@ -66,17 +68,15 @@ def tracking_dashboard(request):
 #    user_stats = [u for u in user_stats if u.user in selected_users]
 
     enriched_user_stats = []
-    for user_stat in user_stats:
-        user = user_stat
+    for user in user_stats:
         UserHitsInTimeFrame = Pageview.objects.filter(visitor__user=user, view_time__gte=start_time)
-        time_on_site = user_stat.time_on_site
         page_views_unique = UserHitsInTimeFrame.values('url').distinct().count()
 
         enriched_user_stats.append({
-            'user': user,
+            'user': user.get_full_name(),
             'page_views_unique': page_views_unique,
             '24_hrs': user.profile.access_count,
-            'time_on_site': time_on_site,
+            'time_on_site': user.time_on_site.seconds,
         })
 
     variant_access_details = []
@@ -99,21 +99,33 @@ def tracking_dashboard(request):
     variant_access_details.sort(key=lambda x: x['user_count'], reverse=True)
 
     # Prepare data for charts
-    user_labels = json.dumps([stat['user'].get_full_name() for stat in enriched_user_stats])
     
-    timedeltas = [stat['time_on_site'].total_seconds() for stat in enriched_user_stats]
-    print("timedeltas", timedeltas)
-    time_on_site_data = json.dumps(timedeltas)
     variants_queried_data = json.dumps([stat['page_views_unique'] for stat in enriched_user_stats])
+    
+    the_page_views = []
+    
+    for pageview in variant_pageviews:
+        the_page_views.append({
+            'time': pageview.view_time.isoformat(),
+            'user': pageview.visitor.user.get_full_name(),
+#            'variant': pageview['variant'],
+            'variant_url': pageview.variant_url
+        })
+    
+    
 
     context = {
         'form': form,
+        'data':json.dumps({
+            'user_details':enriched_user_stats,
+            'variant_pageviews': the_page_views,
+            'warning': None,
+            'variant_access_details': variant_access_details,
+            }),
         'variant_pageviews': variant_pageviews,
         'warning': None,
         'user_stats': enriched_user_stats,
         'variant_access_details': variant_access_details,
-        'user_labels': user_labels,
-        'time_on_site_data': time_on_site_data,
         'variants_queried_data': variants_queried_data,
         
     }
