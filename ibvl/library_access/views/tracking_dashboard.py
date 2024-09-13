@@ -38,6 +38,10 @@ def tracking_dashboard(request):
         'user': None,
         'variant': ''
         }
+    
+    def variant_from_url(url):
+        id = url.split('/')[-1]
+        return Variant.objects.filter(id=id).first()
 
     form = DashboardForm(data=request.GET or defaults)
     if form.is_valid():
@@ -52,16 +56,6 @@ def tracking_dashboard(request):
     target_variant_name = form.cleaned_data['variant']
     target_variant_id = Variant.objects.filter(variant_id=target_variant_name).first().id if target_variant_name else None
     variant_filter = {'url__endswith': f'variant/{target_variant_id}'} if target_variant_id else {'url__contains': 'api/variant'}
-    
-    variant_pageviews = Pageview.objects.filter(
-        view_time__range=(start_time, end_time), 
-        **variant_filter,
-        visitor__user__in=selected_users).order_by('-view_time')
-    
-    for pageview in variant_pageviews:
-        id = pageview.url.split('/')[-1]
-        pageview.variant = Variant.objects.get(id=id).variant_id
-        pageview.variant_url = f"{settings.SITE_URL}/variant/{id}"
 
     user_stats = Visitor.objects.user_stats(start_time, end_time)
     user_stats = [u for u in user_stats if u in selected_users]
@@ -80,54 +74,62 @@ def tracking_dashboard(request):
         })
 
     variant_access_details = []
-    variants = Pageview.objects.filter(**variant_filter).values('url')
+    variant_urls = Pageview.objects.filter(**variant_filter).values('url').distinct()
     # stephanie TODO: please make this variants list unique by url 
     # as a result, every variant_name should appear only once in the variant access details list)
-    for variant in variants:
-        variant_id = variant['url'].split('/')[-1]
-        variant_name = Variant.objects.get(id=variant_id).variant_id
-        user_list = Pageview.objects.filter(url=variant['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email').order_by('visitor__user__email').distinct('visitor__user__email')
-        #print("user_list", user_list)
-        user_count = user_list.count()
-        users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email']} for u in user_list]
+    for variant_url in variant_urls:
+        
+        variant = variant_from_url(variant_url['url'])
+        
+        if variant:
+            variant_name = variant.variant_id
+            user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email').order_by('visitor__user__email').distinct('visitor__user__email')
+            user_count = user_list.count()
+            users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email']} for u in user_list]
 
-        variant_access_details.append({
-            'name': variant_name,
-            'user_count': user_count,
-            'users': users
-        })
+            variant_access_details.append({
+                'name': variant_name,
+                'user_count': user_count,
+                'users': users
+            })
+            
+            print("variant_name", variant_name)
+            print("user_list", user_list)
     variant_access_details.sort(key=lambda x: x['user_count'], reverse=True)
 
     # Prepare data for charts
     
-    variants_queried_data = json.dumps([stat['page_views_unique'] for stat in enriched_user_stats])
-    
     the_page_views = []
+        
     
-    for pageview in variant_pageviews:
+    for pageview in Pageview.objects.filter(
+                view_time__range=(start_time, end_time), 
+                **variant_filter,
+                visitor__user__in=selected_users).order_by('-view_time'):
+        
+        variant = variant_from_url(pageview.url)
+        if variant:
+            pageview.variant = variant.variant_id
+            pageview.variant_url = f"{settings.SITE_URL}/variant/{variant.id}"
+        else:
+            pageview.variant = "Unknown"
+            pageview.variant_url = "Unknown"
+            
         the_page_views.append({
             'time': pageview.view_time.isoformat(),
             'user': pageview.visitor.user.get_full_name(),
 #            'variant': pageview['variant'],
             'variant_url': pageview.variant_url
         })
-    
-    
 
     context = {
         'form': form,
         'data':json.dumps({
-            'user_details':enriched_user_stats,
-            'variant_pageviews': the_page_views,
+            'user_details':enriched_user_stats[0:4],
+            'variant_pageviews': the_page_views[0:4],
             'warning': None,
-            'variant_access_details': variant_access_details,
-            }),
-        'variant_pageviews': variant_pageviews,
-        'warning': None,
-        'user_stats': enriched_user_stats,
-        'variant_access_details': variant_access_details,
-        'variants_queried_data': variants_queried_data,
-        
+            'variant_access_details': variant_access_details[0:4],
+            })
     }
 
     return render(request, 'tracking_dashboard.html', context)

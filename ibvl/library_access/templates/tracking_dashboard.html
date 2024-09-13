@@ -13,14 +13,14 @@
           referrerpolicy="no-referrer" />
     <style>
       body {
-        padding: 2em;
+        padding: 0.5em;
         font-family: "Roboto", sans-serif;
         background-color: #f5f5f5;
       }
       .panel {
         width: 48%;
       }
-      .flex-container {
+      .flex {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -30,6 +30,7 @@
       }
       .filters table {
         width: 100%;
+        height: 100%;
         border-collapse: collapse;
         margin-bottom: 3em;
         background-color: #ffffff;
@@ -77,173 +78,28 @@
     </style>
   </head>
   <body>
-    <h4>Variome Tracking Dashboard</h4>
     <div id="react-root">
       <h4>React Component</h4>
-    </div>
-    <div class="flex">
-      <div name="tracking-filters" class="filters panel">
-        <form method="get">
-          <table>
-            <tr>
-              <th>
-                <label for="id_start">Start date:</label>
-              </th>
-              <td>
-                <input type="date"
-                       name="start"
-                       required
-                       id="id_start"
-                       value="{{ form.start.value }}" />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <label for="id_end">End date:</label>
-              </th>
-              <td>
-                <input type="date"
-                       name="end"
-                       required
-                       id="id_end"
-                       value="{{ form.end.value }}" />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <label for="id_variant">Variant:</label>
-              </th>
-              <td>
-                <input type="text"
-                       name="variant"
-                       id="id_variant"
-                       value="{{ form.variant.value }}"
-                       placeholder="eg. 2-12341234-A-T" />
-              </td>
-            </tr>
-            <tr>
-              <th>
-                <label for="id_user">User:</label>
-              </th>
-              <td>
-                <select name="user" id="id_user" multiple>
-                  {% for user in form.user.field.queryset %}
-                    {% if user.id in form.user.value %}
-                      <option value="{{ user.id }}" selected>{{ user.get_full_name }}</option>
-                    {% else %}
-                      <option value="{{ user.id }}">{{ user.get_full_name }}</option>
-                    {% endif %}
-                  {% endfor %}
-                </select>
-              </td>
-            </tr>
-          </table>
-          <button type="submit" class="btn waves-effect waves-light">Submit</button>
-        </form>
-      </div>
-      <div class="views-table panel">
-        <h5>Variant Views</h5>
-        <div>
-          <div></div>
-          <ul style="display:flex; flex-direction:column;">
-            {% for pageview in variant_pageviews %}
-              <li class="row">
-                <div>
-                  <a href="{{ pageview.variant_url }}_asdf" target="_blank">{{ pageview.variant }}</a>
-                </div>
-                <div>{{ pageview.view_time }}</div>
-                <div>{{ pageview.visitor.user.get_full_name }}</div>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </div>
-    &nbsp;
-    <div class="chart-container" style="border:1px solid red;">
-      chart here
-      <canvas id="lineGraphChart"></canvas>
-    </div>
-    <div class="flex-container">
-      <div class="panel">
-        <h5>User Details</h5>
-        <table>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th># Unique Views</th>
-              <th># Views in 24h</th>
-              <th>Avg. Time on Site</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for stat in data.user_stats %}
-              <tr>stat
-                <td>{{ stat.user.get_full_name }}</td>
-                <td>{{ stat.page_views_unique }}</td>
-                <td>{{ stat.24_hrs }}</td>
-                <td>{{ stat.time_on_site }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h5>Variant Details</h5>
-        <table>
-          <thead>
-            <tr>
-              <th>Variant</th>
-              <th>Users</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for detail in variant_access_details|dictsort:"user_count"|slice:":-1" %}
-              <tr>
-                <td>{{ detail.name }}</td>
-                <td>
-                  <ul>
-                    <li>
-                      {{ detail.user_count }} Users:
-                      <span style="cursor: pointer" title="Hover for more info">ⓘ
-                        <ul>
-                          {% for user in detail.users %}<li>{{ user.get_full_name }} ({{ user.email }})</li>{% endfor %}
-                        </ul>
-                      </span>
-                    </li>
-                  </ul>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js" integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q==" crossorigin="anonymous" referrerpolicy="no-referrer">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-M.AutoInit();
-});
-    </script>
+    
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        M.AutoInit();
+
         const lineGraphCtx = document
           .getElementById("lineGraphChart")
           .getContext("2d");
-
-        const variantsQueriedData = JSON.parse(
-          "{{ variants_queried_data|escapejs }}"
-        );
 
         const variantViewsChart = new Chart(lineGraphCtx, {
           type: "line",
           data: {
             datasets: [
               {
-//                label: "# Variant Views",
-                data: variantsQueriedData,
+                label: "# Variant Views",
+                data: [1,2,3,4],
 //                backgroundColor: "rgba(153, 102, 255, 0.2)",
                 borderColor: "rgba(153, 102, 255, 1)",
                 borderWidth: 1
@@ -272,6 +128,8 @@ M.AutoInit();
             integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
+
+    <!-- dev deps -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js"
             integrity="sha512-YFI6ChaPQ5hH9o8Q4n5ZzDHrhrwZ3dhgZSQ2JC/pgmYuD0QtG0iwQgfFa1J+o4jvklsKBupcHz5Tx1yqa25FFQ=="
             crossorigin="anonymous"
@@ -296,8 +154,85 @@ M.AutoInit();
     </script>
     <script type="text/babel" src="{% static 'tracking_dashboard.js' %}"></script>
     <script type="text/babel">
+      
+      const formStartValue = "{{ form.start.value }}";
+      const formEndValue = "{{ form.end.value }}";
+      const formVariantValue = "{{ form.variant.value }}";
+
+
+
       {% verbatim %}
-      ReactDOM.createRoot(document.getElementById('react-root')).render(<TrackingDashboard initialdata={trackingData} />);
+      var trackingDashboardMarkup = <>
+      
+        <h4>Variome Tracking Dashboard</h4>
+        <div class="flex" style={{height:"400px"}}>
+          <div name="tracking-filters" class="filters panel">
+            <form method="get">
+              <table>
+                <tr>
+                  <th>
+                    <label for="id_start">Start date:</label>
+                  </th>
+                  <td>
+                    <input type="date"
+                          name="start"
+                          required
+                          id="id_start"
+                          value={ formStartValue }
+                          onChange={(data) => {
+                            console.log("on change",data);
+                          }} />
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <label for="id_end">End date:</label>
+                  </th>
+                  <td>
+                    <input type="date"
+                          name="end"
+                          required
+                          id="id_end"
+                          value="{{ form.end.value }}" />
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <label for="id_variant">Variant:</label>
+                  </th>
+                  <td>
+                    <input type="text"
+                          name="variant"
+                          id="id_variant"
+                          value="{{ form.variant.value }}"
+                          placeholder="eg. 2-12341234-A-T" />
+                  </td>
+                </tr>
+                <tr>
+                  <th>
+                    <label for="id_user">User:</label>
+                  </th>
+
+                  {/*} paste td here {*/}
+                </tr>
+              </table>
+              <button type="submit" class="btn waves-effect waves-light">Submit</button>
+            </form>
+          </div>
+          <VariantViews/>
+        </div>
+        &nbsp;
+        <div className="chart-container" style={{ border: "1px solid red" }}>
+          <canvas id="lineGraphChart"></canvas>
+        </div>
+        <div class="flex">
+          <UserDetails />
+          <VariantDetails />
+        </div>
+      </>
+      ReactDOM.createRoot(document.getElementById('react-root'))
+        .render(trackingDashboardMarkup);
+//        .render(<TrackingDashboard initialdata={trackingData} />);
       {% endverbatim %}
     </script>
   </body>
