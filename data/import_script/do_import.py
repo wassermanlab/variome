@@ -269,6 +269,8 @@ def import_file(file, file_info, action_info, include_fn, fill_na=None):
             pass
 
     df = readTSV(file, file_info, dtype=types_dict)
+    
+    df.replace('.', None, inplace=True)
     if fill_na is not None:
         df.fillna(fill_na, inplace=True)
     
