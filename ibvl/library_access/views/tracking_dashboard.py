@@ -10,7 +10,6 @@ from tracking.settings import TRACK_PAGEVIEWS
 from ibvl.library.models import Variant
 from ibvl.library_access.models import LibraryUser
 
-
 import json
 
 log = logging.getLogger(__file__)
@@ -19,7 +18,6 @@ log = logging.getLogger(__file__)
 input_formats = [
     '%Y-%m-%d',  # '2006-10-25'
 ]
-
 
 class DashboardForm(forms.Form):
     start = forms.DateTimeField(required=True, input_formats=input_formats, widget=forms.DateTimeInput(attrs={'type': 'date'}))
@@ -48,28 +46,23 @@ def tracking_dashboard(request):
         start_time = form.cleaned_data['start']
         end_time = form.cleaned_data['end']
         
-        # add one day to end_time
+        # add one day to end_time so it goes until midnight end of day
         end_time += timedelta(days=1)
 
-    selected_users = form.cleaned_data['user'] if form.cleaned_data['user'] else LibraryUser.objects.all()
-    
-    
     target_variant = Variant.objects.filter(variant_id=form.cleaned_data['variant']).first()
-    
-    
     target_variant_id = target_variant.id if target_variant else None
     variant_filter = {'url__endswith': f'variant/{target_variant_id}'} if target_variant_id else {'url__contains': 'api/variant'}
 
     user_stats = Visitor.objects.user_stats(start_time, end_time)
+    selected_users = form.cleaned_data['user'] if form.cleaned_data['user'] else LibraryUser.objects.all()
     user_stats = [u for u in user_stats if u in selected_users]
-#    user_stats = [u for u in user_stats if u.user in selected_users]
 
-    enriched_user_stats = []
+    user_details = []
     for user in user_stats:
         UserHitsInTimeFrame = Pageview.objects.filter(visitor__user=user, view_time__gte=start_time)
         page_views_unique = UserHitsInTimeFrame.values('url').distinct().count()
 
-        enriched_user_stats.append({
+        user_details.append({
             'name': user.get_full_name(),
             'page_views_unique': page_views_unique,
             'views_24_hrs': user.profile.access_count,
@@ -78,21 +71,19 @@ def tracking_dashboard(request):
 
     variant_access_details = []
     variant_urls = Pageview.objects.filter(**variant_filter).values('url').distinct()
-    # stephanie TODO: please make this variants list unique by url 
-    # as a result, every variant_name should appear only once in the variant access details list)
+    # TODO: please make this variants list unique
+    # as a result, every variant_name should appear only once in the Variant Details list)
     for variant_url in variant_urls:
         
         variant = variant_from_url(variant_url['url'])
         
         if variant:
-            variant_name = variant.variant_id
             user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email').order_by('visitor__user__email').distinct('visitor__user__email')
-            user_count = user_list.count()
             users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email']} for u in user_list]
 
             variant_access_details.append({
-                'name': variant_name,
-                'user_count': user_count,
+                'name': variant.variant_id,
+                'user_count': user_list.count(),
                 'users': users
             })
             
@@ -102,8 +93,7 @@ def tracking_dashboard(request):
 
     # Prepare data for charts
     
-    the_page_views = []
-        
+    variant_pageviews = []
     
     for pageview in Pageview.objects.filter(
                 view_time__range=(start_time, end_time), 
@@ -118,7 +108,7 @@ def tracking_dashboard(request):
             pageview.variant = "Unknown"
             pageview.variant_url = "Unknown"
             
-        the_page_views.append({
+        variant_pageviews.append({
             'time': pageview.view_time.isoformat(),
             'user': pageview.visitor.user.get_full_name(),
             'variant': pageview.variant,
@@ -128,8 +118,8 @@ def tracking_dashboard(request):
     context = {
         'form': form,
         'data':json.dumps({
-            'user_details':enriched_user_stats,
-            'variant_pageviews': the_page_views,
+            'user_details':user_details,
+            'variant_pageviews': variant_pageviews,
             'warning': None,
             'variant_access_details': variant_access_details,
             })
