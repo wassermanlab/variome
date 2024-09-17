@@ -5,7 +5,7 @@ from .variant import Variant
 class SNV(models.Model):
     variant = models.ForeignKey(Variant, on_delete=models.CASCADE, db_column='variant', related_name='snv')
     type = models.CharField(max_length=30)
-    length = models.IntegerField()
+    length = models.IntegerField(null=True)
     chr = models.CharField(max_length=3)
     pos = models.IntegerField()
     ref = models.CharField(max_length=255)
