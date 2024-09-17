@@ -13,88 +13,11 @@
           referrerpolicy="no-referrer" />
     <style>
       html{
-        --top-section-height: 400px;
+        --top-section-height: 450px;
       }
       body {
-        padding: 1em;
         font-family: "Roboto", sans-serif;
         background-color: #f5f5f5;
-      }
-      .flex {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-      }
-      .chart-container canvas {
-        width: 100%;
-      }
-      .filters {
-        width:50vw;
-        min-width:300px;
-        border: 1px solid pink;
-        height: var(--top-section-height);
-      }
-      .filters table {
-        width: 100%;
-        height: 100%;
-        border-collapse: collapse;
-        margin-bottom: 3em;
-        background-color: #ffffff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .filters th,
-      td {
-        padding: 1em;
-        text-align: left;
-        border: 1px solid #ddd;
-      }
-      .filters th {
-        background-color: #163647;
-        color: white;
-      }
-      .filters td ul {
-        padding-left: 20px;
-      }
-      .views-table {
-        position:absolute;
-        top:1em;
-        right:1em;
-        height:var(--top-section-height);
-        border: 1px solid lime;
-        overflow-y:scroll;
-      }
-      .below-filters-and-views-table{
-        position:absolute;
-        top: var(--top-section-height);
-        width: calc (100vw - 2em);
-        display:flex;
-        flex-wrap: wrap;
-        border: 1px solid yellow;
-      }
-      @media (max-width: 600px) {
-        .filters {
-          width:100%;
-        }
-        .views-table {
-          top: var(--top-section-height);
-          width:100%;
-        }
-        .below-filters-and-views-table {
-          top: calc( 2 * var(--top-section-height) );
-          margin-top: 1em;
-        }
-      }
-      .views-table .row {
-        height:1em;
-        background:white;
-        margin:0;
-        padding:0;
-        display:flex;
-        justify-content: end;
-        gap: 1em;
-      }
-      .views-table .row:hover {
-        background:grey;
       }
       h2,
       h4,
@@ -105,74 +28,151 @@
       .btn {
         background-color: #71a7b0;
       }
+      .filters {
+        position:absolute;
+        padding:1em;
+        width:40vw;
+        min-width:300px;
+        height: var(--top-section-height);
+      }
+      .filters table {
+        width: 100%;
+        height: 100%;
+        margin-bottom: 3em;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .filters th,
+      td {
+        padding: 1em;
+        text-align: right;
+      }
+      .filters th {
+        background-color: #163647;
+        color: white;
+      }
+      .filters td ul {
+        padding-left: 20px;
+      }
+      .filters .btn{
+        float:right;
+      }
+      #dashboard-page-body{
+        width: 100%;
+        padding-top:1em;
+        display:flex;
+        flex-wrap: wrap;
+      }
+      #react-root{
+        width: 100%;
+        overflow-x: clip;
+        z-index: -1;
+      }
+      @media (max-width: 600px) {
+
+        #react-root {
+          padding-top: var(--top-section-height);
+        }
+
+        .filters {
+          width:100%;
+        }
+        .views-table {
+          display:none;
+        }
+
+        #dashboard-page-body {
+          width:100%;
+          margin-top: 1em;
+        }
+      }
+
+      .views-table {
+        float:right;
+        width:50%;
+        height:var(--top-section-height);
+        overflow-y:scroll;
+      }
+      .views-table .row {
+        height:1em;
+        background:white;
+        margin:0;
+        padding:0;
+        display:flex;
+        justify-content: end;
+        gap: 1em;
+        cursor: default;
+      }
     </style>
   </head>
   <body>
-    <div name="tracking-filters" class="filters">
-      <form method="get">
-        <table>
-          <tr>
-            <th>
-              <label for="id_start">Start date:</label>
-            </th>
-            <td>
-              <input type="date"
-                    name="start"
-                    required
-                    id="id_start"
-                    value="{{ form.start.value }}" />
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <label for="id_end">End date:</label>
-            </th>
-            <td>
-              <input type="date"
-                    name="end"
-                    required
-                    id="id_end"
-                    value="{{ form.end.value }}" />
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <label for="id_variant">Variant:</label>
-            </th>
-            <td>
-              <input type="text"
-                    name="variant"
-                    id="id_variant"
-                    value="{{ form.variant.value }}"
-                    placeholder="eg. 2-12341234-A-T" />
-            </td>
-          </tr>
-          <tr>
-            <th>
-              <label for="id_user">User:</label>
-            </th>
+    <div style="padding:1em;">
+      <h4>Tracking Dashboard</h4>
+        
+      <div name="tracking-filters" class="filters">
+        <form method="get">
+          <table>
+            <tr>
+              <th>
+                <label for="id_start">Start date:</label>
+              </th>
+              <td>
+                <input type="date"
+                      name="start"
+                      required
+                      id="id_start"
+                      value="{{ form.start.value }}" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_end">End date:</label>
+              </th>
+              <td>
+                <input type="date"
+                      name="end"
+                      required
+                      id="id_end"
+                      value="{{ form.end.value }}" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_variant">Variant:</label>
+              </th>
+              <td>
+                <input type="text"
+                      name="variant"
+                      id="id_variant"
+                      value="{{ form.variant.value }}"
+                      placeholder="eg. 2-12341234-A-T" />
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <label for="id_user">User:</label>
+              </th>
+              <td>
+                <select name="user" id="id_user" multiple>
+                  {% for user in form.user.field.queryset %}
+                    {% if user.id|stringformat:"i" in form.user.value %}
+                      <option value="{{ user.id }}" selected>{{ user.get_full_name }}</option>
+                    {% else %}
+                      <option value="{{ user.id }}">{{ user.get_full_name }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+              </td>
+            </tr>
+          </table>
+          <button type="submit" class="btn waves-effect waves-light">Apply Filters</button>
+        </form>
+      </div>
 
-            <td>
-              <select name="user" id="id_user" multiple>
-                {% for user in form.user.field.queryset %}
-                  {% if user.id in form.user.value %}
-                    <option value="{{ user.id }}" selected>{{ user.get_full_name }}</option>
-                  {% else %}
-                    <option value="{{ user.id }}">{{ user.get_full_name }}</option>
-                  {% endif %}
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-        </table>
-        <button type="submit" class="btn waves-effect waves-light">Submit</button>
-      </form>
+      <div id="react-root" />
     </div>
     &nbsp;
 
-    <div id="react-root">
-      <h4>React Component</h4>
-    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.js" integrity="sha512-m2PhLxj2N91eYrIGU2cmIu2d0SkaE4A14bCjVb9zykvp6WtsdriFCiXQ/8Hdj0kssUB/Nz0dMBcoLsJkSCto0Q==" crossorigin="anonymous" referrerpolicy="no-referrer">
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -186,6 +186,7 @@
             integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.5.0/luxon.min.js" integrity="sha512-SN7iwxiJt9nFKiLayg3NjLItXPwRfBr4SQSIugMeBFrD4lIFJe1Z/exkTZYAg3Ul+AfZEGws2PQ+xSoaWfxRQQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <!-- dev deps -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.development.js"

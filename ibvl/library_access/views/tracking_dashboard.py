@@ -53,8 +53,11 @@ def tracking_dashboard(request):
 
     selected_users = form.cleaned_data['user'] if form.cleaned_data['user'] else LibraryUser.objects.all()
     
-    target_variant_name = form.cleaned_data['variant']
-    target_variant_id = Variant.objects.filter(variant_id=target_variant_name).first().id if target_variant_name else None
+    
+    target_variant = Variant.objects.filter(variant_id=form.cleaned_data['variant']).first()
+    
+    
+    target_variant_id = target_variant.id if target_variant else None
     variant_filter = {'url__endswith': f'variant/{target_variant_id}'} if target_variant_id else {'url__contains': 'api/variant'}
 
     user_stats = Visitor.objects.user_stats(start_time, end_time)
@@ -93,8 +96,8 @@ def tracking_dashboard(request):
                 'users': users
             })
             
-            print("variant_name", variant_name)
-            print("user_list", user_list)
+#            print("variant_name", variant_name)
+#            print("user_list", user_list)
     variant_access_details.sort(key=lambda x: x['user_count'], reverse=True)
 
     # Prepare data for charts
@@ -125,10 +128,10 @@ def tracking_dashboard(request):
     context = {
         'form': form,
         'data':json.dumps({
-            'user_details':enriched_user_stats[0:4],
-            'variant_pageviews': the_page_views[0:4],
+            'user_details':enriched_user_stats,
+            'variant_pageviews': the_page_views,
             'warning': None,
-            'variant_access_details': variant_access_details[0:4],
+            'variant_access_details': variant_access_details,
             })
     }
 
