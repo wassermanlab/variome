@@ -67,9 +67,9 @@ def tracking_dashboard(request):
         page_views_unique = UserHitsInTimeFrame.values('url').distinct().count()
 
         enriched_user_stats.append({
-            'user': user.get_full_name(),
+            'name': user.get_full_name(),
             'page_views_unique': page_views_unique,
-            '24_hrs': user.profile.access_count,
+            'views_24_hrs': user.profile.access_count,
             'time_on_site': user.time_on_site.seconds,
         })
 
@@ -118,7 +118,7 @@ def tracking_dashboard(request):
         the_page_views.append({
             'time': pageview.view_time.isoformat(),
             'user': pageview.visitor.user.get_full_name(),
-#            'variant': pageview['variant'],
+            'variant': pageview.variant,
             'variant_url': pageview.variant_url
         })
 

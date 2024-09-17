@@ -274,6 +274,12 @@ if DEBUG:
             "handlers": ["console"],
             "level": "DEBUG",
         },
+#        "loggers": {
+#            "django.db.backends": {
+#                "handlers": ["console"],
+#                "level": "DEBUG",
+#            },
+#        },
     }
 else:
     LOGGING = {}

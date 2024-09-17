@@ -10,6 +10,8 @@ def backend_home_page(request):
     return login_view(request)
 
 # for development environment. logs in a non-staff, non-superadmin user
+# note: login via django admin dashboard is sufficient for most dev purposes
+# this login flow is only needed for testing non-admin user auth behaviour
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
