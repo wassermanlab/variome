@@ -142,14 +142,33 @@ class Importer:
                 for row in reader:
                     if self.progress and reader.line_num % 1000 == 0:
                         sys.stderr.write(f"SNV {reader.line_num}...\n")
+                    for field in (
+                        "cadd_intr",
+                        "dbsnp_url",
+                        "dbsnp_id",
+                        "ucsc_url",
+                        "ensembl_url",
+                        "clinvar_url",
+                        "gnomad_url",
+                    ):
+                        if row[field] == ".":
+                            row[field] = ""
+                    for field in (
+                        "cadd_score",
+                        "clinvar_vcv",
+                        "splice_ai"
+                    ):
+                        if row[field] == ".":
+                            row[field] = None
                     try:
+                        # int(float(foo)) to convert possible scientific notation to int. sucks.
                         obj, created = ibvlmodels.SNV.objects.update_or_create(
                             variant=ibvlmodels.Variant.objects.get(variant_id=row["variant"]),
                             defaults={
                                 "type": row["type"],
                                 "length": row["length"],
                                 "chr": row["chr"],
-                                "pos": row["pos"],
+                                "pos": int(float(row["pos"])),
                                 "ref": row["ref"],
                                 "alt": row["alt"],
                                 "cadd_intr": row["cadd_intr"],

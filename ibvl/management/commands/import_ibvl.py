@@ -25,6 +25,7 @@ class Command(BaseCommand):
                 sys.stderr.write(f"* {err}\n")
 
     def add_arguments(self, parser):
+        parser.formatter_class=argparse.ArgumentDefaultsHelpFormatter
         parser.add_argument(
             "--path", "-p", dest="path", required=True,
             help="Path of folder containing unpacked IBVL data files",
@@ -74,7 +75,7 @@ class Command(BaseCommand):
             help="Show progress indications?",
         )
         parser.add_argument(
-            "--failfast", default=False, action=argparse.BooleanOptionalAction,
+            "--failfast", "-f", default=False, action=argparse.BooleanOptionalAction,
             help="Fail on first error?",
         )
         parser.add_argument(
