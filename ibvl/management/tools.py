@@ -1,6 +1,7 @@
 import logging
 import csv
 import sys
+import pprint
 from pathlib import Path
 
 import ibvl.library.models as ibvlmodels
@@ -17,6 +18,9 @@ class Importer:
         self.path = Path(options["path"])
         self.progress = options["progress"]
         self.failfast = options["failfast"]
+        self.update_existing = not options["ignore-existing"]
+        self.batch = options["batch"]
+        self.batch_size = 999
 
     def import_severities(self):
         """ Locate the severities data file and load severities from it """
@@ -136,8 +140,16 @@ class Importer:
         """ Locate the SNVs data file and load SNVs from it """
         errors = []
         input_file = self.path / "snvs" / "snvs.tsv"
+
+        existing = {
+            v["variant__variant_id"]: v["variant_id"]
+            for v in ibvlmodels.SNV.objects.values("variant__variant_id", "variant_id")
+        }
+
         with open(input_file, newline="") as f:
             reader = csv.DictReader(f, dialect=IBVLDialect)
+            bulk_create = []
+            bulk_update = []
             try:
                 for row in reader:
                     if self.progress and reader.line_num % 1000 == 0:
@@ -160,31 +172,181 @@ class Importer:
                     ):
                         if row[field] == ".":
                             row[field] = None
+                    if self.batch:
+                        if row["variant"] not in existing:
+                            try:
+                                bulk_create.append(
+                                    ibvlmodels.SNV(
+                                        variant=ibvlmodels.Variant.objects.get(variant_id=row["variant"]),
+                                        type=row["type"],
+                                        length=row["length"],
+                                        chr=row["chr"],
+                                        pos=int(float(row["pos"])),
+                                        ref=row["ref"],
+                                        alt=row["alt"],
+                                        cadd_intr=row["cadd_intr"],
+                                        cadd_score=row["cadd_score"],
+                                        dbsnp_url=row["dbsnp_url"],
+                                        dbsnp_id=row["dbsnp_id"],
+                                        ucsc_url=row["ucsc_url"],
+                                        ensembl_url=row["ensembl_url"],
+                                        clinvar_vcv=row["clinvar_vcv"],
+                                        clinvar_url=row["clinvar_url"],
+                                        gnomad_url=row["gnomad_url"],
+                                        splice_ai=row["splice_ai"],
+                                    )
+                                )
+                            except Exception as e:
+                                msg = f"error creating SNV object for bulk create for variant {row['variant']} from line {reader.line_num}: {e}"
+                                errors.append(msg)
+                                if self.failfast:
+                                    return errors
+                        elif self.update_existing:
+                            try:
+                                snv = ibvlmodels.SNV.objects.get(variant__variant_id=row["variant"])
+                                snv.type = row["type"]
+                                snv.length = row["length"]
+                                snv.chr = row["chr"]
+                                snv.pos=int(float(row["pos"]))
+                                snv.ref=row["ref"]
+                                snv.alt=row["alt"]
+                                snv.cadd_intr=row["cadd_intr"]
+                                snv.cadd_score=row["cadd_score"]
+                                snv.dbsnp_url=row["dbsnp_url"]
+                                snv.dbsnp_id=row["dbsnp_id"]
+                                snv.ucsc_url=row["ucsc_url"]
+                                snv.ensembl_url=row["ensembl_url"]
+                                snv.clinvar_vcv=row["clinvar_vcv"]
+                                snv.clinvar_url=row["clinvar_url"]
+                                snv.gnomad_url=row["gnomad_url"]
+                                snv.splice_ai=row["splice_ai"]
+                                bulk_update.append(snv)
+                                # ibvlmodels.SNV.objects.filter(variant__variant_id=row["variant"]).update(
+                                #     type=row["type"],
+                                #     length=row["length"],
+                                #     chr=row["chr"],
+                                #     pos=int(float(row["pos"])),
+                                #     ref=row["ref"],
+                                #     alt=row["alt"],
+                                #     cadd_intr=row["cadd_intr"],
+                                #     cadd_score=row["cadd_score"],
+                                #     dbsnp_url=row["dbsnp_url"],
+                                #     dbsnp_id=row["dbsnp_id"],
+                                #     ucsc_url=row["ucsc_url"],
+                                #     ensembl_url=row["ensembl_url"],
+                                #     clinvar_vcv=row["clinvar_vcv"],
+                                #     clinvar_url=row["clinvar_url"],
+                                #     gnomad_url=row["gnomad_url"],
+                                #     splice_ai=row["splice_ai"],
+                                # )
+                            except Exception as e:
+                                msg = f"error building SNV object for bulk update for variant {row['variant']} from line {reader.line_num}: {e}"
+                                errors.append(msg)
+                                if self.failfast:
+                                    return errors
+                    else:
+                        try:
+                            # int(float(foo)) to convert possible scientific notation to int. sucks.
+                            obj, created = ibvlmodels.SNV.objects.update_or_create(
+                                variant=ibvlmodels.Variant.objects.get(variant_id=row["variant"]),
+                                defaults={
+                                    "type": row["type"],
+                                    "length": row["length"],
+                                    "chr": row["chr"],
+                                    "pos": int(float(row["pos"])),
+                                    "ref": row["ref"],
+                                    "alt": row["alt"],
+                                    "cadd_intr": row["cadd_intr"],
+                                    "cadd_score": row["cadd_score"],
+                                    "dbsnp_url": row["dbsnp_url"],
+                                    "dbsnp_id": row["dbsnp_id"],
+                                    "ucsc_url": row["ucsc_url"],
+                                    "ensembl_url": row["ensembl_url"],
+                                    "clinvar_vcv": row["clinvar_vcv"],
+                                    "clinvar_url": row["clinvar_url"],
+                                    "gnomad_url": row["gnomad_url"],
+                                    "splice_ai": row["splice_ai"],
+                                },
+                            )
+                        except Exception as e:
+                            msg = f"error creating/updating SNV for variant {row['variant']} from line {reader.line_num}: {e}"
+                            errors.append(msg)
+                            if self.failfast:
+                                return errors
+
+                    if len(bulk_create) >= self.batch_size:
+                        try:
+                            ibvlmodels.SNV.objects.bulk_create(bulk_create)
+                            bulk_create = []
+                        except Exception as e:
+                            msg = f"error in bulk create of SNV after input line {reader.line_num}: {e}"
+                            errors.append(msg)
+                            if self.failfast:
+                                return errors
+                    if len(bulk_update) >= self.batch_size:
+                        try:
+                            ibvlmodels.SNV.objects.bulk_update(
+                                bulk_update,
+                                [
+                                    "type",
+                                    "length",
+                                    "chr",
+                                    "pos",
+                                    "ref",
+                                    "alt",
+                                    "cadd_intr",
+                                    "cadd_score",
+                                    "dbsnp_url",
+                                    "dbsnp_id",
+                                    "ucsc_url",
+                                    "ensembl_url",
+                                    "clinvar_vcv",
+                                    "clinvar_url",
+                                    "gnomad_url",
+                                    "splice_ai"
+                                ]
+                            )
+                            bulk_update = []
+                        except Exception as e:
+                            msg = f"error in bulk update of SNV after input line {reader.line_num}: {e}"
+                            errors.append(msg)
+                            if self.failfast:
+                                return errors
+                # Run out of input rows, tidy up outstanding create/updates
+                if len(bulk_create):
                     try:
-                        # int(float(foo)) to convert possible scientific notation to int. sucks.
-                        obj, created = ibvlmodels.SNV.objects.update_or_create(
-                            variant=ibvlmodels.Variant.objects.get(variant_id=row["variant"]),
-                            defaults={
-                                "type": row["type"],
-                                "length": row["length"],
-                                "chr": row["chr"],
-                                "pos": int(float(row["pos"])),
-                                "ref": row["ref"],
-                                "alt": row["alt"],
-                                "cadd_intr": row["cadd_intr"],
-                                "cadd_score": row["cadd_score"],
-                                "dbsnp_url": row["dbsnp_url"],
-                                "dbsnp_id": row["dbsnp_id"],
-                                "ucsc_url": row["ucsc_url"],
-                                "ensembl_url": row["ensembl_url"],
-                                "clinvar_vcv": row["clinvar_vcv"],
-                                "clinvar_url": row["clinvar_url"],
-                                "gnomad_url": row["gnomad_url"],
-                                "splice_ai": row["splice_ai"],
-                            },
+                        ibvlmodels.SNV.objects.bulk_create(bulk_create)
+                        bulk_create = []
+                    except Exception as e:
+                        msg = f"error in bulk create of SNV after input line {reader.line_num}: {e}"
+                        errors.append(msg)
+                        if self.failfast:
+                            return errors
+                if len(bulk_update):
+                    try:
+                        ibvlmodels.SNV.objects.bulk_update(
+                            bulk_update,
+                            [
+                                "type",
+                                "length",
+                                "chr",
+                                "pos",
+                                "ref",
+                                "alt",
+                                "cadd_intr",
+                                "cadd_score",
+                                "dbsnp_url",
+                                "dbsnp_id",
+                                "ucsc_url",
+                                "ensembl_url",
+                                "clinvar_vcv",
+                                "clinvar_url",
+                                "gnomad_url",
+                                "splice_ai"
+                            ]
                         )
                     except Exception as e:
-                        msg = f"error creating/updating SNV for variant {row['variant']} from line {reader.line_num}: {e}"
+                        msg = f"error in bulk update of SNV after input line {reader.line_num}: {e}"
                         errors.append(msg)
                         if self.failfast:
                             return errors

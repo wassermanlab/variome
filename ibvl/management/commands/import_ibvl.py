@@ -79,6 +79,14 @@ class Command(BaseCommand):
             help="Fail on first error?",
         )
         parser.add_argument(
+            "--batch", "-b", dest="batch", action="store_true", default=False,
+            help="Batch database updates to attempt to improve performance",
+        )
+        parser.add_argument(
+            "--ignore-existing", "-i", dest="ignore-existing", action="store_true", default=False,
+            help="Ignore (don't update) input rows that already exist in the database",
+        )
+        parser.add_argument(
             "--rollback-on-error", "-r", dest="rollback-on-error", action="store_true", default=False,
             help="Rollback (don't commit) database changes on errors",
         )
