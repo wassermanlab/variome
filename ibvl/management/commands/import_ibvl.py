@@ -110,10 +110,8 @@ class Command(BaseCommand):
         con_errors = None
         vts_errors = None
 
-        importer = ibvltools.Importer(options)
-
         if options['severities']:
-            sev_errors = importer.import_severities()
+            sev_errors = ibvltools.SeverityImporter(options).import_data()
 
         if options['genes']:
             gen_errors = importer.import_genes()
@@ -125,7 +123,7 @@ class Command(BaseCommand):
             tra_errors = importer.import_transcripts()
 
         if options['snvs']:
-            tra_errors = importer.import_snvs()
+            snv_errors = ibvltools.SNVImporter(options).import_data()
 
         if options['gvfs']:
             gvf_errors = importer.import_gvfs()

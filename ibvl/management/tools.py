@@ -14,13 +14,100 @@ class IBVLDialect(csv.excel_tab):
 
 
 class Importer:
+    path_component = None
+    OBJECT_NAME = None
+    OBJECT_NAME_PLURAL = None
+    CSV_DIALECT = IBVLDialect
+
     def __init__(self, options):
+        if getattr(self, "model", None) is None:
+            raise NotImplementedError("Subclasses of Importer must set 'model' attribute on class")
+        if self.OBJECT_NAME is None:
+            self.OBJECT_NAME = self.model._meta.verbose_name
+        if self.OBJECT_NAME_PLURAL is None:
+            self.OBJECT_NAME_PLURAL = self.model._meta.verbose_name_plural
+
         self.path = Path(options["path"])
         self.progress = options["progress"]
         self.failfast = options["failfast"]
         self.update_existing = not options["ignore-existing"]
         self.batch = options["batch"]
         self.batch_size = 999
+
+    def get_input_path(self):
+        """ Get input path for this data type. May use self.path_component to
+        build path """
+        if self.path_component is None:
+            raise NotImplementedError("Subclass of Importer must set path_component attribute")
+        return self.path / self.path_component / f"{self.path_component}.tsv"
+
+    def populate_caches(self):
+        """ Populate any caches that will be required during import process """
+        pass
+
+    def clean_data(self, row):
+        """ Clean the input data in row & return cleaned row.
+        Default implementation returns input row as-is """
+        return row
+
+    def import_data(self):
+        """ Locate the appropriate data file and load objects from it """
+        errors = []
+        input_file = self.get_input_path()
+        self.populate_caches()
+
+        with open(input_file, newline="") as f:
+            self.reader = csv.DictReader(f, dialect=self.CSV_DIALECT)
+            bulk_create = []
+            try:
+                for row in self.reader:
+                    if self.progress and self.reader.line_num % 1000 == 0:
+                        sys.stderr.write(f"{self.OBJECT_NAME} {self.reader.line_num}...\n")
+                    row = self.clean_data(row)
+                    if self.batch:
+                        if not self.check_existing(row):
+                            success, obj = bulk_create.append(self.created_row_object())
+                            if not success:
+                                errors.append(obj)
+                                if self.failfast:
+                                    return errors
+                        elif self.update_existing:
+                            success, obj = self.update(row)
+                            if not success:
+                                errors.append(obj)
+                                if self.failfast:
+                                    return errors
+                    else:
+                        success, obj = self.update_or_create(row)
+                        if not success:
+                            errors.append(obj)
+                            if self.failfast:
+                                return errors
+
+                    if len(bulk_create) >= self.batch_size:
+                        try:
+                            self.model.objects.bulk_create(bulk_create)
+                            bulk_create = []
+                        except Exception as e:
+                            msg = f"error in bulk create of {self.OBJECT_NAME_PLURAL} after input line {self.reader.line_num}: {e}"
+                            errors.append(msg)
+                            if self.failfast:
+                                return errors
+                # Run out of input rows, tidy up outstanding create/updates
+                if len(bulk_create):
+                    try:
+                        self.model.objects.bulk_create(bulk_create)
+                        bulk_create = []
+                    except Exception as e:
+                        msg = f"error in bulk create of {self.OBJECT_NAME_PLURAL} after end of input {self.reader.line_num}: {e}"
+                        errors.append(msg)
+                        if self.failfast:
+                            return errors
+            except csv.Error as e:
+                errors.append(f"error reading line {self.reader.line_num}: {e}")
+                if self.failfast:
+                    return errors
+        return errors
 
     def import_severities(self):
         """ Locate the severities data file and load severities from it """
@@ -446,3 +533,204 @@ class Importer:
                     return errors
         return errors
 
+
+class SeverityImporter(Importer):
+    model = ibvlmodels.Severity
+    path_component = "severities"
+
+    def get_input_path(self):
+        return self.path / f"{self.path_component}.tsv"
+
+    def populate_caches(self):
+        # This costs a bit at startup but is necessary to enable bulk creates, which
+        # speed up creation by ~ an order of magnitude
+        self.existing = {
+            v["severity_number"]: v["pk"]
+            for v in self.model.objects.values("severity_number", "pk")
+        }
+
+    def check_existing(self, row):
+        """ Return true is row represents an object that already exists in
+        the database (i.e. if update rather than create is needed) """
+        return row["severity_number"] in self.existing
+
+    def created_row_object(self, row):
+        """ Create a new object to represent the row supplied.
+        Return True, object on success or False, msg on failure """
+        try:
+            return True, self.model(
+                severity_number=row["severity_number"],
+                consequence=row["consequence"],
+            )
+        except Exception as e:
+            msg = f"error creating {self.OBJECT_NAME} object for bulk create from line {self.reader.line_num}: {e}"
+            return False, msg
+
+    def update(self, row):
+        """ Update the existing object in the DB for the supplied row.
+        Return True, 1 on success or False, msg on failure """
+        # This is significantly *faster* than doing bulk updates
+        try:
+            updated = self.model.objects.filter(severity_number=row["severity_number"]).update(
+                consequence=row["consequence"],
+            )
+            if updated != 1:
+                msg = f"error, updated {updated} DB rows from line {self.reader.line_num}"
+                return False, msg
+            return True, updated
+        except Exception as e:
+            msg = f"error updating {self.OBJECT_NAME} object from line {self.reader.line_num}: {e}"
+            return False, msg
+    
+    def update_or_create(self, row):
+        """ Use foo.objects.update_or_create() to update or create the entry for
+        the supplied row in DB.
+        Return True, obj on success or False, msg on failure """
+        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        try:
+            obj, created = self.model.objects.update_or_create(
+                severity_number=row["severity_number"],
+                defaults={
+                    "consequence": row["consequence"],
+                },
+            )
+            return True, obj
+        except Exception as e:
+            msg = f"error creating/updating {self.OBJECT_NAME} from line {self.reader.line_num}: {e}"
+            return False, msg
+
+
+class SNVImporter(Importer):
+    model = ibvlmodels.SNV
+    path_component = "snvs"
+
+    def populate_caches(self):
+        # This costs a bit at startup but is necessary to enable bulk creates, which
+        # speed up creation by ~ an order of magnitude
+        self.existing = {
+            v["variant__variant_id"]: v["variant_id"]
+            for v in ibvlmodels.SNV.objects.values("variant__variant_id", "variant_id")
+        }
+        # This costs around 10s at startup (with 6.5M records) and a bunch of RAM, but
+        # approximately doubles the speed of updates
+        self.variants = {
+            v["variant_id"]: v["pk"]
+            for v in ibvlmodels.Variant.objects.values("pk", "variant_id")
+        }
+
+    def clean_data(self, row):
+        """ Clean the input data in row & return cleaned row """
+        for field in (
+            "cadd_intr",
+            "dbsnp_url",
+            "dbsnp_id",
+            "ucsc_url",
+            "ensembl_url",
+            "clinvar_url",
+            "gnomad_url",
+        ):
+            if row[field] == ".":
+                row[field] = ""
+        for field in (
+            "cadd_score",
+            "clinvar_vcv",
+            "splice_ai"
+        ):
+            if row[field] == ".":
+                row[field] = None
+        return row
+
+    def check_existing(self, row):
+        """ Return true is row represents an object that already exists in
+        the database (i.e. if update rather than create is needed) """
+        return row["variant"] in self.existing
+
+    def created_row_object(self, row):
+        """ Create a new object to represent the row supplied.
+        Return True, object on success or False, msg on failure """
+        try:
+            return True, ibvlmodels.SNV(
+                variant_id=self.variants[row["variant"]],
+                type=row["type"],
+                length=row["length"],
+                chr=row["chr"],
+                pos=int(float(row["pos"])),
+                ref=row["ref"],
+                alt=row["alt"],
+                cadd_intr=row["cadd_intr"],
+                cadd_score=row["cadd_score"],
+                dbsnp_url=row["dbsnp_url"],
+                dbsnp_id=row["dbsnp_id"],
+                ucsc_url=row["ucsc_url"],
+                ensembl_url=row["ensembl_url"],
+                clinvar_vcv=row["clinvar_vcv"],
+                clinvar_url=row["clinvar_url"],
+                gnomad_url=row["gnomad_url"],
+                splice_ai=row["splice_ai"],
+            )
+        except Exception as e:
+            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            return False, msg
+
+    def update(self, row):
+        """ Update the existing object in the DB for the supplied row.
+        Return True, 1 on success or False, msg on failure """
+        # This is significantly *faster* than doing bulk updates
+        try:
+            updated = ibvlmodels.SNV.objects.filter(variant_id=self.variants[row["variant"]]).update(
+                type=row["type"],
+                length=row["length"],
+                chr=row["chr"],
+                pos=int(float(row["pos"])),
+                ref=row["ref"],
+                alt=row["alt"],
+                cadd_intr=row["cadd_intr"],
+                cadd_score=row["cadd_score"],
+                dbsnp_url=row["dbsnp_url"],
+                dbsnp_id=row["dbsnp_id"],
+                ucsc_url=row["ucsc_url"],
+                ensembl_url=row["ensembl_url"],
+                clinvar_vcv=row["clinvar_vcv"],
+                clinvar_url=row["clinvar_url"],
+                gnomad_url=row["gnomad_url"],
+                splice_ai=row["splice_ai"],
+            )
+            if updated != 1:
+                msg = f"error, updated {updated} DB rows for variant {row['variant']} from line {self.reader.line_num}"
+                return False, msg
+            return True, updated
+        except Exception as e:
+            msg = f"error updating SNV object for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            return False, msg
+    
+    def update_or_create(self, row):
+        """ Use foo.objects.update_or_create() to update or create the entry for
+        the supplied row in DB.
+        Return True, obj on success or False, msg on failure """
+        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        try:
+            obj, created = ibvlmodels.SNV.objects.update_or_create(
+                variant_id=self.variants[row["variant"]],
+                defaults={
+                    "type": row["type"],
+                    "length": row["length"],
+                    "chr": row["chr"],
+                    "pos": int(float(row["pos"])),
+                    "ref": row["ref"],
+                    "alt": row["alt"],
+                    "cadd_intr": row["cadd_intr"],
+                    "cadd_score": row["cadd_score"],
+                    "dbsnp_url": row["dbsnp_url"],
+                    "dbsnp_id": row["dbsnp_id"],
+                    "ucsc_url": row["ucsc_url"],
+                    "ensembl_url": row["ensembl_url"],
+                    "clinvar_vcv": row["clinvar_vcv"],
+                    "clinvar_url": row["clinvar_url"],
+                    "gnomad_url": row["gnomad_url"],
+                    "splice_ai": row["splice_ai"],
+                },
+            )
+            return True, obj
+        except Exception as e:
+            msg = f"error creating/updating SNV for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            return False, msg
