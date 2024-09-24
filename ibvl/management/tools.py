@@ -943,12 +943,18 @@ class AnnotationImporter(Importer):
             self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
+    def clean_data(self, row):
+        """ Clean the input data in row & return cleaned row """
+        if (row["variant"], row["transcript"]) not in self.vts:
+            return False, f"variant transcript object not found to annotate variant {row['variant']} transcript {row['transcript']}"
+        return row
+
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
         vt = self.vts.get((row["variant"], row["transcript"]), None)
         if vt is None:
-            msg = f"variant transcript object not found for variant {row['variant']} transcript {row['transcript']}"
+            msg = f"variant transcript object not found to annotate variant {row['variant']} transcript {row['transcript']}"
             return False, msg
         try:
             return True, self.model(
@@ -959,7 +965,7 @@ class AnnotationImporter(Importer):
                 impact=row["impact"],
             )
         except Exception as e:
-            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating object for bulk create of {self.object_name} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -1055,16 +1061,22 @@ class ConsequenceImporter(Importer):
             self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
+    def clean_data(self, row):
+        """ Clean the input data in row & return cleaned row """
+        if (row["variant"], row["transcript"]) not in self.vts:
+            return False, f"variant transcript object not found for consequence of variant {row['variant']} transcript {row['transcript']}"
+        return row
+
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
         vt = self.vts.get((row["variant"], row["transcript"]), None)
         if vt is None:
-            msg = f"variant transcript object not found for variant {row['variant']} transcript {row['transcript']}"
+            msg = f"variant transcript object not found for consequence of variant {row['variant']} transcript {row['transcript']}"
             return False, msg
         severity = self.severities.get(row["severity"], None)
         if severity is None:
-            msg = f"severity object with number {row['severity']} not found for variant {row['variant']} transcript {row['transcript']}"
+            msg = f"severity object with number {row['severity']} not found for consequence of variant {row['variant']} transcript {row['transcript']}"
             return False, msg
         try:
             return True, self.model(
@@ -1072,7 +1084,7 @@ class ConsequenceImporter(Importer):
                 severity=severity,
             )
         except Exception as e:
-            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating object for bulk create of {self.object_name} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
