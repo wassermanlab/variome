@@ -4,6 +4,8 @@ import sys
 import pprint
 from pathlib import Path
 
+from django.db.models import Q
+
 import ibvl.library.models as ibvlmodels
 
 log = logging.getLogger("management")
@@ -14,26 +16,47 @@ class IBVLDialect(csv.excel_tab):
 
 
 class Importer:
+    """ Abstract base class for importers which will import data from .tsv or similar files """
+    # Object names for an importer - taken from model._meta if not overridden
+    object_name = None
+    object_name_plural = None
+
+    # The string to use as a path component in standard input file path
     path_component = None
-    OBJECT_NAME = None
-    OBJECT_NAME_PLURAL = None
-    CSV_DIALECT = IBVLDialect
+
+    # CSV dialect to use (override if a particular importer needs to)
+    csv_dialect = IBVLDialect
+
+    # Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things
+    # faster with PostgreSQL
+    batch_size = 999
+
+    # Set this when debugging, if you want to stop after a certain number of input rows
+    # have been processed
+    limit = None
 
     def __init__(self, options):
         if getattr(self, "model", None) is None:
             raise NotImplementedError("Subclasses of Importer must set 'model' attribute on class")
-        if self.OBJECT_NAME is None:
-            self.OBJECT_NAME = self.model._meta.verbose_name
-        if self.OBJECT_NAME_PLURAL is None:
-            self.OBJECT_NAME_PLURAL = self.model._meta.verbose_name_plural
+        if self.object_name is None:
+            self.object_name = self.model._meta.verbose_name
+        if self.object_name_plural is None:
+            self.object_name_plural = self.model._meta.verbose_name_plural
 
+        # Base path to input data
         self.path = Path(options["path"])
+        
+        # Whether to show progress indication
         self.progress = options["progress"]
+
+        # Whether to bail out after first error
         self.failfast = options["failfast"]
+
+        # Whether to update existing records (else ignore input for rows which exist in DB)
         self.update_existing = not options["ignore-existing"]
+
+        # Whether to use batch mode (it's an order of magnitude or more faster)
         self.batch = options["batch"]
-        self.batch_size = 999
-        self.limit = None
 
     def get_input_path(self):
         """ Get input path for this data type. May use self.path_component to
@@ -59,12 +82,12 @@ class Importer:
         self.populate_caches()
 
         with open(input_file, newline="") as f:
-            self.reader = csv.DictReader(f, dialect=self.CSV_DIALECT)
+            self.reader = csv.DictReader(f, dialect=self.csv_dialect)
             bulk_create = []
             try:
                 for row in self.reader:
                     if self.progress and self.reader.line_num % 1000 == 0:
-                        sys.stderr.write(f"{self.OBJECT_NAME} {self.reader.line_num}...\n")
+                        sys.stderr.write(f"{self.object_name} {self.reader.line_num}...\n")
                     if self.limit is not None and self.limit < self.reader.line_num:
                         warnings.append(f"stopped processing after limit ({self.limit}) hit")
                         break
@@ -101,7 +124,7 @@ class Importer:
                             self.model.objects.bulk_create(bulk_create)
                             bulk_create = []
                         except Exception as e:
-                            msg = f"error in bulk create of {self.OBJECT_NAME_PLURAL} after input line {self.reader.line_num}: {e}"
+                            msg = f"error in bulk create of {self.object_name_plural} after input line {self.reader.line_num}: {e}"
                             errors.append(msg)
                             if self.failfast:
                                 return errors, warnings
@@ -111,7 +134,7 @@ class Importer:
                         self.model.objects.bulk_create(bulk_create)
                         bulk_create = []
                     except Exception as e:
-                        msg = f"error in bulk create of {self.OBJECT_NAME_PLURAL} after end of input {self.reader.line_num}: {e}"
+                        msg = f"error in bulk create of {self.object_name_plural} after end of input {self.reader.line_num}: {e}"
                         errors.append(msg)
                         if self.failfast:
                             return errors, warnings
@@ -154,7 +177,7 @@ class SeverityImporter(Importer):
                 consequence=row["consequence"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -170,7 +193,7 @@ class SeverityImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -187,7 +210,7 @@ class SeverityImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -217,7 +240,7 @@ class GeneImporter(Importer):
                 short_name=row["short_name"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -237,7 +260,7 @@ class GeneImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -269,7 +292,7 @@ class VariantImporter(Importer):
                 filter=row["filter"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -286,7 +309,7 @@ class VariantImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -304,7 +327,7 @@ class VariantImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -335,10 +358,9 @@ class TranscriptImporter(Importer):
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
-        try:
-            gene = self.genes[row["gene"]]
-        except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object {row['transcript_id']} for bulk create from line {self.reader.line_num}: gene {row['gene']} not found"
+        gene = self.genes.get(row["gene"], None)
+        if gene is None:
+            msg = f"error creating {self.object_name} object {row['transcript_id']} for bulk create from line {self.reader.line_num}: gene {row['gene']} not found"
             return False, msg
         try:
             return True, self.model(
@@ -349,7 +371,7 @@ class TranscriptImporter(Importer):
                 biotype=row["biotype"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object {row['transcript_id']} for bulk create from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object {row['transcript_id']} for bulk create from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -364,11 +386,11 @@ class TranscriptImporter(Importer):
                 biotype=row["biotype"],
             )
             if updated != 1:
-                msg = f"error, updated {updated} DB rows for {self.OBJECT_NAME} {row['transcript_id']} from line {self.reader.line_num}"
+                msg = f"error, updated {updated} DB rows for {self.object_name} {row['transcript_id']} from line {self.reader.line_num}"
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object {row['transcript_id']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object {row['transcript_id']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -388,7 +410,7 @@ class TranscriptImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} {row['transcript_id']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} {row['transcript_id']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -462,7 +484,7 @@ class SNVImporter(Importer):
                 splice_ai=row["splice_ai"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -493,7 +515,7 @@ class SNVImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -525,7 +547,7 @@ class SNVImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -578,7 +600,7 @@ class GVFImporter(Importer):
                 quality=row["quality"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -600,7 +622,7 @@ class GVFImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -623,7 +645,7 @@ class GVFImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -675,7 +697,7 @@ class GGFImporter(Importer):
                 hom_tot=row["hom_tot"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -694,7 +716,7 @@ class GGFImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -714,7 +736,7 @@ class GGFImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -724,20 +746,26 @@ class VariantTranscriptImporter(Importer):
     path_component = "variants_transcripts"
 
     def populate_caches(self):
-        # This costs a bit at startup but is necessary to enable bulk creates, which
-        # speed up creation by ~ an order of magnitude
-        self.existing = {
-            (
-                obj["variant__variant_id"], obj["transcript__transcript_id"]
-            ): (
-                obj["pk"]
-            )
-            for obj in self.model.objects.values(
-                "variant__variant_id",
-                "transcript__transcript_id",
-                "pk"
-            )
-        }
+        self.noexisting = (self.model.objects.count() == 0)
+        if not self.noexisting:
+            self.current_chromosome = None
+            self.existing = {}
+
+        # Too demanding of RAM
+        #
+        # self.existing = {
+        #     (
+        #         obj["variant__variant_id"], obj["transcript__transcript_id"]
+        #     ): (
+        #         obj["pk"]
+        #     )
+        #     for obj in self.model.objects.values(
+        #         "variant__variant_id",
+        #         "transcript__transcript_id",
+        #         "pk"
+        #     )
+        # }
+
         self.variants = {
             obj["variant_id"]: obj["pk"]
             for obj in ibvlmodels.Variant.objects.values("pk", "variant_id")
@@ -763,23 +791,43 @@ class VariantTranscriptImporter(Importer):
             return False, f"variant {row['variant']} but transcript missing from input"
         return True, row
 
+    def cache_chromosome(self, chromosome):
+        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        qs = self.model.objects.filter(q).values(
+                "variant__variant_id",
+                "transcript__transcript_id",
+                "pk"
+        )
+        self.existing = {
+            (
+                obj["variant__variant_id"], obj["transcript__transcript_id"]
+            ): (
+                obj["pk"]
+            )
+            for obj in qs
+        }
+        self.current_chromosome = chromosome
+
     def check_existing(self, row):
-        """ Return true is row represents an object that already exists in
+        """ Return true if row represents an object that already exists in
         the database (i.e. if update rather than create is needed) """
+        if self.noexisting:
+            return False
+        chromosome, _ = row["variant"].split("-", 1)
+        if self.current_chromosome != chromosome:
+            self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
-        try:
-            variant = self.variants[row["variant"]]
-        except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object {row['variant']} / {row['transcript']} for bulk create from line {self.reader.line_num}: variant {row['variant']} not found"
+        variant = self.variants.get(row["variant"], None)
+        if variant is None:
+            msg = f"error creating {self.object_name} object {row['variant']} / {row['transcript']} for bulk create from line {self.reader.line_num}: variant {row['variant']} not found"
             return False, msg
-        try:
-            transcript = self.transcripts[row["transcript"]]
-        except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object {row['variant']} / {row['transcript']} for bulk create from line {self.reader.line_num}: transcript {row['transcript']} not found"
+        transcript = self.transcripts.get(row["transcript"], None)
+        if transcript is None:
+            msg = f"error creating {self.object_name} object {row['variant']} / {row['transcript']} for bulk create from line {self.reader.line_num}: transcript {row['transcript']} not found"
             return False, msg
         try:
             return True, self.model(
@@ -788,7 +836,7 @@ class VariantTranscriptImporter(Importer):
                 hgvsc=row["hgvsc"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -807,7 +855,7 @@ class VariantTranscriptImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -825,7 +873,7 @@ class VariantTranscriptImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -835,45 +883,83 @@ class AnnotationImporter(Importer):
     path_component = "variants_annotations"
 
     def populate_caches(self):
-        # This costs a bit at startup but is necessary to enable bulk creates, which
-        # speed up creation by ~ an order of magnitude
+        self.noexisting = (self.model.objects.count() == 0)
+        if not self.noexisting:
+            self.current_chromosome = None
+            self.existing = {}
+        self.vts = {}
+
+        # Too demanding of RAM
+        #
+        # self.existing = {
+        #     (
+        #         obj["variant_transcript__variant__variant_id"], obj["variant_transcript__transcript__transcript_id"]
+        #     ): (
+        #         obj["pk"]
+        #     )
+        #     for obj in self.model.objects.values(
+        #         "variant_transcript__variant__variant_id",
+        #         "variant_transcript__transcript__transcript_id",
+        #         "pk"
+        #     )
+        # }
+        # self.vts = {
+        #     (obj["variant_id"], obj["transcript_id"]): obj["pk"]
+        #     for obj in ibvlmodels.VariantTranscript.objects.values("pk", "variant_id", "transcript_id")
+        # }
+
+    def cache_chromosome(self, chromosome):
+        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        qs = self.model.objects.filter(q).values(
+                "variant__variant_id",
+                "transcript__transcript_id",
+                "pk"
+        )
         self.existing = {
             (
                 obj["variant__variant_id"], obj["transcript__transcript_id"]
             ): (
-                obj["pk"], obj["transcript_id"]
+                obj["pk"]
             )
-            for obj in self.model.objects.values(
-                "variant__variant_id",
-                "variant_id",
-                "pk"
-            )
-        }
-        # These cost a little time at startup (and memory), but massively speed up
-        # processing
-        self.vts = {
-            (obj["variant_id"], obj["transcript_id"]): obj["pk"]
-            for obj in ibvlmodels.VariantTranscript.objects.values("pk", "variant_id", "transcript_id")
+            for obj in qs
         }
 
+        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+            "pk", "variant_id", "transcript_id"
+        )
+        self.vts = {
+            (obj["variant_id"], obj["transcript_id"]): obj["pk"]
+            for obj in qs
+        }
+        self.current_chromosome = chromosome
+
     def check_existing(self, row):
-        """ Return true is row represents an object that already exists in
+        """ Return true if row represents an object that already exists in
         the database (i.e. if update rather than create is needed) """
+        if self.noexisting:
+            return False
+        chromosome, _ = row["variant"].split("-", 1)
+        if self.current_chromosome != chromosome:
+            self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
+        vt = self.vts.get((row["variant"], row["transcript"]), None)
+        if vt is None:
+            msg = f"variant transcript object not found for variant {row['variant']} transcript {row['transcript']}"
+            return False, msg
         try:
             return True, self.model(
-                variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
+                variant_transcript_id=vt,
                 hgvsp=row["hgvsp"],
                 polyphen=row["polyphen"],
                 sift=row["sift"],
                 impact=row["impact"],
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -894,7 +980,7 @@ class AnnotationImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -914,7 +1000,7 @@ class AnnotationImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
 
@@ -924,46 +1010,69 @@ class ConsequenceImporter(Importer):
     path_component = "variants_consequences"
 
     def populate_caches(self):
-        # This costs a bit at startup but is necessary to enable bulk creates, which
-        # speed up creation by ~ an order of magnitude
-        self.existing = {
-            (
-                obj["variant__variant_id"], obj["transcript__transcript_id"]
-            ): (
-                obj["pk"], obj["transcript_id"]
-            )
-            for obj in self.model.objects.values(
-                "variant__variant_id",
-                "variant_id",
-                "pk"
-            )
-        }
-        # These cost a little time at startup (and memory), but massively speed up
-        # processing
+        self.noexisting = (self.model.objects.count() == 0)
+        if not self.noexisting:
+            self.current_chromosome = None
+            self.existing = {}
+        self.vts = {}
         self.severities = {
             obj["severity_number"]: obj["pk"]
             for obj in ibvlmodels.Severity.objects.values("pk", "severity_number")
         }
-        self.vts = {
-            (obj["variant_id"], obj["transcript_id"]): obj["pk"]
-            for obj in ibvlmodels.VariantTranscript.objects.values("pk", "variant_id", "transcript_id")
+
+    def cache_chromosome(self, chromosome):
+        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        qs = self.model.objects.filter(q).values(
+                "variant__variant_id",
+                "transcript__transcript_id",
+                "pk"
+        )
+        self.existing = {
+            (
+                obj["variant__variant_id"], obj["transcript__transcript_id"]
+            ): (
+                obj["pk"]
+            )
+            for obj in qs
         }
 
+        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+            "pk", "variant_id", "transcript_id"
+        )
+        self.vts = {
+            (obj["variant_id"], obj["transcript_id"]): obj["pk"]
+            for obj in qs
+        }
+        self.current_chromosome = chromosome
+
     def check_existing(self, row):
-        """ Return true is row represents an object that already exists in
+        """ Return true if row represents an object that already exists in
         the database (i.e. if update rather than create is needed) """
+        if self.noexisting:
+            return False
+        chromosome, _ = row["variant"].split("-", 1)
+        if self.current_chromosome != chromosome:
+            self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
     def created_row_object(self, row):
         """ Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure """
+        vt = self.vts.get((row["variant"], row["transcript"]), None)
+        if vt is None:
+            msg = f"variant transcript object not found for variant {row['variant']} transcript {row['transcript']}"
+            return False, msg
+        severity = self.severities.get(row["severity"], None)
+        if severity is None:
+            msg = f"severity object with number {row['severity']} not found for variant {row['variant']} transcript {row['transcript']}"
+            return False, msg
         try:
             return True, self.model(
-                variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
-                severity=self.severities[row["severity"]],
+                variant_transcript_id=vt,
+                severity=severity,
             )
         except Exception as e:
-            msg = f"error creating {self.OBJECT_NAME} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating {self.object_name} object for bulk create for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
     def update(self, row):
@@ -981,7 +1090,7 @@ class ConsequenceImporter(Importer):
                 return False, msg
             return True, updated
         except Exception as e:
-            msg = f"error updating {self.OBJECT_NAME} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error updating {self.object_name} object for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
     
     def update_or_create(self, row):
@@ -998,6 +1107,6 @@ class ConsequenceImporter(Importer):
             )
             return True, obj
         except Exception as e:
-            msg = f"error creating/updating {self.OBJECT_NAME} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
+            msg = f"error creating/updating {self.object_name} for variant {row['variant']} / transcript {row['transcript']} from line {self.reader.line_num}: {e}"
             return False, msg
 
