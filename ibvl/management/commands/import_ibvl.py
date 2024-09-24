@@ -24,6 +24,12 @@ class Command(BaseCommand):
             for err in errors:
                 sys.stderr.write(f"* {err}\n")
 
+    def log_warnings(self, entity_type, warnings):
+        if warnings:
+            sys.stderr.write(f"\nWARNINGS ({len(warnings)}) in {entity_type} load:\n")
+            for err in warnings:
+                sys.stderr.write(f"* {err}\n")
+
     def add_arguments(self, parser):
         parser.formatter_class=argparse.ArgumentDefaultsHelpFormatter
         parser.add_argument(
@@ -106,39 +112,49 @@ class Command(BaseCommand):
         snv_errors = None
         gvf_errors = None
         ggf_errors = None
+        vts_errors = None
         ann_errors = None
         con_errors = None
-        vts_errors = None
+        sev_warnings = None
+        gen_warnings = None
+        var_warnings = None
+        tra_warnings = None
+        snv_warnings = None
+        gvf_warnings = None
+        ggf_warnings = None
+        vts_warnings = None
+        ann_warnings = None
+        con_warnings = None
 
         if options['severities']:
-            sev_errors = ibvltools.SeverityImporter(options).import_data()
+            sev_errors, sev_warnings = ibvltools.SeverityImporter(options).import_data()
 
         if options['genes']:
-            gen_errors = importer.import_genes()
+            gen_errors, gen_warnings = ibvltools.GeneImporter(options).import_data()
 
         if options['variants']:
-            var_errors = importer.import_variants()
+            var_errors, var_warnings = ibvltools.VariantImporter(options).import_data()
 
         if options['transcripts']:
-            tra_errors = importer.import_transcripts()
+            tra_errors, tra_warnings = ibvltools.TranscriptImporter(options).import_data()
 
         if options['snvs']:
-            snv_errors = ibvltools.SNVImporter(options).import_data()
+            snv_errors, snv_warnings = ibvltools.SNVImporter(options).import_data()
 
         if options['gvfs']:
-            gvf_errors = importer.import_gvfs()
+            gvf_errors, gvf_warnings = ibvltools.GVFImporter(options).import_data()
 
         if options['ggfs']:
-            ggf_errors = importer.import_ggfs()
-
-        if options['annotations']:
-            ann_errors = importer.import_annotations()
-
-        if options['consequences']:
-            con_errors = importer.import_consequences()
+            ggf_errors, ggf_warnings = ibvltools.GGFImporter(options).import_data()
 
         if options['vts']:
-            vts_errors = importer.import_vts()
+            vts_errors, vts_warnings = ibvltools.VariantTranscriptImporter(options).import_data()
+
+        if options['annotations']:
+            ann_errors, ann_warnings = ibvltools.AnnotationImporter(options).import_data()
+
+        if options['consequences']:
+            con_errors, con_warnings = ibvltools.ConsequenceImporter(options).import_data()
 
         self.log_errors("Severity", sev_errors)
         self.log_errors("Gene", gen_errors)
@@ -147,9 +163,20 @@ class Command(BaseCommand):
         self.log_errors("SNV", snv_errors)
         self.log_errors("GVF", gvf_errors)
         self.log_errors("GGF", ggf_errors)
+        self.log_errors("Variant Transcript", vts_errors)
         self.log_errors("Annotation", ann_errors)
         self.log_errors("Consequence", con_errors)
-        self.log_errors("Variant Transcript", vts_errors)
+
+        self.log_warnings("Severity", sev_warnings)
+        self.log_warnings("Gene", gen_warnings)
+        self.log_warnings("Variant", var_warnings)
+        self.log_warnings("Transcript", tra_warnings)
+        self.log_warnings("SNV", snv_warnings)
+        self.log_warnings("GVF", gvf_warnings)
+        self.log_warnings("GGF", ggf_warnings)
+        self.log_warnings("Variant Transcript", vts_warnings)
+        self.log_warnings("Annotation", ann_warnings)
+        self.log_warnings("Consequence", con_warnings)
 
         if options["rollback-on-error"]:
             if (
