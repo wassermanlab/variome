@@ -324,6 +324,15 @@ class VariantImporter(Importer):
         the database (i.e. if update rather than create is needed)"""
         return row["variant_id"] in self.existing
 
+    def clean_data(self, row):
+        """Clean the input data in row & return cleaned row"""
+        for field in (
+            "filter",
+        ):
+            if row[field] == ".":
+                row[field] = ""
+        return True, row
+
     def created_row_object(self, row):
         """Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure"""
