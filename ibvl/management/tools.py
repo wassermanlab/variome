@@ -1030,9 +1030,8 @@ class AnnotationImporter(Importer):
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
-        if not self.noexisting:
-            self.current_chromosome = None
-            self.existing = {}
+        self.current_chromosome = None
+        self.existing = {}
         self.vts = {}
 
         # Too demanding of RAM
@@ -1060,19 +1059,33 @@ class AnnotationImporter(Importer):
         # }
 
     def cache_chromosome(self, chromosome):
+        if not self.noexisting:
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
+            qs = self.model.objects.filter(q).values(
+                "variant_transcript__variant__variant_id",
+                "variant_transcript__transcript__transcript_id", "pk"
+            )
+            self.existing = {
+                (
+                    obj["variant_transcript__variant__variant_id"],
+                    obj["variant_transcript__transcript__transcript_id"]
+                ): (
+                    obj["pk"]
+                )
+                for obj in qs
+            }
+
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = self.model.objects.filter(q).values(
-            "variant__variant_id", "transcript__transcript_id", "pk"
+        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+            "pk", "variant__variant_id", "transcript__transcript_id"
         )
-        self.existing = {
-            (obj["variant__variant_id"], obj["transcript__transcript_id"]): (obj["pk"])
+        self.vts = {
+            (
+                obj["variant__variant_id"],
+                obj["transcript__transcript_id"]
+            ): obj["pk"]
             for obj in qs
         }
-
-        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
-            "pk", "variant_id", "transcript_id"
-        )
-        self.vts = {(obj["variant_id"], obj["transcript_id"]): obj["pk"] for obj in qs}
         self.current_chromosome = chromosome
 
     def check_existing(self, row):
@@ -1080,20 +1093,20 @@ class AnnotationImporter(Importer):
         the database (i.e. if update rather than create is needed)"""
         if self.noexisting:
             return False
-        chromosome, _ = row["variant"].split("-", 1)
-        if self.current_chromosome != chromosome:
-            self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
+        chromosome, _ = row["variant"].split("-", 1)
+        if self.current_chromosome != chromosome:
+            self.cache_chromosome(chromosome)
         if (row["variant"], row["transcript"]) not in self.vts:
             return (
                 False,
                 "variant transcript object not found to annotate variant "
                 f"{row['variant']} transcript {row['transcript']}",
             )
-        return row
+        return True, row
 
     def created_row_object(self, row):
         """Create a new object to represent the row supplied.
@@ -1183,9 +1196,8 @@ class ConsequenceImporter(Importer):
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
-        if not self.noexisting:
-            self.current_chromosome = None
-            self.existing = {}
+        self.current_chromosome = None
+        self.existing = {}
         self.vts = {}
         self.severities = {
             obj["severity_number"]: obj["pk"]
@@ -1193,19 +1205,33 @@ class ConsequenceImporter(Importer):
         }
 
     def cache_chromosome(self, chromosome):
+        if not self.noexisting:
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
+            qs = self.model.objects.filter(q).values(
+                "variant_transcript__variant__variant_id",
+                "variant_transcript__transcript__transcript_id", "pk"
+            )
+            self.existing = {
+                (
+                    obj["variant_transcript__variant__variant_id"],
+                    obj["variant_transcript__transcript__transcript_id"]
+                ): (
+                    obj["pk"]
+                )
+                for obj in qs
+            }
+
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = self.model.objects.filter(q).values(
-            "variant__variant_id", "transcript__transcript_id", "pk"
+        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+            "pk", "variant__variant_id", "transcript__transcript_id"
         )
-        self.existing = {
-            (obj["variant__variant_id"], obj["transcript__transcript_id"]): (obj["pk"])
+        self.vts = {
+            (
+                obj["variant__variant_id"],
+                obj["transcript__transcript_id"]
+            ): obj["pk"]
             for obj in qs
         }
-
-        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
-            "pk", "variant_id", "transcript_id"
-        )
-        self.vts = {(obj["variant_id"], obj["transcript_id"]): obj["pk"] for obj in qs}
         self.current_chromosome = chromosome
 
     def check_existing(self, row):
@@ -1213,20 +1239,20 @@ class ConsequenceImporter(Importer):
         the database (i.e. if update rather than create is needed)"""
         if self.noexisting:
             return False
-        chromosome, _ = row["variant"].split("-", 1)
-        if self.current_chromosome != chromosome:
-            self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
+        chromosome, _ = row["variant"].split("-", 1)
+        if self.current_chromosome != chromosome:
+            self.cache_chromosome(chromosome)
         if (row["variant"], row["transcript"]) not in self.vts:
             return (
                 False,
                 "variant transcript object not found for consequence of variant "
                 f"{row['variant']} transcript {row['transcript']}",
             )
-        return row
+        return True, row
 
     def created_row_object(self, row):
         """Create a new object to represent the row supplied.
