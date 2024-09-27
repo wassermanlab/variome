@@ -1200,7 +1200,7 @@ class ConsequenceImporter(Importer):
         self.existing = {}
         self.vts = {}
         self.severities = {
-            obj["severity_number"]: obj["pk"]
+            str(obj["severity_number"]): obj["pk"]
             for obj in ibvlmodels.Severity.objects.values("pk", "severity_number")
         }
 
@@ -1275,7 +1275,7 @@ class ConsequenceImporter(Importer):
         try:
             return True, self.model(
                 variant_transcript_id=vt,
-                severity=severity,
+                severity_id=severity,
             )
         except Exception as e:
             msg = (
@@ -1293,7 +1293,7 @@ class ConsequenceImporter(Importer):
             updated = self.model.objects.filter(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])]
             ).update(
-                severity=self.severities[row["severity"]],
+                severity_id=self.severities[row["severity"]],
             )
             if updated != 1:
                 msg = (
@@ -1319,7 +1319,7 @@ class ConsequenceImporter(Importer):
             obj, created = self.model.objects.update_or_create(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
                 defaults={
-                    "severity": self.severities[row["severity"]],
+                    "severity_id": self.severities[row["severity"]],
                 },
             )
             return True, obj

@@ -112,11 +112,9 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--batch",
-            "-b",
-            dest="batch",
-            action="store_true",
-            default=False,
-            help="Batch database updates to attempt to improve performance",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Whether to batch database updates in order to improve performance",
         )
         parser.add_argument(
             "--ignore-existing",
