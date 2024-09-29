@@ -15,7 +15,7 @@ function TrackingDashboard({ initialdata }) {
     <VariantViews views={data.variant_pageviews} />
     <div id="dashboard-page-body">
 
-      <ViewsChart views={data.variant_pageviews} />
+      <ViewsChart chartData={data.chart_data}/>
         <UserDetails users={data.user_details} />
         <VariantDetails variants={data.variant_access_details} />
       <pre>{JSON.stringify(data, null, 2)}</pre>
@@ -46,38 +46,76 @@ function VariantViews({ views }) {
 }
 
 
-function ViewsChart({ views }) {
+function ViewsChart({ chartData }) {
 
   const ChartRef = React.useRef(null);
 
+  // chart state Strictly only these three values (daily, weekly, monthly)
+  const [chartTimeView, updateChartTimeView] = useState('monthly'); 
+
+  // need to keep track of chart instance every time switching timelines
+  const [chartInstance, setChartInstance] = useState(null);
 
   React.useEffect(() => {
+
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
 
     var lineGraphCtx = ChartRef.current
       .getContext("2d");
 
+
+    const currentChartTable = chartData[chartTimeView];
+
     const data = {
-      labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+      labels: Object.keys(currentChartTable),
       datasets: [{
-        label: 'My First Dataset',
-        data: [65, 59, 80, 81, 56, 55, 40],
+        label: `${chartTimeView}`,
+        data: Object.values(currentChartTable),
         fill: false,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1
       }]
     };
 
-    new Chart(lineGraphCtx, {
+    const chart = new Chart(lineGraphCtx, {
       type: "line",
       data,
       options: {
         responsive: true,
+        scales: {
+          y: {
+            ticks: {
+              beginAtZero: true,
+              stepSize: 1,
+            },
+            min: 0,
+          }
+        }
       }
     });
-  }, [ChartRef])
+
+    setChartInstance(chart);
+
+
+
+  }, [ChartRef, chartTimeView])
 
 
   return <div style={{ height: "75vh", width: "100%", position: "relative", marginBottom:"2em" }}>
+    <button className="btn waves-effect waves-light btn-small" onClick={(e) => {
+      e.preventDefault();
+      updateChartTimeView('daily');
+    }}>Daily</button>
+    <button style={{marginLeft: "1px", marginRight: "1px"}} className="btn waves-effect waves-light btn-small" onClick={(e) => {
+      e.preventDefault();
+      updateChartTimeView('weekly');
+    }}>Weekly</button>
+    <button className="btn waves-effect waves-light btn-small" onClick={(e) => {
+      e.preventDefault();
+      updateChartTimeView('monthly');
+    }}>Monthly</button>
     <canvas id="lineGraphChart" ref={ChartRef} ></canvas>
   </div>;
 }

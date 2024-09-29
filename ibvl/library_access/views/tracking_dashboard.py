@@ -153,7 +153,7 @@ def tracking_dashboard(request):
                 end_week_date = end_date
         
             
-            week_range = current_date.strftime('%Y-%m-%d') + " to " + end_week_date.strftime('%Y-%m-%d')
+            week_range = current_date.strftime('%Y') + " " + current_date.strftime('%m-%d') + ":" + end_week_date.strftime('%m-%d')
             
             views_data[week_range] = sum(1 for view in data if current_date <= datetime.fromisoformat(view["time"]) <= end_week_date)
             
