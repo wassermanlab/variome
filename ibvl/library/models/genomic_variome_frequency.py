@@ -4,9 +4,9 @@ from .variant import Variant
 
 class GenomicVariomeFrequency(models.Model):
     variant = models.ForeignKey(Variant, on_delete=models.CASCADE, db_column='variant')
-    af_tot = models.DecimalField(decimal_places=10, max_digits=12)
-    af_xx = models.DecimalField(decimal_places=10, max_digits=12)
-    af_xy = models.DecimalField(decimal_places=10, max_digits=12)
+    af_tot = models.DecimalField(decimal_places=10, max_digits=12, null=True)
+    af_xx = models.DecimalField(decimal_places=10, max_digits=12, null=True)
+    af_xy = models.DecimalField(decimal_places=10, max_digits=12, null=True)
     ac_tot = models.PositiveIntegerField()
     an_tot = models.PositiveIntegerField()
     ac_xx = models.PositiveIntegerField()
