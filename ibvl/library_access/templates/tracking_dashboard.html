@@ -92,16 +92,29 @@
         width:50%;
         height:var(--top-section-height);
         overflow-y:scroll;
+        background:white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .views-table .row {
-        height:1em;
+        min-height:2em;
         background:white;
         margin:0;
-        padding:0;
+        padding: 0;
         display:flex;
-        justify-content: end;
+        justify-content: space-between;
         gap: 1em;
         cursor: default;
+        text-align: center;
+      }
+      .views-table .row div:first-child {
+        flex-basis: 70%;
+      }
+      .views-table .row div:nth-child(2),
+      .views-table .row div:nth-child(3) {
+        flex-basis: 25%;
+      }
+      .views-table .row:hover {
+        background-color: #e0e0e0; 
       }
     </style>
   </head>

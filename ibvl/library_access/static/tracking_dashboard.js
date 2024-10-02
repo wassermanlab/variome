@@ -35,12 +35,12 @@ function VariantViews({ views }) {
             <div>
               {pageview.variant}
             </div>
-            <div>{pageview.time}</div>
+              <div>{pageview.time.includes('T') ? pageview.time.split('T')[0] : pageview.time}</div>
             <div>{pageview.user}</div>
           </li>
         ))}
 
-        {views.length === 0 && <li>(No tracked views under selected filters)</li>}
+        {views.length === 0 && <li style={{textAlign: "center"}}>(No tracked views under selected filters)</li>}
       </ul>
   </div>
 }
