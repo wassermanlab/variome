@@ -2,6 +2,8 @@
 
 from django.db import migrations, models
 
+def noop(apps, schema_editor):
+    pass
 
 class Migration(migrations.Migration):
 
@@ -10,40 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="ac_xx",
-            field=models.PositiveIntegerField(default=0),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="ac_xy",
-            field=models.PositiveIntegerField(default=0),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="af_xx",
-            field=models.DecimalField(decimal_places=10, default=0, max_digits=12),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="af_xy",
-            field=models.DecimalField(decimal_places=10, default=0, max_digits=12),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="an_xx",
-            field=models.PositiveIntegerField(default=0),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="genomicvariomefrequency",
-            name="an_xy",
-            field=models.PositiveIntegerField(default=0),
-            preserve_default=False,
-        ),
+        #noop
+        migrations.RunPython(noop, migrations.RunPython.noop),
+        
     ]

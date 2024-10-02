@@ -14,30 +14,6 @@ class Migration(migrations.Migration):
             model_name="genomicgnomadfrequency",
             name="af_popmax",
         ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="ac_xx",
-        ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="ac_xy",
-        ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="af_xx",
-        ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="af_xy",
-        ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="an_xx",
-        ),
-        migrations.RemoveField(
-            model_name="genomicvariomefrequency",
-            name="an_xy",
-        ),
         migrations.AlterField(
             model_name="genomicgnomadfrequency",
             name="ac_tot",
