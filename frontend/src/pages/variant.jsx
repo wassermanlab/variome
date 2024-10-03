@@ -39,7 +39,6 @@ export default function Variant() {
   const [variantAnnotations, setVariantAnnotations] = useState([]);
   const [error, setError] = useState(null);
 
-  console.log("var id ", varId);
   // Get Variant metadata
   useEffect(() => {
     setError(null);
@@ -52,7 +51,7 @@ export default function Variant() {
 
     Api.get("variant/" + varId)
       .then(({ variant, snv, ibvlFrequencies, annotations }) => {
-        console.log("variant", variant);
+//        console.log("variant", variant);
         setVariant(variant);
         setVariantMetadata(snv);
         //          setGnomadFrequencies(gnomadFrequencies);
@@ -78,12 +77,7 @@ export default function Variant() {
       const QUERY = `
     query getVariant($variantId: String!) {
       variant(variantId: $variantId, dataset: gnomad_r4) {
-        exome {
-          ac
-          an
-          homozygote_count
-        }
-        genome {
+        joint {
           ac
           an
           homozygote_count
@@ -91,9 +85,7 @@ export default function Variant() {
       }
     }
     `;
-
       //    console.log(QUERY);
-
       var body = JSON.stringify(
         {
           query: QUERY,
@@ -104,7 +96,6 @@ export default function Variant() {
         null,
         2
       );
-
       //    console.log(body);
 
       fetch("https://gnomad.broadinstitute.org/api", {
@@ -119,13 +110,13 @@ export default function Variant() {
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);
           var ac_tot =
-            _.get(variant, "exome.ac", 0) + _.get(variant, "genome.ac", 0);
+            _.get(variant, "joint.ac", 0);
           var an_tot =
-            _.get(variant, "exome.an", 0) + _.get(variant, "genome.an", 0);
-          var af_tot = ac_tot / an_tot;
+            _.get(variant, "joint.an", 0);
+            //handle 0??
+          var af_tot = _.divide(ac_tot, an_tot);
           var hom_tot =
-            _.get(variant, "exome.homozygote_count", 0) +
-            _.get(variant, "genome.homozygote_count", 0);
+            _.get(variant, "joint.homozygote_count", 0)
 
           //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
           setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot });
