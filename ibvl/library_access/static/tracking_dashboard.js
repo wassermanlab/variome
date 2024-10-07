@@ -27,16 +27,24 @@ function TrackingDashboard({ initialdata }) {
 
 function VariantViews({ views }) {
 
+  // truncating the variant names 
+  function truncateText(text, maxLength) {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength) + "...";
+  }
+    return text;
+  }
+
   return <div className="views-table">
       <ul style={{ display: "flex", flexDirection: "column" }}>
 
         {views.map((pageview, i) => (
           <li className="row" key={i}>
             <div>
-              {pageview.variant}
+              {truncateText(pageview.variant, 20)} 
             </div>
-              <div>{pageview.time.includes('T') ? pageview.time.split('T')[0] : pageview.time}</div>
-            <div>{pageview.user}</div>
+              <div>{pageview.time}</div>
+            <div style={{textAlign: "right"}}>{pageview.user}</div>
           </li>
         ))}
 
