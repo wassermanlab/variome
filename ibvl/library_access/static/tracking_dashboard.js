@@ -15,7 +15,7 @@ function TrackingDashboard({ initialdata }) {
     <VariantViews views={data.variant_pageviews} />
     <div id="dashboard-page-body">
 
-      <ViewsChart chartData={data.chart_data}/>
+      <ViewsChart views={data.variant_pageviews}/>
         <UserDetails users={data.user_details} />
         <VariantDetails variants={data.variant_access_details} />
       <pre>{JSON.stringify(data, null, 2)}</pre>
@@ -43,7 +43,11 @@ function VariantViews({ views }) {
             <div>
               {truncateText(pageview.variant, 20)} 
             </div>
-              <div>{pageview.time}</div>
+              <div>{(() => {
+                const timeString = pageview.time.includes("Z") ? pageview.time : pageview.time + "Z";
+                const dateObject = new Date(timeString);
+                return dateObject.toLocaleString();
+              })()}</div>
             <div style={{textAlign: "right"}}>{pageview.user}</div>
           </li>
         ))}
@@ -54,8 +58,8 @@ function VariantViews({ views }) {
 }
 
 
-function ViewsChart({ chartData }) {
-
+function ViewsChart({ views }) {
+  
   const ChartRef = React.useRef(null);
 
   // chart state Strictly only these three values (daily, weekly, monthly)
@@ -65,7 +69,65 @@ function ViewsChart({ chartData }) {
   const [chartInstance, setChartInstance] = useState(null);
 
   React.useEffect(() => {
+    let chartData = {'daily': {}, 'weekly': {}, 'monthly': {}};
+    
+    // convert to browser timezone
+    const variant_pageviews = views.map((view) => {
+      const timeString = view.time.includes("Z") ? view.time : view.time + "Z";
+      const dateObject = new Date(timeString);
 
+      return {...view, time: dateObject};
+    });
+
+    // count the data for the charts 
+    // daily
+    variant_pageviews.forEach((item) => {
+      const date = new Date(item.time).toLocaleDateString();
+
+      if (chartData['daily'][date]) {
+        chartData['daily'][date]++;
+      } else {
+        chartData['daily'][date] = 1;
+      }
+    })
+
+    // helper function for weekly 
+    function startOfTheWeek(date) {
+      const day = date.getDay(); 
+      const diff = date.getDate() - day; 
+      return new Date(date.setDate(diff)).toLocaleDateString();
+    }
+
+    // weekly
+    variant_pageviews.forEach((item) => {
+      const date = new Date(item.time).toLocaleDateString();
+
+      // finding start of the week
+      const weekStartDate = startOfTheWeek(new Date(date));
+
+      if (chartData['weekly'][weekStartDate]) {
+        chartData['weekly'][weekStartDate]++;
+      } else {
+        chartData['weekly'][weekStartDate] = 1;
+      }
+    })
+
+    // monthly 
+    variant_pageviews.forEach((item) => {
+      const date = new Date(item.time);
+
+      const yearMonth = date.getFullYear() + "-" + (date.getMonth() + 1).toString();
+
+      if (chartData['monthly'][yearMonth]) {
+        chartData['monthly'][yearMonth]++;
+      } else {
+        chartData['monthly'][yearMonth] = 1;
+      }
+
+    })
+
+
+    // destroys an already made chart instant
     if (chartInstance) {
       chartInstance.destroy();
     }
@@ -106,9 +168,7 @@ function ViewsChart({ chartData }) {
 
     setChartInstance(chart);
 
-
-
-  }, [ChartRef, chartTimeView])
+  }, [ChartRef, chartTimeView, views])
 
 
   return <div style={{ height: "75vh", width: "100%", position: "relative", marginBottom:"2em" }}>
