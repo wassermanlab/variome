@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django import forms
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
@@ -66,7 +66,7 @@ def tracking_dashboard(request):
             'name': user.get_full_name(),
             'page_views_unique': page_views_unique,
             'views_24_hrs': user.profile.access_count,
-            'time_on_site': user.time_on_site.seconds,
+            'time_on_site': str(user.time_on_site.seconds // 60) + ":" + str(user.time_on_site.seconds % 60),
         })
 
     variant_access_details = []
@@ -78,8 +78,8 @@ def tracking_dashboard(request):
         variant = variant_from_url(variant_url['url'])
         
         if variant:
-            user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email').order_by('visitor__user__email').distinct('visitor__user__email')
-            users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email']} for u in user_list]
+            user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email', 'visitor__user__username').order_by('visitor__user__email').distinct('visitor__user__email')
+            users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email'], 'username': u['visitor__user__username']} for u in user_list]
 
             variant_access_details.append({
                 'name': variant.variant_id,
