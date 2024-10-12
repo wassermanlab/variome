@@ -4,6 +4,13 @@ import { useState } from "react";
 */
 const useState = React.useState;
 
+// for truncating text when names get too big
+function truncateText(text, maxLength) {
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + "...";
+}
+  return text;
+}
 
 function TrackingDashboard({ initialdata }) {
   const [data, setData] = useState(initialdata);
@@ -27,32 +34,23 @@ function TrackingDashboard({ initialdata }) {
 
 function VariantViews({ views }) {
 
-  // truncating the variant names 
-  function truncateText(text, maxLength) {
-    if (text.length > maxLength) {
-      return text.substring(0, maxLength) + "...";
-  }
-    return text;
-  }
-
   return <div className="views-table">
-      <ul style={{ display: "flex", flexDirection: "column" }}>
-
+      <ul style={{ display: "flex", flexDirection: "column", margin: "0px"}}>
         {views.map((pageview, i) => (
           <li className="row" key={i}>
-            <div>
+            <div className="variant-column">
               {truncateText(pageview.variant, 20)} 
             </div>
-              <div>{(() => {
-                const timeString = pageview.time.includes("Z") ? pageview.time : pageview.time + "Z";
+              <div className="time-column">{(() => {
+                const timeString = pageview.time.includes("Z") ? pageview.time : pageview.time + "Z"; // converting UTC to browser timezone
                 const dateObject = new Date(timeString);
                 return dateObject.toLocaleString();
               })()}</div>
-            <div style={{textAlign: "right"}}>{pageview.user}</div>
+            <div className="user-column" style={{textAlign: "right"}}>{pageview.user}</div>
           </li>
         ))}
 
-        {views.length === 0 && <li style={{textAlign: "center"}}>(No tracked views under selected filters)</li>}
+        {views.length === 0 && <li style={{textAlign: "center", margin: "1em"}}>(No tracked views under selected filters)</li>}
       </ul>
   </div>
 }
@@ -63,7 +61,7 @@ function ViewsChart({ views }) {
   const ChartRef = React.useRef(null);
 
   // chart state Strictly only these three values (daily, weekly, monthly)
-  const [chartTimeView, updateChartTimeView] = useState('monthly'); 
+  const [chartTimeView, updateChartTimeView] = useState('daily'); 
 
   // need to keep track of chart instance every time switching timelines
   const [chartInstance, setChartInstance] = useState(null);
@@ -116,7 +114,7 @@ function ViewsChart({ views }) {
     variant_pageviews.forEach((item) => {
       const date = new Date(item.time);
 
-      const yearMonth = date.getFullYear() + "-" + (date.getMonth() + 1).toString();
+      const yearMonth = (date.getMonth() + 1).toString() + "/" + date.getFullYear();
 
       if (chartData['monthly'][yearMonth]) {
         chartData['monthly'][yearMonth]++;
@@ -190,25 +188,24 @@ function ViewsChart({ views }) {
 
 
 function UserDetails({ users }) {
-
-  return <div style={{ width: "50%"}}>
+  return <div className="users-table" style={{ marginRight: "1em"}}>
     <h5>User Details</h5>
     <table>
       <thead>
         <tr>
-          <th>User</th>
+          <th style={{ borderLeft: 'none' }}>User</th>
           <th># Unique Views</th>
           <th># Views in 24h</th>
-          <th>Avg. Time on Site</th>
+          <th style={{ borderRight: 'none' }}>Avg. Time on Site</th>
         </tr>
       </thead>
       <tbody>
         {users.map((user, i) => {
           return <tr key={i}>
-            <td>{user.name}</td>
+            <td style={{ borderLeft: 'none' }}>{user.name}</td>
             <td>{user.page_views_unique}</td>
             <td>{user.views_24_hrs}</td>
-            <td>{user.time_on_site}</td>
+            <td style={{ borderRight: 'none' }}>{user.time_on_site}</td>
           </tr>
         })
         }
@@ -221,26 +218,45 @@ function UserDetails({ users }) {
 
 function VariantDetails({ variants }) {
 
-  return <div style={{ width: "50%" }}>
+  const [hoveredTracker, setHoveredTracker] = useState(null);
+
+  return <div className="variant-table">
     <h5>Variant Details</h5>
     <table>
       <thead>
         <tr>
-          <th>Variant</th>
-          <th>Users</th>
+          <th style={{ borderLeft: 'none' }}>Variant</th>
+          <th style={{ borderRight: 'none' }}>Users</th>
         </tr>
       </thead>
       <tbody>
-        {
+        { 
           variants.map((variant, i) => {
             return <tr key={i}>
-              <td>{variant.name}</td>
-              <td>
+                <td style={{ borderLeft: 'none' }}>{truncateText(variant.name, 20)}</td>
+                <td style={{ borderRight: 'none' }}>
                 <ul>
                   <li>{variant.user_count} Users:</li>
-                  <span style={{ cursor: "pointer" }} title="Hover for more info">ⓘ</span>
                   {variant.users.map((user, j) => {
-                    return <li key={j}>{user.get_full_name} ({user.email})</li>
+                    return <li key={j}>
+                      {user.get_full_name} 
+                      <span style={{ cursor: "pointer" }}
+                        onMouseEnter={() => setHoveredTracker(j.toString() + ":" + i.toString())}
+                        onMouseLeave={() => setHoveredTracker(null)}> ⓘ</span>
+                        {hoveredTracker === (j.toString() + ":" + i.toString()) &&
+                        <div style={{
+                          position: "absolute",
+                          backgroundColor: '#f9f9f9',
+                          border: '1px solid #ddd',
+                          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+                          zIndex: '1',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          <p style={{ padding: "0", margin: "0.2em 0"}}>Username: {user.username}</p>
+                          <p style={{ padding: "0", margin: "0.2em 0"}}>Email: {user.email}</p>
+                        </div>
+                        }
+                      </li>
                   })}
                 </ul>
               </td>

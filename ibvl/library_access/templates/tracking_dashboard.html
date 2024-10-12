@@ -85,18 +85,36 @@
           width:100%;
           margin-top: 1em;
         }
-      }
 
+        .users-table {
+          width: 100%;
+        }
+
+        .variant-table {
+          width: 100%;
+        }
+      } 
+      @media (min-width: 600px) {
+        .users-table {
+          width: 48%;
+        }
+
+        .variant-table {
+          width: 48%;
+        }
+      }
       .views-table {
         float:right;
         width:50%;
         height:var(--top-section-height);
         overflow-y:scroll;
+      } 
+      .views-table ul {
         background:white;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .views-table .row {
-        min-height:2em;
+        min-height: 1.2em;
         background:white;
         margin:0;
         padding: 0;
@@ -106,22 +124,53 @@
         cursor: default;
         text-align: center;
       }
-      .views-table .row div:first-child {
-        flex-basis: 40%;
+      .views-table .variant-column {
+        flex-basis: 30%;
+        flex-grow: 0;
+        flex-shrink: 0;
         text-align: left;
-        padding: 0.5em;
-        overflow: "hidden";
-        text-overflow: ellipsis;
         white-space: nowrap;
-        
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-left: 0.2em;
       }
-      .views-table .row div:nth-child(2),
-      .views-table .row div:nth-child(3) {
-        flex: 0, 0, 30%;
+
+      .views-table .time-column {
+        flex-basis: 30%;
+        flex-grow: 0;
+        flex-shrink: 0;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
+
+      .views-table .user-column {
+        flex-basis: 30%;
+        flex-grow: 0;
+        flex-shrink: 0;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      } 
       .views-table .row:hover {
         background-color: #e0e0e0; 
       }
+      .users-table, .variant-table{
+        margin-top: 1em;
+        border-collapse: collapse;
+      }
+      .users-table td, .users-table th, .variant-table th, .variant-table td {
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #808080;
+      }
+      .users-table th, .variant-table th {
+        border-top: none;
+      }
+
+     
     </style>
   </head>
   <body>

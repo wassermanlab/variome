@@ -66,7 +66,7 @@ def tracking_dashboard(request):
             'name': user.get_full_name(),
             'page_views_unique': page_views_unique,
             'views_24_hrs': user.profile.access_count,
-            'time_on_site': user.time_on_site.seconds,
+            'time_on_site': str(user.time_on_site.seconds // 60) + ":" + str(user.time_on_site.seconds % 60),
         })
 
     variant_access_details = []
@@ -78,8 +78,8 @@ def tracking_dashboard(request):
         variant = variant_from_url(variant_url['url'])
         
         if variant:
-            user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email').order_by('visitor__user__email').distinct('visitor__user__email')
-            users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email']} for u in user_list]
+            user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email', 'visitor__user__username').order_by('visitor__user__email').distinct('visitor__user__email')
+            users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email'], 'username': u['visitor__user__username']} for u in user_list]
 
             variant_access_details.append({
                 'name': variant.variant_id,
@@ -114,86 +114,12 @@ def tracking_dashboard(request):
             'variant': pageview.variant,
             'variant_url': pageview.variant_url
         })
-        
-    # Data for the display charts (daily, weekly and monthly)
-    chart_data = {}
-    
-    # Helper functions for creating data for chart views
-    def create_daily_views(start_date, end_date, data):
-        
-        current_date = start_date
-        views_data = {}
-        
-        while current_date <= end_date:
-            
-            counter = sum(1 for view in data if view['time'].split("T")[0] == current_date)
-
-            views_data[current_date.strftime('%Y-%m-%d')] = counter
-            
-            current_date += timedelta(days=1)
-        
-        return views_data
-
-    # weekly (Monday to Sunday) Assuming that weeks start with sunday
-    def create_weekly_views(start_date, end_date, data):
-        
-        views_data = {}
-                
-        current_date = start_date
-        
-        while current_date <= end_date:
-            end_week_date = current_date + timedelta(days=6)
-            
-            # if it doesn't equal to monday 
-            if current_date.weekday() != 0: # essentially the first iteration where the week might not be complete 7 days
-                starting_weekday = current_date.weekday()
-                difference_to_sunday = 6 - starting_weekday
-                end_week_date = current_date + timedelta(days=difference_to_sunday)
-            elif current_date + timedelta(days=7) > end_date: # last iteration set up
-                end_week_date = end_date
-        
-            
-            week_range = current_date.strftime('%Y') + " " + current_date.strftime('%m-%d') + ":" + end_week_date.strftime('%m-%d')
-            
-            views_data[week_range] = sum(1 for view in data if current_date <= datetime.fromisoformat(view["time"]) <= end_week_date)
-            
-            current_date = end_week_date + timedelta(days=1)
-            
-        return views_data
-    
-    
-    def create_monthly_views(start_date, end_date, data):
-        
-        # turn it to the first of the month        
-        current_date = start_date.replace(day=1)
-        views_data = {}
-        
-        while current_date <= end_date:
-            
-            year_month_date = current_date.strftime('%Y-%m')
-            
-            counter = sum(1 for view in data if view['time'][0:7] == year_month_date)
-
-            views_data[year_month_date] = counter
-            
-            current_date += timedelta(days=32) # add 32 days to ensure moves onto next month 
-            current_date = current_date.replace(day=1) # replaces it back to day 1
-        
-        return views_data
-
-
-    # chart views data
-    chart_data['daily'] = create_daily_views(start_time, end_time, variant_pageviews)
-    chart_data['weekly'] = create_weekly_views(start_time, end_time, variant_pageviews)
-    chart_data['monthly'] = create_monthly_views(start_time, end_time, variant_pageviews)
-        
 
     context = {
         'form': form,
         'data':json.dumps({
             'user_details':user_details,
             'variant_pageviews': variant_pageviews,
-            'chart_data': chart_data,
             'warning': None,
             'variant_access_details': variant_access_details,
             })
