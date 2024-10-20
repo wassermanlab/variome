@@ -6,16 +6,19 @@ import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
+const DECIMALS = 4;
+
 export default function VariantDetails({ variantMetadata, ibvlFrequencies, variant }) {
     //    console.log({variantMetadata, ibvlFrequencies, varId})
 
     if (!variant){
         return null;
     }
-    var alleleFrequency = "-"
-    if (!_.isNaN((Number(_.get(ibvlFrequencies, 'af_tot'))))) {
-        alleleFrequency = Number(ibvlFrequencies.af_tot).toFixed(4)
+    var alleleFrequency = "--";
+    if (!_.isEmpty(_.get(ibvlFrequencies, 'af_tot'))){
+        alleleFrequency = _.round(_.get(ibvlFrequencies, 'af_tot'), DECIMALS);
     }
+
     const variantDetailsList = [
         {
             title: 'Type',

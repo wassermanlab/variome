@@ -13,14 +13,29 @@ import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/system';
 import _ from 'lodash';
 
+const DECIMALS = 4;
+
 function createData(name, total, xx, xy, af_popmax, gnomad) {
     if (_.isNumber(gnomad)) {
         if ( !_.isInteger(gnomad) ) {
-            gnomad = gnomad.toFixed(4);
+            gnomad = gnomad.toFixed(DECIMALS);
         }
     } else if (!_.isString(gnomad)) {
         gnomad = '...'
     }
+    //^ gnomad is treated differently because it is fetched from the gnomad API
+    // the values being set here are a default fallback
+    
+    if (!_.isEmpty(total)){
+        total = _.round(total, DECIMALS);
+    }
+    if (!_.isEmpty(xx)){
+        xx = _.round(xx, DECIMALS);
+    }
+    if (!_.isEmpty(xy)){
+        xy = _.round(xy, DECIMALS);
+    }
+
     return { name, total, xx, xy, af_popmax, gnomad };
 }
 
@@ -31,30 +46,32 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
     if (!ibvlFrequencies && !gnomadFrequencies) {
         return null;
     }
+    console.log("ibvl", ibvlFrequencies);
+    console.log("gnomad", gnomadFrequencies);
     
     if (ibvlFrequencies && gnomadFrequencies) {
         rows = [
             createData(
                 'Allele Number', 
-                Math.trunc(ibvlFrequencies["an_tot"]), 
-                Math.trunc(ibvlFrequencies["an_xx"]),  
-                Math.trunc(ibvlFrequencies["an_xy"]),  
+                ibvlFrequencies["an_tot"], 
+                ibvlFrequencies["an_xx"],  
+                ibvlFrequencies["an_xy"],  
                 '-',
                 gnomadFrequencies["an_tot"], 
             ),
             createData(
                 'Allele Count', 
-                Math.trunc(ibvlFrequencies["ac_tot"]), 
-                Math.trunc(ibvlFrequencies["ac_xx"]),  
-                Math.trunc(ibvlFrequencies["ac_xy"]),  
+                ibvlFrequencies["ac_tot"], 
+                ibvlFrequencies["ac_xx"],  
+                ibvlFrequencies["ac_xy"],  
                 '-',
                 gnomadFrequencies["ac_tot"],
             ),
             createData(
                 'Allele Frequency',
-                Number(ibvlFrequencies["af_tot"]).toFixed(4), 
-                Number(ibvlFrequencies["af_xx"]).toFixed(4),  
-                Number(ibvlFrequencies["af_xy"]).toFixed(4), 
+                ibvlFrequencies["af_tot"], 
+                ibvlFrequencies["af_xx"],  
+                ibvlFrequencies["af_xy"], 
                 '-', 
                 gnomadFrequencies["af_tot"],
             ),/*
@@ -70,9 +87,9 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
             ),*/
             createData(
                 'No. of Homozygotes',
-                Math.trunc(ibvlFrequencies["hom_tot"]), 
-                Math.trunc(ibvlFrequencies["hom_xx"]),  
-                Math.trunc(ibvlFrequencies["hom_xy"]), 
+                ibvlFrequencies["hom_tot"], 
+                ibvlFrequencies["hom_xx"],  
+                ibvlFrequencies["hom_xy"], 
                 '-', 
                 gnomadFrequencies["hom_tot"],
             ),
