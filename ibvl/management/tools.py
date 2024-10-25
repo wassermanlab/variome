@@ -334,8 +334,8 @@ class VariantImporter(Importer):
         ):
             if row[field] == ".":
                 row[field] = ""
-        if len(row["variant_id"]) > 255:
-            return False, ["variant ID longer than 255"]
+        if len(row["variant_id"]) > 355:
+            return False, ["variant ID longer than 355"]
         return True, row
 
     def created_row_object(self, row):
