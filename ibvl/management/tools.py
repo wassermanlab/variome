@@ -108,10 +108,11 @@ class Importer:
                     if success:
                         row = obj
                     else:
-                        warnings.append(
-                            f"ignored row {self.reader.line_num} due to "
-                            f"uncleanable data: {obj}"
-                        )
+                        for msg in obj:
+                            warnings.append(
+                                f"ignored row {self.reader.line_num} due to "
+                                f"uncleanable data: {msg}"
+                            )
                         continue
                     if self.batch:
                         if not self.check_existing(row):
@@ -334,7 +335,7 @@ class VariantImporter(Importer):
             if row[field] == ".":
                 row[field] = ""
         if len(row["variant_id"]) > 255:
-            return False, "variant ID longer than 255"
+            return False, ["variant ID longer than 255"]
         return True, row
 
     def created_row_object(self, row):
@@ -669,9 +670,24 @@ class GVFImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in ("af_tot",):
-            if row[field] == ".":
-                return False, f"variant {row['variant']}"
+        for field in (
+            "an_xx",
+            "an_xy",
+            "af_tot",
+            "af_xx",
+            "af_xy",
+            "ac_tot",
+            "ac_xx",
+            "ac_xy",
+            "hom_tot",
+            "hom_xx",
+            "hom_xy",
+        ):
+            if row[field] in (".", "NA"):
+                row[field] = None
+        for field in ("an_tot",):
+            if row[field] in (".", "NA"):
+                return False, [f"variant {row['variant']} has an_tot '{row[field]}'"]
         return True, row
 
     def check_existing(self, row):
@@ -782,12 +798,16 @@ class GGFImporter(Importer):
         """Clean the input data in row & return cleaned row"""
         for field in (
             "af_tot",
+        ):
+            if row[field] in (".", "NA"):
+                row[field] = None
+        for field in (
             "ac_tot",
             "an_tot",
             "hom_tot",
         ):
-            if row[field] == ".":
-                return False, f"variant {row['variant']}"
+            if row[field] in (".", "NA"):
+                return False, [f"variant {row['variant']} has {field} '{row[field]}'"]
         return True, row
 
     def check_existing(self, row):
@@ -909,14 +929,17 @@ class VariantTranscriptImporter(Importer):
         if row["transcript"] == "":
             notranscript = True
         if novariant and notranscript:
-            return False, "variant and transcript missing from input"
+            return False, ["variant and transcript missing from input"]
         if novariant:
             return (
                 False,
-                f"transcript {row['transcript']} but variant missing from input",
+                [f"transcript {row['transcript']} but variant missing from input"],
             )
         if notranscript:
-            return False, f"variant {row['variant']} but transcript missing from input"
+            return(
+                False,
+                [f"variant {row['variant']} but transcript missing from input"],
+            )
         return True, row
 
     def cache_chromosome(self, chromosome):
@@ -1102,11 +1125,19 @@ class AnnotationImporter(Importer):
         chromosome, _ = row["variant"].split("-", 1)
         if self.current_chromosome != chromosome:
             self.cache_chromosome(chromosome)
+        errors = []
+        for field in ("variant", "transcript"):
+            if row[field] == "":
+                errors.append(f"no {field} specified")
+        if errors:
+            return False, errors
         if (row["variant"], row["transcript"]) not in self.vts:
             return (
                 False,
-                "variant transcript object not found to annotate variant "
-                f"{row['variant']} transcript {row['transcript']}",
+                [
+                    "variant transcript object not found to annotate variant "
+                    f"{row['variant']} transcript {row['transcript']}"
+                ],
             )
         return True, row
 
@@ -1248,11 +1279,19 @@ class ConsequenceImporter(Importer):
         chromosome, _ = row["variant"].split("-", 1)
         if self.current_chromosome != chromosome:
             self.cache_chromosome(chromosome)
+        errors = []
+        for field in ("variant", "transcript"):
+            if row[field] == "":
+                errors.append(f"no {field} specified")
+        if errors:
+            return False, errors
         if (row["variant"], row["transcript"]) not in self.vts:
             return (
                 False,
-                "variant transcript object not found for consequence of variant "
-                f"{row['variant']} transcript {row['transcript']}",
+                [
+                    "variant transcript object not found for consequence of variant "
+                    f"{row['variant']} transcript {row['transcript']}"
+                ],
             )
         return True, row
 
