@@ -34,7 +34,8 @@ class Command(BaseCommand):
             "--path",
             "-p",
             dest="path",
-            required=True,
+            required=False,
+            default="data/fixtures",
             help="Path of folder containing unpacked IBVL data files",
         )
         parser.add_argument(
