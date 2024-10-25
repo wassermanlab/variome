@@ -699,7 +699,6 @@ class GVFImporter(Importer):
         """Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure"""
         try:
-            # XXX - the af/ac/an _xx/_xy will appear at some point and need to be added.
             return True, self.model(
                 variant_id=self.variants[row["variant"]],
                 af_tot=row["af_tot"],
@@ -709,6 +708,12 @@ class GVFImporter(Importer):
                 hom_xx=row["hom_xx"],
                 hom_xy=row["hom_xy"],
                 quality=row["quality"],
+                an_xx=row["an_xx"],
+                an_xy=row["an_xy"],
+                af_xx=row["af_xx"],
+                af_xy=row["af_xy"],
+                ac_xx=row["ac_xx"],
+                ac_xy=row["ac_xy"],
             )
         except Exception as e:
             msg = (
