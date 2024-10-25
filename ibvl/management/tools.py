@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from django.db.models import Q
+from django.db import transaction
 
 import ibvl.library.models as ibvlmodels
 
@@ -81,6 +82,7 @@ class Importer:
         Default implementation returns input row as-is"""
         return True, row
 
+    @transaction.atomic
     def import_data(self):
         """Locate the appropriate data file and load objects from it"""
         errors = []
