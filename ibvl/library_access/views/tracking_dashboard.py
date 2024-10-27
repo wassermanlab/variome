@@ -71,13 +71,11 @@ def tracking_dashboard(request):
 
     variant_access_details = []
     variant_urls = Pageview.objects.filter(**variant_filter).values('url').distinct()
-    # TODO: please make this variants list unique
-    # as a result, every variant_name should appear only once in the Variant Details list)
+    variant_logging = set()
     for variant_url in variant_urls:
-        
         variant = variant_from_url(variant_url['url'])
         
-        if variant:
+        if variant and variant.variant_id not in variant_logging:
             user_list = Pageview.objects.filter(url=variant_url['url']).values('visitor__user__first_name', 'visitor__user__last_name', 'visitor__user__email', 'visitor__user__username').order_by('visitor__user__email').distinct('visitor__user__email')
             users = [{'get_full_name': f"{u['visitor__user__first_name']} {u['visitor__user__last_name']}", 'email': u['visitor__user__email'], 'username': u['visitor__user__username']} for u in user_list]
 
@@ -86,6 +84,9 @@ def tracking_dashboard(request):
                 'user_count': user_list.count(),
                 'users': users
             })
+            
+            # Marking this variant as processed
+            variant_logging.add(variant.variant_id)
             
 #            print("variant_name", variant_name)
 #            print("user_list", user_list)
