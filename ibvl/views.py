@@ -3,10 +3,14 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.conf import settings
+from django.http import JsonResponse
+from .library.models import Variant
+from ibvl.models import VariomeSettings
+from django.contrib.auth.decorators import login_required
 
 def backend_home_page(request):
     # if production ...?
-    # if developemnt: (case handled in urls.py)
+    # if development: (case handled in urls.py)
     return login_view(request)
 
 # for development environment. logs in a non-staff, non-superadmin user
@@ -30,3 +34,17 @@ def login_view(request):
             messages.error(request,"Invalid username or password.")
     form = AuthenticationForm()
     return render(request, 'development-mode-login.html', context={'form': form})
+
+@login_required
+def get_site_settings(request):
+    site_settings = VariomeSettings.objects.get(pk=1)
+    site_title = site_settings.site_title
+    example_variant = site_settings.example_snv
+        
+    settings = {"settings": {"site_title": site_title}}
+    if isinstance(example_variant, Variant):    
+        settings["settings"]["example_snv"] = {"id": example_variant.id, "var_id": example_variant.variant_id}
+    else:
+        settings["settings"]["example_snv"] = None
+    
+    return JsonResponse(settings)
