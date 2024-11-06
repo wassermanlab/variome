@@ -27,7 +27,7 @@ import Annotations from "../components/Annotations";
 
 import Api from "../Api";
 
-export default function Variant() {
+export default function Variant({pageTitle}) {
   let params = useParams();
   const varId = params.varId;
 
@@ -59,12 +59,13 @@ export default function Variant() {
         setVariantAnnotations(annotations);
         setLoading(false);
       })
-      .catch(({ status, statusText, errors, message }) => {
-        console.log("variant fetch err", message);
-        if (status == 429) {
+      .catch((r) => {
+        if (r.status == 429) {
           setError(
             "Variant requests are limited on a 24-hour basis. Please try again later"
           );
+        } else if (r.status == 404){
+          setError("Variant not found");
         } else {
           setError("Sorry, something went wrong");
         }
@@ -175,6 +176,7 @@ export default function Variant() {
                 varId={varId}
                 ibvlFrequencies={ibvlFrequencies}
                 gnomadFrequencies={gnomadFrequencies}
+                pageTitle={pageTitle}
               />
             </Grid>
 

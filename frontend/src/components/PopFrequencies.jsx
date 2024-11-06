@@ -40,7 +40,7 @@ function createData(name, total, xx, xy, af_popmax, gnomad) {
 }
 
 
-export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
+export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies, pageTitle}) {
     var rows = []
 
     if (!ibvlFrequencies && !gnomadFrequencies) {
@@ -104,7 +104,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies}) {
                     <Grid container>
                         <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
-                                IBVL Frequencies
+                                {pageTitle} Frequencies
                             </Typography>
                         </Grid>
                         <Grid item xs={12}>

@@ -27,6 +27,23 @@ import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
 function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
   const [user, setUser] = useState(null);
+  const [pageTitle, setPageTitle] = useState(null);
+
+  const [exampleSnv, setExampleSnv] = useState(null);
+  const [exampleMt, setExampleMt] = useState(null);
+  const [exampleSv, setExampleSv] = useState(null);
+
+  useEffect(() => {
+      if (_.isEmpty(exampleSnv)){
+
+          Api.get('settings').then((data) => {
+              console.log(data);
+              setExampleSnv(_.get(data,'settings.example_snv'));
+              setPageTitle(_.get(data,'settings.site_title'));
+          });
+      }
+  
+  },[_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
 
   useEffect(() => {
     Api.get('user', { json: true }).then((response) => {
@@ -45,12 +62,12 @@ function AppRouter() {
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user}>
               <Routes>
-                <Route path="/" exact element={<Home user={user} />} />
+                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}}/>} />
                 <Route path="/about" exact element={<About />} />
                 <Route path="/terms" exact element={<TermsOfUse />} />
                 <Route path="/faq" exact element={<FAQ />} />
                 <Route path="/contact" exact element={<Contact />} />
-                {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant />} />}
+                {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
                 {user && <Route path="/profile" element={<Profile user={user} />} />}
                 {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
               </Routes>
