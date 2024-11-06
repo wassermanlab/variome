@@ -25,8 +25,8 @@ def snv_annotations(variant_id, database=None):
             "annotation__hgvsp": "hgvsp",
 #            "annotation__polyphen": "polyphen",
 #            "annotation__sift": "sift",
-            "variant__snv__cadd_intr": "cadd intr",
-            "variant__snv__cadd_score": "cadd score",
+#            "variant__snv__cadd_intr": "cadd intr",
+#            "variant__snv__cadd_score": "cadd score",
         }
         
         if database is None or database not in ["E", "R"]:

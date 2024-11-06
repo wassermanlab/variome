@@ -52,20 +52,20 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies, page
     if (ibvlFrequencies && gnomadFrequencies) {
         rows = [
             createData(
-                'Allele Number', 
-                ibvlFrequencies["an_tot"], 
-                ibvlFrequencies["an_xx"],  
-                ibvlFrequencies["an_xy"],  
-                '-',
-                gnomadFrequencies["an_tot"], 
-            ),
-            createData(
                 'Allele Count', 
                 ibvlFrequencies["ac_tot"], 
                 ibvlFrequencies["ac_xx"],  
                 ibvlFrequencies["ac_xy"],  
                 '-',
                 gnomadFrequencies["ac_tot"],
+            ),
+            createData(
+                'Allele Number', 
+                ibvlFrequencies["an_tot"], 
+                ibvlFrequencies["an_xx"],  
+                ibvlFrequencies["an_xy"],  
+                '-',
+                gnomadFrequencies["an_tot"], 
             ),
             createData(
                 'Allele Frequency',
@@ -120,7 +120,7 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies, page
                                     <TableHead>
                                         <TableRow>
                                             <TableCell sx={{ borderBottom: 'none' }}/>
-                                            <TableCell colSpan={3} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#b3eca4', 0.25) }}>IBVL</TableCell>
+                                            <TableCell colSpan={3} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#b3eca4', 0.25) }}>{pageTitle}</TableCell>
                                             <TableCell colSpan={1} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#ffbcbc', 0.25) }}>gnomAD v4</TableCell>
                                         </TableRow>
                                         {/* BH TODO: Change the font of the headings in this table */}

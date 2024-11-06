@@ -27,7 +27,7 @@ export default function References({variant, variantMetadata}) {
         },
         {
             ref: 'ClinVar',
-            val: _.isEmpty(variantMetadata.clinvar_vcv) ? "(Search)" : <><LinkIcon/> {variantMetadata.clinvar_vcv}</>,
+            val: _.isEmpty(variantMetadata.clinvar_vcv) ? "(Search)" : <><LinkIcon/> {_.round(variantMetadata.clinvar_vcv)}</>,
             link: _.isEmpty(variantMetadata.clinvar_url) ?  "https://www.ncbi.nlm.nih.gov/clinvar/" : variantMetadata.clinvar_url,
         },
         {
@@ -45,7 +45,7 @@ export default function References({variant, variantMetadata}) {
                     <Grid container>
                         <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 'light', paddingBottom: '2%' }}>
-                                References
+                                External Resources
                             </Typography>
                         </Grid>
                         {referencesList.map((item, index) => (

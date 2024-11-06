@@ -25,16 +25,8 @@ export default function VariantDetails({ variantMetadata, ibvlFrequencies, varia
             val: _.get(variant,"var_type", "-"),
         },
         {
-            title: 'Position',
-            val: _.get(variantMetadata, "pos", "-"),
-        },
-        {
             title: 'Site Quality',
             val: _.get(ibvlFrequencies, 'quality', '-'),
-        },
-        {
-            title: 'Allele Frequency',
-            val: alleleFrequency
         },
         {
             title: 'Filter',
@@ -49,10 +41,6 @@ export default function VariantDetails({ variantMetadata, ibvlFrequencies, varia
                     <Grid container>
                         <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 'light' }}>
-                                {/* TODO: Get the reference genome information from the database based 
-                                    on which version of the database is currently being used -- need to
-                                    figure this out a little bit more, as we will have a separate database
-                                    for each reference genome */}
                                 {variant.variant_id} (hg38)
                             </Typography>
                         </Grid>
