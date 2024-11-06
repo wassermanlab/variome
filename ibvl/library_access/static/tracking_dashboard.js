@@ -25,7 +25,7 @@ function TrackingDashboard({ initialdata }) {
       <ViewsChart views={data.variant_pageviews}/>
         <UserDetails users={data.user_details} />
         <VariantDetails variants={data.variant_access_details} />
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+      <pre>{ /*JSON.stringify(data, null, 2) */}</pre>
     </div>
 
   </>;
