@@ -35,14 +35,14 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, 'development-mode-login.html', context={'form': form})
 
-@login_required
+#@login_required
 def get_site_settings(request):
     site_settings = VariomeSettings.objects.get(pk=1)
-    site_title = site_settings.site_title
     example_variant = site_settings.example_snv
         
-    settings = {"settings": {"site_title": site_title}}
-    if isinstance(example_variant, Variant):    
+    settings = {"settings": {"site_title": site_settings.site_title, "home_page_message": site_settings.home_page_message}}
+    
+    if isinstance(example_variant, Variant) & request.user.is_authenticated:    
         settings["settings"]["example_snv"] = {"id": example_variant.id, "var_id": example_variant.variant_id}
     else:
         settings["settings"]["example_snv"] = None

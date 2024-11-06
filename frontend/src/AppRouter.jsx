@@ -27,19 +27,23 @@ import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
 function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
   const [user, setUser] = useState(null);
+  const [settingsFetched, setSettingsFetched] = useState(false);
   const [pageTitle, setPageTitle] = useState(null);
+  const [homePageMessage, setHomePageMessage] = useState(null);
 
   const [exampleSnv, setExampleSnv] = useState(null);
   const [exampleMt, setExampleMt] = useState(null);
   const [exampleSv, setExampleSv] = useState(null);
 
   useEffect(() => {
-      if (_.isEmpty(exampleSnv)){
+      if (!settingsFetched ){
 
           Api.get('settings').then((data) => {
               console.log(data);
               setExampleSnv(_.get(data,'settings.example_snv'));
               setPageTitle(_.get(data,'settings.site_title'));
+              setHomePageMessage(_.get(data,'settings.home_page_message'));
+              setSettingsFetched(true);
           });
       }
   
@@ -62,7 +66,7 @@ function AppRouter() {
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user}>
               <Routes>
-                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}}/>} />
+                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}} message={homePageMessage}/>} />
                 <Route path="/about" exact element={<About />} />
                 <Route path="/terms" exact element={<TermsOfUse />} />
                 <Route path="/faq" exact element={<FAQ />} />

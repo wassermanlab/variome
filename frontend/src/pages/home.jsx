@@ -45,7 +45,7 @@ const Item = styled('div')(({ theme }) => ({
     textAlign: 'center',
   }));
 
-export default function Home({user, pageTitle, setPageTitle, examples}) {
+export default function Home({user, pageTitle, setPageTitle, message, examples}) {
 
     return (
         <Container maxWidth="xl">
@@ -58,10 +58,11 @@ export default function Home({user, pageTitle, setPageTitle, examples}) {
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
+                    {!_.isEmpty(message) &&
                         <Alert severity="info">
-                            This is a test database. All data used is open source and does
-                            not include Indigenous data.
+                            {message}
                         </Alert>
+                    }
                     </Grid>
                     <Grid item xs={12}>
                         {user ? <Card>
