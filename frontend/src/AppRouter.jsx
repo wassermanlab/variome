@@ -64,7 +64,7 @@ function AppRouter() {
       <BrowserRouter>
         <Routes>
           <Route path="/*" element={
-            <AppLayoutWithNavigation user={user}>
+            <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
               <Routes>
                 <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}} message={homePageMessage}/>} />
                 <Route path="/about" exact element={<About />} />

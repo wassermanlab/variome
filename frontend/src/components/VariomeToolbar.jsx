@@ -31,7 +31,7 @@ import Link from "./Link";
 
 import config from "../config";
 
-export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }) {
+export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, pageTitle }) {
 
 
   const accountMenuAnchorEl = useRef(null);
@@ -74,7 +74,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen }
       component="div"
       sx={{ display: { xs: "none", sm: "block" } }}
     >
-      <PlainLink to="/">He Kākano</PlainLink>
+      <PlainLink to="/">{pageTitle}</PlainLink>
     </Typography>
 
     <FlexBox sx={{ flexGrow:"1" }}>
