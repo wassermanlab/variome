@@ -46,7 +46,7 @@ def variant(request, id ):
     try:
         variant = Variant.objects.get(id=id)
     except Variant.DoesNotExist:
-        raise Http404
+        return JsonResponse({"errors": ["Variant not found"]}, status=404)
     
 #    print(f"variant_type: {variant.var_type}")
     

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { styled } from '@mui/material/styles';
+import _ from 'lodash';
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -16,6 +17,7 @@ import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import Search from '../components/Search';
 import Link from '../components/Link';
+import Api from '../Api';
 
 const PREFIX = 'Home';
 const classes = {
@@ -43,7 +45,7 @@ const Item = styled('div')(({ theme }) => ({
     textAlign: 'center',
   }));
 
-export default function Home({user}) {
+export default function Home({user, pageTitle, setPageTitle, message, examples}) {
 
     return (
         <Container maxWidth="xl">
@@ -52,14 +54,15 @@ export default function Home({user}) {
                     <Grid item xs={7}>
                         {/* BH TODO: Pick a better font for this */}
                         <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                            Welcome to He Kākano
+                            Welcome to {pageTitle ? pageTitle : 'Variome'}
                         </Typography>
                     </Grid>
                     <Grid item xs={5}>
+                    {!_.isEmpty(message) &&
                         <Alert severity="info">
-                            This is a test database. All data used is open source and does
-                            not include Indigenous data.
+                            {message}
                         </Alert>
+                    }
                     </Grid>
                     <Grid item xs={12}>
                         {user ? <Card>
@@ -75,31 +78,46 @@ export default function Home({user}) {
                                     <Grid item xs={1} container direction="row" justifyContent="center" alignItems="center">
                                         <Divider orientation="vertical" variant="middle"/>
                                     </Grid>
-                                    <Grid item xs={5}>
+                                    { examples && 
+                                    <Grid item xs={5} >
                                         <Typography variant="h5" sx={{ fontWeight: 'light', paddingBottom: '5%' }}>
-                                            Examples
+                                            Example
                                         </Typography>
                                         <Grid container>
+                                    { examples.snv?
+                                        <>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>SNV:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
-                                                <Typography variant="body1"><Link to="/variant/1" color="primary">22-50623773-C-A</Link></Typography>
+                                                <Typography variant="body1"><Link to={`/variant/${examples.snv.id}`} color="primary">{examples.snv.var_id}</Link></Typography>
                                             </Grid>
+                                        </>
+                                        : "..."
+                                       }
+                                       { examples.mt?
+                                       <>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Mt:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
                                                 <Typography variant="body1">Mt example</Typography>
                                             </Grid>
+                                        </>
+                                        : null}
+                                        { examples.sv?
+                                        <>
                                             <Grid item xs={2}>
                                                 <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Sv:</Typography>
                                             </Grid>
                                             <Grid item xs={10}>
                                                 <Typography variant="body1">SV example</Typography>
                                             </Grid>
+                                        </>
+                                        : null}
                                         </Grid>
                                     </Grid>
+            }
                                 </Grid>
                             </CardContent>
                         </Card> : null }
@@ -163,9 +181,6 @@ export default function Home({user}) {
                     src="/temp-logo.svg"
                     style={{ width: '200px', opacity:'0.2'  }}
                 />
-                <Typography variant="h5" component="div" sx={{ color: 'white' }}>
-                    Variome
-                </Typography>
                 <Typography variant="h5" component="div" sx={{ color: 'white' }}>
                     <Link href="/about" color="inherit">
                         About

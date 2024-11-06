@@ -94,9 +94,7 @@ export default function Annotations({ variantAnnotations, gene }) {
 
     var columnLabelMap = {
       "hgvsc": "HGVSC",
-      "hgvsp": "HGVSP",
-      "cadd intr": "CADD Intr",
-      "cadd score": "CADD Score",
+      "hgvsp": "HGVSP"
     }
     return (
       <Box sx={{ overflowX: "scroll", maxWidth: "100vw" }}>
@@ -168,7 +166,7 @@ export default function Annotations({ variantAnnotations, gene }) {
           }}
         >
           <Typography variant="h4" sx={{ marginRight: "1em" }}>
-            Transcript Annotations
+            Variant Effect Predictor
           </Typography>
 
           <AnnotationsFilter
@@ -195,6 +193,30 @@ export default function Annotations({ variantAnnotations, gene }) {
               return _.get(filter, "impact");
             }}
           />
+          <AnnotationsFilter
+            label="Refseq"
+            filterSetFn={(oldfilter) => {
+              return { ...oldfilter, database: ["R"] };
+            }}
+            filterUnsetFn={(oldfilter) => {
+              return _.omit(oldfilter, "database");
+            }}
+            isCheckedFn={() => {
+              return _.includes(_.get(filter, "database"), "R");
+            }}
+          />
+          <AnnotationsFilter
+            label="Ensembl"
+            filterSetFn={(oldfilter) => {
+              return { ...oldfilter, database: ["E"] };
+            }}
+            filterUnsetFn={(oldfilter) => {
+              return _.omit(oldfilter, "database");
+            }}
+            isCheckedFn={() => {
+              return _.includes(_.get(filter, "database"), "E");
+            }}
+          />
         </Box>
         <Grid container>
           <Grid item xs={12}>
@@ -202,7 +224,7 @@ export default function Annotations({ variantAnnotations, gene }) {
               {variantAnnotations.map((geneAnnotations) => {
                 return (
                   <Card key={geneAnnotations.gene}>
-                    <h3>{geneAnnotations.gene}</h3>
+                    <h3 style={{fontStyle:"italic"}}>{geneAnnotations.gene}</h3>
                     {geneAnnotations.transcripts &&
                     geneAnnotations.transcripts.length > 0 ? (
                       <TranscriptsAnnotationsTable

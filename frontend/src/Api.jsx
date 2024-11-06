@@ -83,10 +83,13 @@ function cachedFetch(url, query, method = 'GET', data) {
 
 const Api = {
   get: async (path, query) => {
+    var json;
     try {
-      var json = await cachedFetch(API_URL_BASE + path, query);
+      json = await cachedFetch(API_URL_BASE + path, query);
 //      console.log('api get', path, query, json)
     } catch (response) {
+      // BW note: it would be nice to still be able to read the response body
+      // for server-provided error messages even if fetch fails
       return Promise.reject(response);
     }
     return json;

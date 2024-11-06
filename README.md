@@ -1,4 +1,3 @@
-# He Kākano (Variome)
 An implementation of the Wasserman Lab IBVL portal
 
 ## Dev Environment Setup

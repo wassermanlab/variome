@@ -21,13 +21,13 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from .library import views as library
 from .library_access import views as access
-from .views import backend_home_page
+from .views import backend_home_page, get_site_settings
 
 api_urls = [
     path('variant/<str:id>', library.variant, name='variant'),
     path('search', library.snv_search, name='search'),
-    path('user/', access.profile_view_json, name='profile')
-
+    path('user/', access.profile_view_json, name='profile'),
+    path('settings', get_site_settings, name='settings')
 ]
 
 urlpatterns = [
