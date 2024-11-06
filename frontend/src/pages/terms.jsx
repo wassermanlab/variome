@@ -43,9 +43,6 @@ export default function TermsOfUse() {
                     </Grid>
                     <Grid item xs={5}>
                         <Alert severity="warning">
-                            <AlertTitle sx={{ fontWeight: 'bold' }}>Disclaimer</AlertTitle>
-                            This is a test database. All data used is open source and does
-                            not include Indigenous data.
                         </Alert>
                     </Grid>
                 </Grid>
