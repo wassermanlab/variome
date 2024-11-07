@@ -130,7 +130,7 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
         "AUDIENCE": AUTH_CLIENT_ID,
         "CLIENT_ID": AUTH_CLIENT_ID,
         "CLIENT_SECRET": AUTH_CLIENT_SECRET,
-        "GROUPS_CLAIM": None,
+        "GROUPS_CLAIM": "groups",
         "CLAIM_MAPPING": {
             "first_name": "given_name",
             "last_name": "family_name",
