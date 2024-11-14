@@ -118,6 +118,12 @@ class Command(BaseCommand):
             help="Whether to batch database updates in order to improve performance",
         )
         parser.add_argument(
+            "--delete",
+            default=False,
+            action=argparse.BooleanOptionalAction,
+            help="Delete the existing data before importing",
+        )
+        parser.add_argument(
             "--ignore-existing",
             "-i",
             dest="ignore-existing",

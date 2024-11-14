@@ -37,6 +37,8 @@ class Importer:
     # Set this when debugging, if you want to stop after a certain number of input rows
     # have been processed
     limit = None
+    
+    delete = False
 
     def __init__(self, options):
         if getattr(self, "model", None) is None:
@@ -63,6 +65,8 @@ class Importer:
 
         # Whether to use batch mode (it's an order of magnitude or more faster)
         self.batch = options["batch"]
+        
+        self.delete = options["delete"]
 
     def get_input_path(self):
         """Get input path for this data type. May use self.path_component to
@@ -85,6 +89,8 @@ class Importer:
     @transaction.atomic
     def import_data(self):
         """Locate the appropriate data file and load objects from it"""
+        if (self.delete):
+            self.model.objects.all().delete()
         errors = []
         warnings = []
         input_file = self.get_input_path()
