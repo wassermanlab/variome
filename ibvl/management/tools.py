@@ -95,12 +95,14 @@ class Importer:
         warnings = []
         input_file = self.get_input_path()
         self.populate_caches()
+        n_count = 0
 
         with open(input_file, newline="") as f:
             self.reader = csv.DictReader(f, dialect=self.csv_dialect)
             bulk_create = []
             try:
                 for row in self.reader:
+                    n_count += 1
                     if self.progress and self.reader.line_num % 1000 == 0:
                         sys.stderr.write(
                             f"{self.object_name} {self.reader.line_num}...\n"
@@ -171,7 +173,9 @@ class Importer:
                 errors.append(f"error reading line {self.reader.line_num}: {e}")
                 if self.failfast:
                     return errors, warnings
-        return errors, warnings
+                
+        n_success = self.model.objects.count()
+        return errors, warnings, (n_count, n_success)
 
 
 class SeverityImporter(Importer):
