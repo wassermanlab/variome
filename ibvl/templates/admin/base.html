@@ -52,8 +52,8 @@ This file is included so that we can show the link to the tracking dashboard in 
                 <strong>{% firstof user.get_short_name user.get_username %}</strong>.
             {% endblock %}
             {% block userlinks %}
-                {% if site_url %}
-                    <a href="{{ site_url }}">{% translate 'View site' %}</a> /
+                {% if frontend_url %}
+                    <a href="{{ frontend_url }}">{% translate 'View site' %}</a> /
                 {% endif %}
                 <a href="/tracking">Tracking Dashboard</a> /
                 {% if user.is_active and user.is_staff %}
