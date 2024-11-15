@@ -22,7 +22,7 @@ function TrackingDashboard({ initialdata }) {
     <VariantViews views={data.variant_pageviews} />
     <div id="dashboard-page-body">
 
-      <ViewsChart views={data.variant_pageviews}/>
+      <ViewsChart views={data.variant_pageviews} filters={data.filter_details}/>
         <UserDetails users={data.user_details} />
         <VariantDetails variants={data.variant_access_details} />
       <pre>{ /*JSON.stringify(data, null, 2) */}</pre>
@@ -56,7 +56,7 @@ function VariantViews({ views }) {
 }
 
 
-function ViewsChart({ views }) {
+function ViewsChart({ views , filters }) {
   
   const ChartRef = React.useRef(null);
 
@@ -69,6 +69,7 @@ function ViewsChart({ views }) {
   React.useEffect(() => {
     let chartData = {'daily': {}, 'weekly': {}, 'monthly': {}};
     
+    if (filters.valid_form) {
     // convert to browser timezone
     const variant_pageviews = views.map((view) => {
       const timeString = view.time.includes("Z") ? view.time : view.time + "Z";
@@ -77,54 +78,90 @@ function ViewsChart({ views }) {
       return {...view, time: dateObject};
     });
 
-    // count the data for the charts 
-    // daily
-    variant_pageviews.forEach((item) => {
-      const date = new Date(item.time).toLocaleDateString();
-
-      if (chartData['daily'][date]) {
-        chartData['daily'][date]++;
-      } else {
-        chartData['daily'][date] = 1;
-      }
-    })
-
-    // helper function for weekly 
+    // for weekly view
     function startOfTheWeek(date) {
-      const day = date.getDay(); 
-      const diff = date.getDate() - day; 
-      return new Date(date.setDate(diff)).toLocaleDateString();
+      const newDate = new Date(date);
+      const day = newDate.getDay();
+      const diff = newDate.getDate() - day + (day === 0 ? -6 : 1); // start of the week is monday
+      return new Date(newDate.setDate(diff)).toLocaleDateString();
     }
 
-    // weekly
-    variant_pageviews.forEach((item) => {
-      const date = new Date(item.time).toLocaleDateString();
 
-      // finding start of the week
-      const weekStartDate = startOfTheWeek(new Date(date));
-
-      if (chartData['weekly'][weekStartDate]) {
-        chartData['weekly'][weekStartDate]++;
-      } else {
-        chartData['weekly'][weekStartDate] = 1;
+    function createDateBuckets(startDate, endDate, bucketType) {
+      const buckets = {};
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        let bucketKey;
+        
+        if (bucketType === 'daily') {
+          bucketKey = currentDate.toLocaleDateString();
+        } else if (bucketType === 'weekly') {
+          bucketKey = startOfTheWeek(currentDate);
+        } else if (bucketType === 'monthly') {
+          bucketKey = `${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+        }
+        
+        if (!buckets[bucketKey]) {
+          buckets[bucketKey] = 0;
+        }
+        
+        if (bucketType === 'daily') {
+          currentDate.setDate(currentDate.getDate() + 1);
+        } else if (bucketType === 'weekly') {
+          currentDate.setDate(currentDate.getDate() + 7);
+        } else if (bucketType === 'monthly') {
+          currentDate.setDate(1);
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
       }
-    })
+      
+      return buckets;
+    }
 
-    // monthly 
+    // formats to local timezone date
+    let startDateUTC = filters.start_time.includes("Z") ? filters.start_time : filters.start_time + "Z";
+    let endDateUTC = filters.end_time.includes("Z") ? filters.end_time : filters.end_time + "Z";
+    const startDate = new Date(startDateUTC);
+    const endDate = new Date(endDateUTC);
+
+    chartData['daily'] = createDateBuckets(startDate, endDate, 'daily');
+    chartData['weekly'] = createDateBuckets(startDate, endDate, 'weekly');
+    chartData['monthly'] = createDateBuckets(startDate, endDate, 'monthly');
+
     variant_pageviews.forEach((item) => {
-      const date = new Date(item.time);
-
-      const yearMonth = (date.getMonth() + 1).toString() + "/" + date.getFullYear();
-
-      if (chartData['monthly'][yearMonth]) {
-        chartData['monthly'][yearMonth]++;
-      } else {
-        chartData['monthly'][yearMonth] = 1;
+      // Daily
+      const dailyKey = item.time.toLocaleDateString();
+      if (chartData['daily'][dailyKey] !== undefined) {
+        chartData['daily'][dailyKey]++;
       }
+    
+      // Weekly
+      const weeklyKey = startOfTheWeek(item.time);
+      if (chartData['weekly'][weeklyKey] !== undefined) {
+        chartData['weekly'][weeklyKey]++;
+      }
+    
+      // Monthly
+      const monthlyKey = `${item.time.getMonth() + 1}/${item.time.getFullYear()}`;
+      if (chartData['monthly'][monthlyKey] !== undefined) {
+        chartData['monthly'][monthlyKey]++;
+      }
+    });
 
-    })
+    function sortChartData(data) {
+      return Object.keys(data).sort((a, b) => new Date(a) - new Date(b))
+        .reduce((sorted, key) => {
+          sorted[key] = data[key];
+          return sorted;
+        }, {});
+    }
 
+    chartData['daily'] = sortChartData(chartData['daily']);
+    chartData['weekly'] = sortChartData(chartData['weekly']);
+    chartData['monthly'] = sortChartData(chartData['monthly']);
 
+  }
     // destroys an already made chart instant
     if (chartInstance) {
       chartInstance.destroy();
