@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
 
-admin.site.site_header = 'Variome Dashboard'
+admin.site.site_header = 'BVL Dashboard'
 
 from .gene import GeneAdmin
 from .severity import SeverityAdmin
