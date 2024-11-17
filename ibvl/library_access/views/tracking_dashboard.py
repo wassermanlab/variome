@@ -116,6 +116,9 @@ def tracking_dashboard(request):
             'variant_url': pageview.variant_url
         })
 
+    # Filter details
+    filter_details = {"valid_form": form.is_valid(), "start_time": start_time.isoformat(), "end_time": end_time.isoformat()}
+
     context = {
         'form': form,
         'data':json.dumps({
@@ -123,6 +126,7 @@ def tracking_dashboard(request):
             'variant_pageviews': variant_pageviews,
             'warning': None,
             'variant_access_details': variant_access_details,
+            'filter_details': filter_details
             })
     }
 

@@ -118,6 +118,12 @@ class Command(BaseCommand):
             help="Whether to batch database updates in order to improve performance",
         )
         parser.add_argument(
+            "--delete",
+            default=False,
+            action=argparse.BooleanOptionalAction,
+            help="Delete the existing data before importing",
+        )
+        parser.add_argument(
             "--ignore-existing",
             "-i",
             dest="ignore-existing",
@@ -166,42 +172,53 @@ class Command(BaseCommand):
         vts_warnings = None
         ann_warnings = None
         con_warnings = None
+        sev_counts = None
+        gen_counts = None
+        var_counts = None
+        tra_counts = None
+        snv_counts = None
+        gvf_counts = None
+        ggf_counts = None
+        vts_counts = None
+        ann_counts = None
+        con_counts = None
+        
 
         if options["severities"]:
-            sev_errors, sev_warnings = ibvltools.SeverityImporter(options).import_data()
+            sev_errors, sev_warnings, sev_counts = ibvltools.SeverityImporter(options).import_data()
 
         if options["genes"]:
-            gen_errors, gen_warnings = ibvltools.GeneImporter(options).import_data()
+            gen_errors, gen_warnings, gen_counts = ibvltools.GeneImporter(options).import_data()
 
         if options["variants"]:
-            var_errors, var_warnings = ibvltools.VariantImporter(options).import_data()
+            var_errors, var_warnings, var_counts = ibvltools.VariantImporter(options).import_data()
 
         if options["transcripts"]:
-            tra_errors, tra_warnings = ibvltools.TranscriptImporter(
+            tra_errors, tra_warnings, tra_counts = ibvltools.TranscriptImporter(
                 options
             ).import_data()
 
         if options["snvs"]:
-            snv_errors, snv_warnings = ibvltools.SNVImporter(options).import_data()
+            snv_errors, snv_warnings, snv_counts = ibvltools.SNVImporter(options).import_data()
 
         if options["gvfs"]:
-            gvf_errors, gvf_warnings = ibvltools.GVFImporter(options).import_data()
+            gvf_errors, gvf_warnings, gvf_counts = ibvltools.GVFImporter(options).import_data()
 
         if options["ggfs"]:
-            ggf_errors, ggf_warnings = ibvltools.GGFImporter(options).import_data()
+            ggf_errors, ggf_warnings, ggf_counts = ibvltools.GGFImporter(options).import_data()
 
         if options["vts"]:
-            vts_errors, vts_warnings = ibvltools.VariantTranscriptImporter(
+            vts_errors, vts_warnings, vts_counts = ibvltools.VariantTranscriptImporter(
                 options
             ).import_data()
 
         if options["annotations"]:
-            ann_errors, ann_warnings = ibvltools.AnnotationImporter(
+            ann_errors, ann_warnings, ann_counts = ibvltools.AnnotationImporter(
                 options
             ).import_data()
 
         if options["consequences"]:
-            con_errors, con_warnings = ibvltools.ConsequenceImporter(
+            con_errors, con_warnings, con_counts = ibvltools.ConsequenceImporter(
                 options
             ).import_data()
 
@@ -250,3 +267,20 @@ class Command(BaseCommand):
             transaction.rollback()
         else:
             transaction.commit()
+            
+        def report_counts(model, counts):
+            if counts:
+                (total, success) = counts
+                percent = round(100 * success / total, 5)
+                sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
+            
+        report_counts("Severity", sev_counts)
+        report_counts("Gene", gen_counts)
+        report_counts("Variant", var_counts)
+        report_counts("Transcript", tra_counts)
+        report_counts("SNV", snv_counts)
+        report_counts("GVF", gvf_counts)
+        report_counts("GGF", ggf_counts)
+        report_counts("Variant Transcript", vts_counts)
+        report_counts("Annotation", ann_counts)
+        report_counts("Consequence", con_counts)

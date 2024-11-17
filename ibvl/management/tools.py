@@ -37,6 +37,8 @@ class Importer:
     # Set this when debugging, if you want to stop after a certain number of input rows
     # have been processed
     limit = None
+    
+    delete = False
 
     def __init__(self, options):
         if getattr(self, "model", None) is None:
@@ -63,6 +65,8 @@ class Importer:
 
         # Whether to use batch mode (it's an order of magnitude or more faster)
         self.batch = options["batch"]
+        
+        self.delete = options["delete"]
 
     def get_input_path(self):
         """Get input path for this data type. May use self.path_component to
@@ -85,16 +89,20 @@ class Importer:
     @transaction.atomic
     def import_data(self):
         """Locate the appropriate data file and load objects from it"""
+        if (self.delete):
+            self.model.objects.all().delete()
         errors = []
         warnings = []
         input_file = self.get_input_path()
         self.populate_caches()
+        n_count = 0
 
         with open(input_file, newline="") as f:
             self.reader = csv.DictReader(f, dialect=self.csv_dialect)
             bulk_create = []
             try:
                 for row in self.reader:
+                    n_count += 1
                     if self.progress and self.reader.line_num % 1000 == 0:
                         sys.stderr.write(
                             f"{self.object_name} {self.reader.line_num}...\n"
@@ -165,7 +173,9 @@ class Importer:
                 errors.append(f"error reading line {self.reader.line_num}: {e}")
                 if self.failfast:
                     return errors, warnings
-        return errors, warnings
+                
+        n_success = self.model.objects.count()
+        return errors, warnings, (n_count, n_success)
 
 
 class SeverityImporter(Importer):

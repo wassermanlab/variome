@@ -2,9 +2,10 @@ from django.db import models
 
 
 VAR_CHOICES = [
-    ("SNV", "SNV"),
+    ("SNP", "SNP"),
     ("M", "Mitochondrial"),
-    ("SV", "SV")
+    ("SV", "SV"),
+    ("INDEL", "INDEL")
 ]
 
 
