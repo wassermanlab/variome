@@ -271,7 +271,10 @@ class Command(BaseCommand):
         def report_counts(model, counts):
             if counts:
                 (total, success) = counts
-                percent = round(100 * success / total, 5)
+                if total == 0:
+                    percent = 100
+                else:
+                    percent = round(100 * success / total, 5)
                 sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
             
         report_counts("Severity", sev_counts)

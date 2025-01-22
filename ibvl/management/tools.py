@@ -814,13 +814,13 @@ class GGFImporter(Importer):
         """Clean the input data in row & return cleaned row"""
         for field in (
             "af_tot",
+            "ac_tot",
+            "hom_tot"
         ):
             if row[field] in (".", "NA"):
                 row[field] = None
         for field in (
-            "ac_tot",
             "an_tot",
-            "hom_tot",
         ):
             if row[field] in (".", "NA"):
                 return False, [f"variant {row['variant']} has {field} '{row[field]}'"]
