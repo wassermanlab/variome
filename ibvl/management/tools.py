@@ -37,7 +37,7 @@ class Importer:
     # Set this when debugging, if you want to stop after a certain number of input rows
     # have been processed
     limit = None
-    
+
     delete = False
 
     def __init__(self, options):
@@ -65,7 +65,7 @@ class Importer:
 
         # Whether to use batch mode (it's an order of magnitude or more faster)
         self.batch = options["batch"]
-        
+
         self.delete = options["delete"]
 
     def get_input_path(self):
@@ -130,19 +130,19 @@ class Importer:
                             else:
                                 errors.append(obj)
                                 if self.failfast:
-                                    return errors, warnings
+                                    return errors, warnings, (0,0)
                         elif self.update_existing:
                             success, obj = self.update(row)
                             if not success:
                                 errors.append(obj)
                                 if self.failfast:
-                                    return errors, warnings
+                                    return errors, warnings, (0,0)
                     else:
                         success, obj = self.update_or_create(row)
                         if not success:
                             errors.append(obj)
                             if self.failfast:
-                                return errors, warnings
+                                return errors, warnings, (0,0)
 
                     if len(bulk_create) >= self.batch_size:
                         try:
@@ -151,11 +151,11 @@ class Importer:
                         except Exception as e:
                             msg = (
                                 f"error in bulk create of {self.object_name_plural} "
-                                f"after input line {self.reader.line_num}: {e}"
+                                f"after input line {self.reader.line_num}: \n row:{row}\n{e}"
                             )
                             errors.append(msg)
                             if self.failfast:
-                                return errors, warnings
+                                return errors, warnings, (0,0)
                 # Run out of input rows, tidy up outstanding create/updates
                 if len(bulk_create):
                     try:
@@ -164,16 +164,16 @@ class Importer:
                     except Exception as e:
                         msg = (
                             f"error in bulk create of {self.object_name_plural} "
-                            f"after end of input {self.reader.line_num}: {e}"
+                            f"after end of input {self.reader.line_num}\n row:{row}\n{e}"
                         )
                         errors.append(msg)
                         if self.failfast:
-                            return errors, warnings
+                            return errors, warnings, (0,0)
             except csv.Error as e:
                 errors.append(f"error reading line {self.reader.line_num}: {e}")
                 if self.failfast:
-                    return errors, warnings
-                
+                    return errors, warnings, (0,0)
+
         n_success = self.model.objects.count()
         return errors, warnings, (n_count, n_success)
 
@@ -1258,12 +1258,15 @@ class ConsequenceImporter(Importer):
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
-                "variant_transcript__transcript__transcript_id", "pk"
+                "variant_transcript__transcript__transcript_id",
+                "severity",
+                "pk"
             )
             self.existing = {
                 (
                     obj["variant_transcript__variant__variant_id"],
-                    obj["variant_transcript__transcript__transcript_id"]
+                    obj["variant_transcript__transcript__transcript_id"],
+                    obj["severity"],
                 ): (
                     obj["pk"]
                 )
@@ -1288,7 +1291,7 @@ class ConsequenceImporter(Importer):
         the database (i.e. if update rather than create is needed)"""
         if self.noexisting:
             return False
-        return (row["variant"], row["transcript"]) in self.existing
+        return (row["variant"], row["transcript"], row["severity"]) in self.existing
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
