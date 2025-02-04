@@ -547,6 +547,10 @@ class SNVImporter(Importer):
         for field in ("cadd_score", "clinvar_vcv", "splice_ai"):
             if row[field] == ".":
                 row[field] = None
+        for field in ("ref", "alt"):
+            field_len = self.model._meta.get_field(field).max_length
+            if len(row[field]) > field_len:
+                return False, [f"{field} longer than max_length allows"]
         return True, row
 
     def check_existing(self, row):
