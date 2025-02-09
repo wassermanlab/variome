@@ -8,7 +8,7 @@ class SNV(models.Model):
     length = models.IntegerField(null=True)
     chr = models.CharField(max_length=3)
     pos = models.IntegerField()
-    ref = models.CharField(max_length=255)
+    ref = models.CharField(max_length=400)
     alt = models.CharField(max_length=255)
     cadd_intr = models.CharField(max_length=255, blank=True, default="")
     cadd_score = models.DecimalField(decimal_places=5, max_digits=10, null=True)
