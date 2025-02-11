@@ -20,7 +20,7 @@ import {
 
 import _ from "lodash";
 
-export default function Annotations({ variantAnnotations, gene }) {
+export default function Annotations({ variantAnnotations }) {
   const FILTER_KEY = "transcript-filter";
 
   var defaultTranscriptFilter = { biotype: "protein_coding" };
@@ -224,7 +224,7 @@ export default function Annotations({ variantAnnotations, gene }) {
               {variantAnnotations.map((geneAnnotations) => {
                 return (
                   <Card key={geneAnnotations.gene}>
-                    <h3 style={{fontStyle:"italic"}}>{geneAnnotations.gene}</h3>
+                    <h3 style={{fontStyle:"italic"}}>{geneAnnotations.gene || "(no gene)"}</h3>
                     {geneAnnotations.transcripts &&
                     geneAnnotations.transcripts.length > 0 ? (
                       <TranscriptsAnnotationsTable

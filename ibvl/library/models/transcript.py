@@ -54,7 +54,7 @@ BIOTYPE_CHOICES = [
 
 class Transcript(models.Model):
     transcript_id = models.CharField(max_length=100, unique=True)
-    gene = models.ForeignKey(Gene, on_delete=models.CASCADE, db_column='gene')
+    gene = models.ForeignKey(Gene, on_delete=models.CASCADE, db_column='gene', null=True)
     transcript_type = models.CharField(max_length=1, choices=TRANSCRIPT_CHOICES)
     tsl = models.CharField(max_length=255, blank=True, default='')
     biotype = models.CharField(max_length=60, blank=True, default='', choices=BIOTYPE_CHOICES)

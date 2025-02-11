@@ -415,6 +415,15 @@ class TranscriptImporter(Importer):
     model = ibvlmodels.Transcript
     path_component = "transcripts"
 
+    def clean_data(self, row):
+        """Clean the input data in row & return cleaned row"""
+        for field in (
+            "gene",
+        ):
+            if row[field] in (".", "NA"):
+                row[field] = None
+        return True, row
+
     def populate_caches(self):
         # This costs a bit at startup but is necessary to enable bulk creates, which
         # speed up creation by ~ an order of magnitude
@@ -437,14 +446,17 @@ class TranscriptImporter(Importer):
     def created_row_object(self, row):
         """Create a new object to represent the row supplied.
         Return True, object on success or False, msg on failure"""
-        gene = self.genes.get(row["gene"], None)
-        if gene is None:
-            msg = (
-                f"error creating {self.object_name} object {row['transcript_id']} "
-                f"for bulk create from line {self.reader.line_num}: "
-                f"gene {row['gene']} not found"
-            )
-            return False, msg
+        if row["gene"] is None or row["gene"] == "":
+            gene = None
+        else:
+            gene = self.genes.get(row["gene"], None)
+            if gene is None:
+                msg = (
+                    f"error creating {self.object_name} object {row['transcript_id']} "
+                    f"for bulk create from line {self.reader.line_num}: "
+                    f"gene {row['gene']} not found"
+                )
+                return False, msg
         try:
             return True, self.model(
                 transcript_id=row["transcript_id"],
@@ -465,10 +477,20 @@ class TranscriptImporter(Importer):
         Return True, 1 on success or False, msg on failure"""
         # This is significantly *faster* than doing bulk updates
         try:
+            if row["gene"] is None or row["gene"] == "":
+                gene = None
+            else:
+                gene = self.genes.get(row["gene"], None)
+                if gene is None:
+                    msg = (
+                        f"error updating {self.object_name} object {row['transcript_id']} "
+                        f"from line {self.reader.line_num}: gene {row['gene']} not found"
+                    )
+                    return False, msg
             updated = self.model.objects.filter(
                 transcript_id=row["transcript_id"]
             ).update(
-                gene_id=self.genes[row["gene"]],
+                gene_id=gene,
                 transcript_type=row["transcript_type"],
                 tsl=row["tsl"],
                 biotype=row["biotype"],
