@@ -1263,14 +1263,14 @@ class ConsequenceImporter(Importer):
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
-                "severity",
+                "severity__severity_number",
                 "pk"
             )
             self.existing = {
                 (
                     obj["variant_transcript__variant__variant_id"],
                     obj["variant_transcript__transcript__transcript_id"],
-                    obj["severity"],
+                    str(obj["severity__severity_number"]),
                 ): (
                     obj["pk"]
                 )
