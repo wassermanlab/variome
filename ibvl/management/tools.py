@@ -422,6 +422,8 @@ class TranscriptImporter(Importer):
         ):
             if row[field] in (".", "NA"):
                 row[field] = None
+        if row["transcript_id"] in (".","NA",""):
+            return False, [f"transcript ID missing: got {row['transcript_id']} "]
         return True, row
 
     def populate_caches(self):
@@ -965,23 +967,18 @@ class VariantTranscriptImporter(Importer):
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
         novariant = False
-        notranscript = False
         if row["variant"] == "":
             novariant = True
-        if row["transcript"] == "":
-            notranscript = True
-        if novariant and notranscript:
-            return False, ["variant and transcript missing from input"]
         if novariant:
             return (
                 False,
                 [f"transcript {row['transcript']} but variant missing from input"],
             )
-        if notranscript:
-            return(
-                False,
-                [f"variant {row['variant']} but transcript missing from input"],
-            )
+        if row["transcript"] in ("", "NA","."):
+            row["transcript"] = None
+        if row["hgvsc"] in ("", "NA","."):
+            row["hgvsc"] = ""
+            
         return True, row
 
     def cache_chromosome(self, chromosome):
@@ -1017,13 +1014,7 @@ class VariantTranscriptImporter(Importer):
             )
             return False, msg
         transcript = self.transcripts.get(row["transcript"], None)
-        if transcript is None:
-            msg = (
-                f"error creating {self.object_name} object {row['variant']} / "
-                f"{row['transcript']} for bulk create from line "
-                f"{self.reader.line_num}: transcript {row['transcript']} not found"
-            )
-            return False, msg
+
         try:
             return True, self.model(
                 variant_id=variant,
@@ -1045,7 +1036,7 @@ class VariantTranscriptImporter(Importer):
         try:
             updated = self.model.objects.filter(
                 variant_id=self.variants[row["variant"]],
-                transcript_id=self.transcripts[row["transcript"]],
+                transcript_id=self.transcripts.get(row["transcript"]),
             ).update(
                 hgvsc=row["hgvsc"],
             )
@@ -1073,7 +1064,7 @@ class VariantTranscriptImporter(Importer):
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=self.variants[row["variant"]],
-                transcript_id=self.transcripts[row["transcript"]],
+                transcript_id=self.transcripts.get(row["transcript"]),
                 defaults={
                     "hgvsc": row["hgvsc"],
                 },
@@ -1168,9 +1159,10 @@ class AnnotationImporter(Importer):
         if self.current_chromosome != chromosome:
             self.cache_chromosome(chromosome)
         errors = []
-        for field in ("variant", "transcript"):
-            if row[field] == "":
-                errors.append(f"no {field} specified")
+        if row["variant"] == "":
+            errors.append(f"no variant specified")
+        if row["transcript"] in ("", "NA", "."):
+            row["transcript"] = None
         if errors:
             return False, errors
         if (row["variant"], row["transcript"]) not in self.vts:
@@ -1181,6 +1173,15 @@ class AnnotationImporter(Importer):
                     f"{row['variant']} transcript {row['transcript']}"
                 ],
             )
+        if row["polyphen"] in ("", "NA", "."):
+            row["polyphen"] = ""
+        if row["sift"] in ("", "NA", "."):
+            row["sift"] = ""
+        if row["impact"] in ("", "NA", "."):
+            row["impact"] = ""
+        if row["hgvsp"] in ("", "NA", "."):
+            row["hgvsp"] = ""
+        
         return True, row
 
     def created_row_object(self, row):
@@ -1303,6 +1304,7 @@ class ConsequenceImporter(Importer):
         qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
             "pk", "variant__variant_id", "transcript__transcript_id"
         )
+        
         self.vts = {
             (
                 obj["variant__variant_id"],
@@ -1325,12 +1327,14 @@ class ConsequenceImporter(Importer):
         if self.current_chromosome != chromosome:
             self.cache_chromosome(chromosome)
         errors = []
-        for field in ("variant", "transcript"):
-            if row[field] == "":
-                errors.append(f"no {field} specified")
+        if row["variant"] == "":
+            errors.append(f"no variant specified")
+            
+        if row["transcript"] in ("", "NA", "."):
+            row["transcript"] = None
         if errors:
             return False, errors
-        if (row["variant"], row["transcript"]) not in self.vts:
+        if (row["variant"], row.get("transcript")) not in self.vts:
             return (
                 False,
                 [
