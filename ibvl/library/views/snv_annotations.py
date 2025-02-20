@@ -29,32 +29,23 @@ def snv_annotations(variant_id, database=None):
 #            "variant__snv__cadd_score": "cadd score",
         }
         
-        if database is None or database not in ["E", "R"]:
-            transcripts = (
-                VariantTranscript.objects.filter(
-                    variant__variant_id=variant_id
-                )
-                .values(*values_names.keys())
-                .all()
+        variant_effects = (
+            VariantTranscript.objects.filter(
+                variant__variant_id=variant_id
             )
-        else:
-            transcripts = (
-                VariantTranscript.objects.filter(
-                    variant__variant_id=variant_id, transcript__transcript_type=database
-                )
-                .values(*values_names.keys())
-                .all()
-            )
+            .values(*values_names.keys())
+            .all()
+        )
 
-        if len(transcripts) == 0:
+        if len(variant_effects) == 0:
             raise VariantTranscript.DoesNotExist
 #        print("transcripts", transcripts)
-        transcripts = [
+        variant_effects = [
             {values_names[key]: value for key, value in transcript.items()}
-            for transcript in transcripts
+            for transcript in variant_effects
         ]
 
-        for t in transcripts:
+        for t in variant_effects:
             gene = t["gene"]
             gene_exists = any(
                 gene == gene_dict["gene"] for gene_dict in transcripts_by_gene
