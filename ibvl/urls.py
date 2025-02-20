@@ -38,8 +38,16 @@ urlpatterns = [
 ]
 
 def redirect_to_login(request):
+
     response = redirect('accounts/login/')
     return response
+# brad: this is better handling of redirect IMO, but leaving commented out so as to avoid unexpected confusion
+#    if request.user.is_authenticated and request.user.is_staff:
+#        response = redirect('backend/admin')
+#    else:
+#        response = redirect('accounts/login/')
+#    return response
+
 
 if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
     urlpatterns.extend([
