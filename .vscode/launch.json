@@ -5,12 +5,48 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug mange.py import_ibvl",
+            "name": "Debug mange.py import_ibvl ",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/manage.py",
             "args": [
-                "import_ibvl"
+                "import_ibvl",
+                "--failfast"
+            ],
+            "django": true
+        
+        },
+        {
+            "name": "Debug mange.py import_ibvl (delete first)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "import_ibvl",
+                "--failfast",
+                "--delete"
+            ],
+            "django": true
+        
+        },
+        {
+            "name": "Debug mange.py import_ibvl (update consequences only)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "import_ibvl",
+                "--failfast",
+                "--no-severities",
+                "--no-genes",
+                "--no-variants",
+                "--no-transcripts",
+                "--no-snvs",
+                "--no-gvfs",
+                "--no-ggfs",
+                "--no-annotations",
+                "--no-vts",
+                "--no-progress"
             ],
             "django": true
         
