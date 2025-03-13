@@ -347,6 +347,8 @@ class VariantImporter(Importer):
                 row[field] = ""
         if len(row["variant_id"]) > self.variant_id_length:
             return False, ["variant ID longer than max_length"]
+        if row.get("var_type") == "SNP":
+            row["var_type"] = "SNV"
         return True, row
 
     def created_row_object(self, row):
