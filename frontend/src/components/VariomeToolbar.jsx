@@ -25,7 +25,10 @@ import {
   Person
 } from "@mui/icons-material";
 
-import Search from "./Search";
+
+import SearchInput from "./SearchInput";
+import SearchResults from "./SearchResults";
+import SearchProvider from "./SearchProvider";
 import AssemblyPicker from "./AssemblyPicker";
 import Link from "./Link";
 
@@ -81,7 +84,11 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
       {user && (
         <>
           <AssemblyPicker sx={{flexShrink:"2"}} />
-          <Search inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+
+          <SearchProvider>
+            <SearchInput inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+            <SearchResults sx={{border:"1px solid purple", position:"absolute"}} />
+          </SearchProvider>
         </>
       )}
     </FlexBox>

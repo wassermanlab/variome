@@ -91,12 +91,9 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   justifyContent: "flex-end"
 }));
 
-
 export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
   const theme = useTheme();
   const [navDrawerOpen, setNavDrawerOpen] = React.useState(false);
-
-
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -109,7 +106,12 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
           color: theme.palette.text.primary
         })}
       >
-        <VariomeToolbar user={user} navDrawerOpen={navDrawerOpen} setNavDrawerOpen={setNavDrawerOpen} pageTitle={pageTitle} ></VariomeToolbar>
+        <VariomeToolbar
+          user={user}
+          navDrawerOpen={navDrawerOpen}
+          setNavDrawerOpen={setNavDrawerOpen}
+          pageTitle={pageTitle}
+        ></VariomeToolbar>
       </TopBar>
       <Drawer
         sx={{
