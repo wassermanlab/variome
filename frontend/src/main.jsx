@@ -12,3 +12,10 @@ root.render(
     </StyledEngineProvider >
   </React.StrictMode>
 );
+
+
+if (import.meta.hot) {
+  import.meta.hot.on("vite:beforeUpdate", () => {
+      console.clear(); // Clears the console before each HMR update
+  });
+}
