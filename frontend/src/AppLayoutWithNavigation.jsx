@@ -134,7 +134,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
         </DrawerHeader>
         <Divider />
         <List>
-          <Link href="/" color="inherit" underline="none">
+          <Link to="/" color="inherit" underline="none">
             <ListItem button key="home">
               <ListItemIcon>
                 <HomeIcon />
@@ -142,7 +142,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          <Link href="/" color="inherit" underline="none">
+          <Link to="/" color="inherit" underline="none">
             <ListItem button key="about">
               <ListItemIcon>
                 <Info />
@@ -150,7 +150,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="About" />
             </ListItem>
           </Link>
-          <Link href="/" color="inherit" underline="none">
+          <Link to="/" color="inherit" underline="none">
             <ListItem button key="terms">
               <ListItemIcon>
                 <Article />
@@ -159,7 +159,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
             </ListItem>
           </Link>
           <Divider />
-          <Link href="/" color="inherit" underline="none">
+          <Link to="/" color="inherit" underline="none">
             <ListItem button key="faq">
               <ListItemIcon>
                 <HelpCenter />
@@ -167,7 +167,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="FAQ" />
             </ListItem>
           </Link>
-          <Link href="/" color="inherit" underline="none">
+          <Link to="/" color="inherit" underline="none">
             <ListItem button key="contact">
               <ListItemIcon>
                 <Email />

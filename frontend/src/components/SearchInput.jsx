@@ -34,8 +34,7 @@ export default function SearchInput({ width, marginLeft, inputElementId, variant
       }}
       sx={{ width, marginLeft, ...sx }}
       onChange={(event) => {
-        var trimmed = _.trim(event.target.value);
-        searchContext.debounceUpdateSearch(trimmed)
+        searchContext.debounceUpdateSearch(event.target.value)
       }
       }
 
