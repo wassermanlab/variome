@@ -15,7 +15,7 @@ class VariantIdFilter(InputFilter):
 class SNVAdmin(admin.ModelAdmin):
 
 
-    list_display = ('id', 'variant', 'type')
+    list_display = ('id', 'variant', 'type', 'length', 'chr', 'pos', 'ref', 'alt', 'cadd_intr', 'cadd_score', 'dbsnp_url', 'dbsnp_id', 'ucsc_url', 'ensembl_url', 'clinvar_vcv', 'clinvar_url', 'gnomad_url', 'splice_ai')
     list_display_links = ('id', 'variant')
     list_filter = (VariantIdFilter,)
     autocomplete_fields = ('variant',)
