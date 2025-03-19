@@ -9,6 +9,7 @@ let variant_groups_regex = new RegExp(
 );
 
 const DEBOUNCE_DELAY = 800;
+//const DEBOUNCE_DELAY = 999999;
 
 export const SearchContext = createContext();
 
@@ -78,15 +79,18 @@ const parseParameters = (query) => {
 function SearchProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const [resultsMessage, setResultsMessage] = useState("");
+  const [resultsMessage, setResultsMessage] = useState(null);
   const [results, setResults] = useState([]);
   const [nearby, setNearby] = useState([]);
-  const [summary, setSummary] = useState("results doo go here");
+  const [summary, setSummary] = useState("");
+  const [hideResultsOverride, setHideResultsOverride] = useState(false);
 
   const cancelledQueriesRef = useRef([]);
   const searchTimeoutRef = useRef(null);
 
+
   const debounceUpdateSearch = (newQuery) => {
+    setHideResultsOverride(false);
 
     if (!_.isEmpty(newQuery)) {
 
@@ -102,6 +106,7 @@ function SearchProvider({ children }) {
       setQuery(newQuery);
       setResults([]);
       setLoading(true);
+      
       console.log("new query", newQuery);
       searchTimeoutRef.current = setTimeout(async () => {
 
@@ -131,12 +136,10 @@ function SearchProvider({ children }) {
     } else {
       setResults([]);
       setNearby([]);
-      setResultsMessage("? gone");
+      setResultsMessage(null);
       setQuery("");
       cancelledQueriesRef.current = [];
       setLoading(() => false);
-      //            console.log("set empty");
-      //            console.log("cancelledQueries", cancelledQueriesRef.current);
     }
   }
 
@@ -145,14 +148,11 @@ function SearchProvider({ children }) {
     var results = [];
 
     console.log("searching", query);
-    //    setSummary("searching...");
     var parameters = parseParameters(query);
     console.log("parameters", parameters);
 
-    //        groups = _.
     if (_.isEmpty(parameters) || !_.get(parameters, "searchParameters") || !_.get(parameters, "groups")) {
 
-      //                        setResults(()=>[]);
       setLoading(() => false);
       setSummary("");
       setResultsMessage("No results ( query format is not recognized )");
@@ -170,8 +170,8 @@ function SearchProvider({ children }) {
         });
 
         setSummary(
-          <div style={{ display: "flex", gap: "12px" }}>
-            <label>Your search</label>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", background: "#f0f0f0", padding: "8px" }}>
+            <label>Your search:</label>
             {pairs.map(([key, val]) => {
               return (
                 <span key={key}>
@@ -196,21 +196,15 @@ function SearchProvider({ children }) {
             _.get(variantData, "results.dbsnp", []),
             _.get(variantData, "results.clinvar", []),
             _.get(variantData, "results.position", []),
-            //      _.map(_.get(variantData, "results.nearby", []), (r) => {
-            //        return { resultType: "nearby", ...r };
-            //      })
           ])
         );
-        //                console.log("debug", apex.debug.getLevel());
-        //  var resultsWithLinks = _.map(resultsFlat, addLinkForResult);
 
         nearby = _.get(variantData, "results.nearby", [])
       } catch (error) {
         console.error(error);
         setLoading(() => false);
-        //        if (searchResult.errors && _.size(searchResult.errors) > 0) {
+        setHideResultsOverride(false);
         setResultsMessage(`Sorry, something went wrong`);
-        //      }
       }
 
       if (_.size(results) == 0 && _.size(nearby) == 1) {
@@ -226,12 +220,16 @@ function SearchProvider({ children }) {
       } else if (_.size(nearby) == 1) {
         setResultsMessage(`1 variant nearby:`);
       } else {
-        setResultsMessage("");
+        setResultsMessage(null);
       }
     }
     return { results, nearby };
   };
 
+  function onInputFocus() {
+    setHideResultsOverride(false);
+  }
+  
   return (
     <SearchContext.Provider
       value={{
@@ -240,6 +238,12 @@ function SearchProvider({ children }) {
         loading,
         results,
         nearby,
+        query,
+        setQuery,
+        onInputFocus,
+        hideResultsOverride,
+        setHideResultsOverride,
+
         resultsMessage
       }}
     >
@@ -247,8 +251,5 @@ function SearchProvider({ children }) {
     </SearchContext.Provider>
   );
 }
-
-
-
 
 export default SearchProvider;

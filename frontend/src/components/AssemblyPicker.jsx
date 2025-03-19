@@ -18,7 +18,7 @@ export default function AssemblyPicker({sx}) {
             value={assembly}
             onChange={handleChange}
             displayEmpty
-            inputProps={{ "aria-label": "Select Assembly" }}
+            inputProps={{ "aria-label": "Select Assembly", id: "genome-assembly-version-picker" }}
             style={{ color: "black", marginLeft: "20px",...sx }}
         //variant="standard"
         >

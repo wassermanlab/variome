@@ -79,8 +79,8 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw"}}/>
-                        <SearchResults sx={{border:"1px solid purple", position:"absolute"}} />
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+                        <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>
                     <Grid
