@@ -1,7 +1,7 @@
 from django.contrib import admin
 from ..models import SNV
 
-from ibvl.admin_components.filters import InputFilter
+from variome_backend.admin_components.filters import InputFilter
 
 class VariantIdFilter(InputFilter):
     parameter_name = 'variant_id'

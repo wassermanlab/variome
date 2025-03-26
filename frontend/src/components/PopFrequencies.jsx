@@ -40,43 +40,43 @@ function createData(name, total, xx, xy, af_popmax, gnomad) {
 }
 
 
-export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies, pageTitle}) {
+export default function PopFrequencies({bvlFrequencies, gnomadFrequencies, pageTitle}) {
     var rows = []
 
-    if (!ibvlFrequencies && !gnomadFrequencies) {
+    if (!bvlFrequencies && !gnomadFrequencies) {
         return null;
     }
-    console.log("ibvl", ibvlFrequencies);
+    console.log("bvl", bvlFrequencies);
     console.log("gnomad", gnomadFrequencies);
     
-    if (ibvlFrequencies && gnomadFrequencies) {
+    if (bvlFrequencies && gnomadFrequencies) {
         rows = [
             createData(
                 'Allele Count', 
-                ibvlFrequencies["ac_tot"], 
-                ibvlFrequencies["ac_xx"],  
-                ibvlFrequencies["ac_xy"],  
+                bvlFrequencies["ac_tot"], 
+                bvlFrequencies["ac_xx"],  
+                bvlFrequencies["ac_xy"],  
                 '-',
                 gnomadFrequencies["ac_tot"],
             ),
             createData(
                 'Allele Number', 
-                ibvlFrequencies["an_tot"], 
-                ibvlFrequencies["an_xx"],  
-                ibvlFrequencies["an_xy"],  
+                bvlFrequencies["an_tot"], 
+                bvlFrequencies["an_xx"],  
+                bvlFrequencies["an_xy"],  
                 '-',
                 gnomadFrequencies["an_tot"], 
             ),
             createData(
                 'Allele Frequency',
-                ibvlFrequencies["af_tot"], 
-                ibvlFrequencies["af_xx"],  
-                ibvlFrequencies["af_xy"], 
+                bvlFrequencies["af_tot"], 
+                bvlFrequencies["af_xx"],  
+                bvlFrequencies["af_xy"], 
                 '-', 
                 gnomadFrequencies["af_tot"],
             ),/*
             // hidden because unable to determine how to format
-            // does not belong in "IBVL" columns
+            // does not belong in "bvl" columns
             createData(
                 'Allele Frequency Popmax',
                 '-', 
@@ -87,9 +87,9 @@ export default function PopFrequencies({ibvlFrequencies, gnomadFrequencies, page
             ),*/
             createData(
                 'No. of Homozygotes',
-                ibvlFrequencies["hom_tot"], 
-                ibvlFrequencies["hom_xx"],  
-                ibvlFrequencies["hom_xy"], 
+                bvlFrequencies["hom_tot"], 
+                bvlFrequencies["hom_xx"],  
+                bvlFrequencies["hom_xy"], 
                 '-', 
                 gnomadFrequencies["hom_tot"],
             ),

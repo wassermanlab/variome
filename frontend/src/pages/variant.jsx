@@ -35,7 +35,7 @@ export default function Variant({pageTitle}) {
   const [variant, setVariant] = useState({});
   const [variantMetadata, setVariantMetadata] = useState({});
   const [gnomadFrequencies, setGnomadFrequencies] = useState({});
-  const [ibvlFrequencies, setIbvlFrequencies] = useState({});
+  const [bvlFrequencies, setbvlFrequencies] = useState({});
   const [variantAnnotations, setVariantAnnotations] = useState([]);
   const [error, setError] = useState(null);
 
@@ -45,17 +45,17 @@ export default function Variant({pageTitle}) {
     setVariant(null);
     setVariantMetadata(null);
     setGnomadFrequencies(null);
-    setIbvlFrequencies(null);
+    setbvlFrequencies(null);
     setVariantAnnotations(null);
     setLoading(true);
 
     Api.get("variant/" + varId)
-      .then(({ variant, snv, ibvlFrequencies, annotations }) => {
+      .then(({ variant, snv, bvlFrequencies, annotations }) => {
 //        console.log("variant", variant);
         setVariant(variant);
         setVariantMetadata(snv);
         //          setGnomadFrequencies(gnomadFrequencies);
-        setIbvlFrequencies(ibvlFrequencies);
+        setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
         setLoading(false);
       })
@@ -161,7 +161,7 @@ export default function Variant({pageTitle}) {
               <VariantDetails
                 variant={variant}
                 variantMetadata={variantMetadata}
-                ibvlFrequencies={ibvlFrequencies}
+                bvlFrequencies={bvlFrequencies}
               />
             </Grid>
 
@@ -174,7 +174,7 @@ export default function Variant({pageTitle}) {
             <Grid item xs={12} className="gridItem">
               <PopFrequencies
                 varId={varId}
-                ibvlFrequencies={ibvlFrequencies}
+                bvlFrequencies={bvlFrequencies}
                 gnomadFrequencies={gnomadFrequencies}
                 pageTitle={pageTitle}
               />

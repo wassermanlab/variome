@@ -1,7 +1,6 @@
 from django.contrib import admin
-from ..models import VariantAnnotation
-from ibvl.admin_components.filters import InputFilter
-
+from ..models import VariantConsequence
+from variome_backend.admin_components.filters import InputFilter
 
 class VariantIdFilter(InputFilter):
     parameter_name = 'variant_id'
@@ -12,12 +11,11 @@ class VariantIdFilter(InputFilter):
             return queryset.filter(variant_transcript__variant__variant_id__icontains=self.value())
         return queryset
 
-class VariantAnnotationAdmin(admin.ModelAdmin):
+class VariantConsequenceAdmin(admin.ModelAdmin):
 
 
-    list_display = ('id', 'variant_transcript', 'hgvsp', 'polyphen', 'sift')
+    list_display = ('id', 'variant_transcript', 'severity')
     list_display_links = ('id', 'variant_transcript')
     list_filter = (VariantIdFilter,)
-    autocomplete_fields = ('variant_transcript',)
 
-admin.site.register(VariantAnnotation, VariantAnnotationAdmin)
+admin.site.register(VariantConsequence, VariantConsequenceAdmin)

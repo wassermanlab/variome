@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.http import JsonResponse
 from .library.models import Variant
-from ibvl.models import VariomeSettings
+from variome_backend.models import VariomeSettings
 from django.contrib.auth.decorators import login_required
 
 def backend_home_page(request):

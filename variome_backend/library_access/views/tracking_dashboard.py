@@ -7,8 +7,8 @@ from django.utils.timezone import now
 from django.conf import settings
 from tracking.models import Visitor, Pageview
 from tracking.settings import TRACK_PAGEVIEWS
-from ibvl.library.models import Variant
-from ibvl.library_access.models import LibraryUser
+from variome_backend.library.models import Variant
+from variome_backend.library_access.models import LibraryUser
 
 import json
 

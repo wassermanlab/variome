@@ -1,4 +1,4 @@
-An implementation of the Wasserman Lab IBVL portal
+An implementation of the Wasserman Lab bvl portal
 
 ## Dev Environment Setup (Python / Django module)
 
@@ -48,7 +48,7 @@ cp .env-sample .env
 4. Load the data and create a superuser account
 ```
 python manage.py migrate
-python manage.py import_ibvl
+python manage.py import_bvl
 python manage.py createsuperuser
 ```
 
@@ -76,5 +76,5 @@ npm install
 npm run dev
 ```
 
-Please note the port number that the dev frontend is being run on, you will get CORS errors if the domain is not in the list of CORS_ALLOWED_ORIGINS in ibvl/settings.py L187
+Please note the port number that the dev frontend is being run on, you will get CORS errors if the domain is not in the list of CORS_ALLOWED_ORIGINS in variome_backend/settings.py L187
 

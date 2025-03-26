@@ -41,7 +41,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         return False
 
 
-# models from parent app "ibvl" or dependency apps like tracking2
+# models from parent app "variome_backend" or dependency apps like tracking2
 admin.site.unregister(User)
 admin.site.unregister(Group)
 admin.site.unregister(Visitor)

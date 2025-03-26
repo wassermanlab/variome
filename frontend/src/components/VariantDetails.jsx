@@ -8,15 +8,15 @@ import Typography from '@mui/material/Typography';
 
 const DECIMALS = 4;
 
-export default function VariantDetails({ variantMetadata, ibvlFrequencies, variant }) {
-    //    console.log({variantMetadata, ibvlFrequencies, varId})
+export default function VariantDetails({ variantMetadata, bvlFrequencies, variant }) {
+    //    console.log({variantMetadata, bvlFrequencies, varId})
 
     if (!variant){
         return null;
     }
     var alleleFrequency = "--";
-    if (!_.isEmpty(_.get(ibvlFrequencies, 'af_tot'))){
-        alleleFrequency = _.round(_.get(ibvlFrequencies, 'af_tot'), DECIMALS);
+    if (!_.isEmpty(_.get(bvlFrequencies, 'af_tot'))){
+        alleleFrequency = _.round(_.get(bvlFrequencies, 'af_tot'), DECIMALS);
     }
 
     const variantDetailsList = [
@@ -26,7 +26,7 @@ export default function VariantDetails({ variantMetadata, ibvlFrequencies, varia
         },
         {
             title: 'Site Quality',
-            val: _.get(ibvlFrequencies, 'quality', '-'),
+            val: _.get(bvlFrequencies, 'quality', '-'),
         },
         {
             title: 'Filter',

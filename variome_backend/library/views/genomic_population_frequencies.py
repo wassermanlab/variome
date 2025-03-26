@@ -46,8 +46,8 @@ def genomic_population_frequencies(request, variant_id, **kwargs):
 #        return JsonResponse({"errors":["genomic gnomad frequency not found for this variant"]}, status=404)
     
     try:
-        gen_ibvl_freq = GenomicVariomeFrequency.objects.get(variant_id=variant.id)
-        data_out["genomic_ibvl_freq"] = GenomicVariomeFrequencySerializer(gen_ibvl_freq).data
+        gen_bvl_freq = GenomicVariomeFrequency.objects.get(variant_id=variant.id)
+        data_out["genomic_bvl_freq"] = GenomicVariomeFrequencySerializer(gen_bvl_freq).data
     except GenomicVariomeFrequency.DoesNotExist:
         errors.append("genomic variome frequency not found for this variant")
 #        return JsonResponse({"errors":["genomic variome frequency not found for this variant"]}, status=404)

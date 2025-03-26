@@ -1,5 +1,5 @@
 from django.db import models
-from ibvl.library.models.variant import Variant
+from variome_backend.library.models.variant import Variant
 
 class VariomeSettings(models.Model):
     """Singleton container for user-editable (Admin) settings and config."""

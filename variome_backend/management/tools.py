@@ -7,12 +7,12 @@ from pathlib import Path
 from django.db.models import Q
 from django.db import transaction
 
-import ibvl.library.models as ibvlmodels
+import variome_backend.library.models as bvlmodels
 
 log = logging.getLogger("management")
 
 
-class IBVLDialect(csv.excel_tab):
+class bvlDialect(csv.excel_tab):
     pass
 
 
@@ -28,7 +28,7 @@ class Importer:
     path_component = None
 
     # CSV dialect to use (override if a particular importer needs to)
-    csv_dialect = IBVLDialect
+    csv_dialect = bvlDialect
 
     # Batch size for bulk creates - 999 is limit for SQLite, larger numbers
     # may make things faster with PostgreSQL
@@ -181,7 +181,7 @@ class Importer:
 class SeverityImporter(Importer):
     """Importer class to locate the severities data file and load severities from it"""
 
-    model = ibvlmodels.Severity
+    model = bvlmodels.Severity
     path_component = "severities"
 
     def get_input_path(self):
@@ -264,7 +264,7 @@ class SeverityImporter(Importer):
 class GeneImporter(Importer):
     """Importer class to locate the genes data file and load genes from it"""
 
-    model = ibvlmodels.Gene
+    model = bvlmodels.Gene
     path_component = "genes"
 
     def populate_caches(self):
@@ -321,7 +321,7 @@ class GeneImporter(Importer):
 class VariantImporter(Importer):
     """Importer class to locate the variants data file and load variants from it"""
 
-    model = ibvlmodels.Variant
+    model = bvlmodels.Variant
     path_component = "variants"
     variant_id_length = model._meta.get_field('variant_id').max_length
 
@@ -414,7 +414,7 @@ class VariantImporter(Importer):
 class TranscriptImporter(Importer):
     """Importer class to locate the transcripts data file and load transcripts from it"""
 
-    model = ibvlmodels.Transcript
+    model = bvlmodels.Transcript
     path_component = "transcripts"
 
     def clean_data(self, row):
@@ -439,7 +439,7 @@ class TranscriptImporter(Importer):
         # approximately doubles the speed of updates
         self.genes = {
             obj["short_name"]: obj["pk"]
-            for obj in ibvlmodels.Gene.objects.values("pk", "short_name")
+            for obj in bvlmodels.Gene.objects.values("pk", "short_name")
         }
 
     def check_existing(self, row):
@@ -540,7 +540,7 @@ class TranscriptImporter(Importer):
 class SNVImporter(Importer):
     """Importer class to locate the SNV data file and load SNVs from it"""
 
-    model = ibvlmodels.SNV
+    model = bvlmodels.SNV
     path_component = "snvs"
 
     def populate_caches(self):
@@ -554,7 +554,7 @@ class SNVImporter(Importer):
         # approximately doubles the speed of updates
         self.variants = {
             obj["variant_id"]: obj["pk"]
-            for obj in ibvlmodels.Variant.objects.values("pk", "variant_id")
+            for obj in bvlmodels.Variant.objects.values("pk", "variant_id")
         }
 
     def clean_data(self, row):
@@ -692,7 +692,7 @@ class SNVImporter(Importer):
 class GVFImporter(Importer):
     """Importer class to locate the GVF data file and load GVFs from it"""
 
-    model = ibvlmodels.GenomicVariomeFrequency
+    model = bvlmodels.GenomicVariomeFrequency
     path_component = "genomic_variome_frequencies"
 
     def populate_caches(self):
@@ -706,7 +706,7 @@ class GVFImporter(Importer):
         # approximately doubles the speed of updates
         self.variants = {
             obj["variant_id"]: obj["pk"]
-            for obj in ibvlmodels.Variant.objects.values("pk", "variant_id")
+            for obj in bvlmodels.Variant.objects.values("pk", "variant_id")
         }
 
     def clean_data(self, row):
@@ -823,7 +823,7 @@ class GVFImporter(Importer):
 class GGFImporter(Importer):
     """Importer class to locate the GGF data file and load GGFs from it"""
 
-    model = ibvlmodels.GenomicGnomadFrequency
+    model = bvlmodels.GenomicGnomadFrequency
     path_component = "genomic_gnomad_frequencies"
 
     def populate_caches(self):
@@ -837,7 +837,7 @@ class GGFImporter(Importer):
         # approximately doubles the speed of updates
         self.variants = {
             obj["variant_id"]: obj["pk"]
-            for obj in ibvlmodels.Variant.objects.values("pk", "variant_id")
+            for obj in bvlmodels.Variant.objects.values("pk", "variant_id")
         }
 
     def clean_data(self, row):
@@ -933,7 +933,7 @@ class GGFImporter(Importer):
 class VariantTranscriptImporter(Importer):
     """Importer class to locate the GGF data file and load GGFs from it"""
 
-    model = ibvlmodels.VariantTranscript
+    model = bvlmodels.VariantTranscript
     path_component = "variants_transcripts"
 
     def populate_caches(self):
@@ -959,11 +959,11 @@ class VariantTranscriptImporter(Importer):
 
         self.variants = {
             obj["variant_id"]: obj["pk"]
-            for obj in ibvlmodels.Variant.objects.values("pk", "variant_id")
+            for obj in bvlmodels.Variant.objects.values("pk", "variant_id")
         }
         self.transcripts = {
             obj["transcript_id"]: obj["pk"]
-            for obj in ibvlmodels.Transcript.objects.values("pk", "transcript_id")
+            for obj in bvlmodels.Transcript.objects.values("pk", "transcript_id")
         }
 
     def clean_data(self, row):
@@ -1085,7 +1085,7 @@ class AnnotationImporter(Importer):
     """Importer class to locate the Variant Annotation data file
     and load Annotations from it"""
 
-    model = ibvlmodels.VariantAnnotation
+    model = bvlmodels.VariantAnnotation
     path_component = "variants_annotations"
 
     def populate_caches(self):
@@ -1111,7 +1111,7 @@ class AnnotationImporter(Importer):
         # }
         # self.vts = {
         #     (obj["variant_id"], obj["transcript_id"]): obj["pk"]
-        #     for obj in ibvlmodels.VariantTranscript.objects.values(
+        #     for obj in bvlmodels.VariantTranscript.objects.values(
         #         "pk",
         #         "variant_id",
         #         "transcript_id"
@@ -1136,7 +1136,7 @@ class AnnotationImporter(Importer):
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+        qs = bvlmodels.VariantTranscript.objects.filter(q).values(
             "pk", "variant__variant_id", "transcript__transcript_id"
         )
         self.vts = {
@@ -1269,7 +1269,7 @@ class ConsequenceImporter(Importer):
     """Importer class to locate the Variant Consequence data
     file and load Consequences from it"""
 
-    model = ibvlmodels.VariantConsequence
+    model = bvlmodels.VariantConsequence
     path_component = "variants_consequences"
 
     def populate_caches(self):
@@ -1279,7 +1279,7 @@ class ConsequenceImporter(Importer):
         self.vts = {}
         self.severities = {
             str(obj["severity_number"]): obj["pk"]
-            for obj in ibvlmodels.Severity.objects.values("pk", "severity_number")
+            for obj in bvlmodels.Severity.objects.values("pk", "severity_number")
         }
 
     def cache_chromosome(self, chromosome):
@@ -1303,7 +1303,7 @@ class ConsequenceImporter(Importer):
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = ibvlmodels.VariantTranscript.objects.filter(q).values(
+        qs = bvlmodels.VariantTranscript.objects.filter(q).values(
             "pk", "variant__variant_id", "transcript__transcript_id"
         )
         

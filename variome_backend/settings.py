@@ -102,9 +102,9 @@ INSTALLED_APPS = [
     "tracking",
     "pghistory",
     "pgtrigger",
-    "ibvl",
-    "ibvl.library",
-    "ibvl.library_access",
+    "variome_backend",
+    "variome_backend.library",
+    "variome_backend.library_access",
 ]
 
 MIDDLEWARE = [
@@ -156,7 +156,7 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
     LOGIN_URL = "django_auth_adfs:login"
     LOGIN_REDIRECT_URL = f"/{os.getenv('URL_PREFIX')}admin/"
 
-    CUSTOM_FAILED_RESPONSE_VIEW = 'ibvl.library_access.views.login_failed'
+    CUSTOM_FAILED_RESPONSE_VIEW = 'variome_backend.library_access.views.login_failed'
 
 else:
     AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
@@ -172,12 +172,12 @@ TRACK_IGNORE_URLS = [
 ]  # ignore everything other than api/variant
 TRACK_IGNORE_STATUS_CODES = [400, 404, 403, 405, 410, 429, 500]
 
-ROOT_URLCONF = "ibvl.urls"
+ROOT_URLCONF = "variome_backend.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": ["ibvl/templates"],
+        "DIRS": ["variome_backend/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -185,13 +185,13 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "ibvl.context_processors.custom_admin_dashboard",
+                "variome_backend.context_processors.custom_admin_dashboard",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "ibvl.wsgi.application"
+WSGI_APPLICATION = "variome_backend.wsgi.application"
 
 
 # Database

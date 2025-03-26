@@ -6,13 +6,13 @@ import sys
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-import ibvl.management.tools as ibvltools
+import variome_backend.management.tools as bvltools
 
 log = logging.getLogger("management")
 
 
 class Command(BaseCommand):
-    help = "Import IBVL data from tsv files"
+    help = "Import bvl data from tsv files"
     enable_debug = False
     verbose = False
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
             dest="path",
             required=False,
             default="data/fixtures",
-            help="Path of folder containing unpacked IBVL data files",
+            help="Path of folder containing unpacked bvl data files",
         )
         parser.add_argument(
             "--severities",
@@ -150,7 +150,7 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         transaction.set_autocommit(False)
-        log.debug("import_ibvl got options: \n %s", pprint.pformat(options))
+        log.debug("import_bvl got options: \n %s", pprint.pformat(options))
 
         sev_errors = None
         gen_errors = None
@@ -185,40 +185,40 @@ class Command(BaseCommand):
         
 
         if options["severities"]:
-            sev_errors, sev_warnings, sev_counts = ibvltools.SeverityImporter(options).import_data()
+            sev_errors, sev_warnings, sev_counts = bvltools.SeverityImporter(options).import_data()
 
         if options["genes"]:
-            gen_errors, gen_warnings, gen_counts = ibvltools.GeneImporter(options).import_data()
+            gen_errors, gen_warnings, gen_counts = bvltools.GeneImporter(options).import_data()
 
         if options["variants"]:
-            var_errors, var_warnings, var_counts = ibvltools.VariantImporter(options).import_data()
+            var_errors, var_warnings, var_counts = bvltools.VariantImporter(options).import_data()
 
         if options["transcripts"]:
-            tra_errors, tra_warnings, tra_counts = ibvltools.TranscriptImporter(
+            tra_errors, tra_warnings, tra_counts = bvltools.TranscriptImporter(
                 options
             ).import_data()
 
         if options["snvs"]:
-            snv_errors, snv_warnings, snv_counts = ibvltools.SNVImporter(options).import_data()
+            snv_errors, snv_warnings, snv_counts = bvltools.SNVImporter(options).import_data()
 
         if options["gvfs"]:
-            gvf_errors, gvf_warnings, gvf_counts = ibvltools.GVFImporter(options).import_data()
+            gvf_errors, gvf_warnings, gvf_counts = bvltools.GVFImporter(options).import_data()
 
         if options["ggfs"]:
-            ggf_errors, ggf_warnings, ggf_counts = ibvltools.GGFImporter(options).import_data()
+            ggf_errors, ggf_warnings, ggf_counts = bvltools.GGFImporter(options).import_data()
 
         if options["vts"]:
-            vts_errors, vts_warnings, vts_counts = ibvltools.VariantTranscriptImporter(
+            vts_errors, vts_warnings, vts_counts = bvltools.VariantTranscriptImporter(
                 options
             ).import_data()
 
         if options["annotations"]:
-            ann_errors, ann_warnings, ann_counts = ibvltools.AnnotationImporter(
+            ann_errors, ann_warnings, ann_counts = bvltools.AnnotationImporter(
                 options
             ).import_data()
 
         if options["consequences"]:
-            con_errors, con_warnings, con_counts = ibvltools.ConsequenceImporter(
+            con_errors, con_warnings, con_counts = bvltools.ConsequenceImporter(
                 options
             ).import_data()
 

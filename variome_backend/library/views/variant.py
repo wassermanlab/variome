@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.http.response import JsonResponse
 
-from ibvl.library_access.decorators import access_count_gate
+from variome_backend.library_access.decorators import access_count_gate
     
 
 @api_view(['GET'])
@@ -85,7 +85,7 @@ def variant(request, id ):
         "variant": VariantSerializer(variant).data,
         "snv": snv,
         "gnomadFrequencies":gnomadFrequences,
-        "ibvlFrequencies":variomeFrequencies,
+        "bvlFrequencies":variomeFrequencies,
         "annotations":annotations,
         "errors": errors
     })
