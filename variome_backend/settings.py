@@ -57,7 +57,7 @@ if manager_email:
     MANAGERS = [("Manager", manager_email)]
 
 # internal alert emails
-EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", "[He Kākano] ")
+EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", f"[{os.environ.get("BVL_TITLE","bvl")}] ")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "variome-admin-alerts-noreply@example.com")
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", False)
@@ -233,23 +233,22 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "http://localhost:3123",
+    f"http://localhost:{os.environ.get("FRONTEND_PORT")}",
+    f"https://localhost:{os.environ.get("FRONTEND_PORT")}",
+    f"http://127.0.0.1:{os.environ.get("FRONTEND_PORT")}",
+    f"https://127.0.0.1:{os.environ.get("FRONTEND_PORT")}",
     "http://" + DOMAIN,
     "https://" + DOMAIN,
-    "http://" + DOMAIN + ":3000",
-    "https://" + DOMAIN + ":3000",
+    "http://" + DOMAIN + f":{os.environ.get("FRONTEND_PORT")}",
+    "https://" + DOMAIN + f":{os.environ.get("FRONTEND_PORT")}",
     "http://" + DOMAIN + ":8000",
     "https://" + DOMAIN + ":8000",
 ]
 
 
 # for the "View Site" link in admin dashboard toolbar
-if isinstance(os.environ.get("FRONTEND_URL"), str):
-    SITE_URL = os.environ.get("FRONTEND_URL")
+if IS_DEVELOPMENT:
+    SITE_URL = f"http://localhost:{os.environ.get("FRONTEND_PORT")}"
 else:
     SITE_URL = "https://" + DOMAIN
     

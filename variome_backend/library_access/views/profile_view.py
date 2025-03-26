@@ -8,7 +8,7 @@ import os
 
 from ..models import UserProfile
 
-DOMAIN = os.environ.get('DOMAIN', 'http://localhost:3000')
+DOMAIN = os.environ.get('DOMAIN', f'http://localhost:{os.environ.get("FRONTEND_PORT")}')
 @login_required
 def profile_view_redirect(request):
     # do redirect to app

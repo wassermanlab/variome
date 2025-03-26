@@ -1,6 +1,6 @@
 
 ## `npm run start` 
-To startup dev server. it runs at localhost:3000. You can press "o" and hit the enter key in the terminal window to open in a browser easily. Use "h" for more shortcuts
+To startup dev server. it runs at localhost:3000 by default. You can press "o" and hit the enter key in the terminal window to open in a browser easily. Use "h" for more shortcuts
 
 
 ## `npm run build` to build
