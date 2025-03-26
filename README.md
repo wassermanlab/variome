@@ -1,21 +1,30 @@
 An implementation of the Wasserman Lab IBVL portal
 
-## Dev Environment Setup
-1. Create an environment for the backend and activate if you did not do it yet
-```
-#(recommended - using rye)
-#install rye for dependency management:
-https://rye.astral.sh/guide/installation/
+## Dev Environment Setup (Python / Django module)
 
-git clone git@github.com:wassermanlab/variome.git
+```
+git clone -b community-version git@github.com:wassermanlab/variome.git
 cd variome
+```
+
+### Option 1 - Rye (recommended)
+install rye for dependency management: https://rye.astral.sh/guide/installation/ then run:
+
+```
 rye sync
 ```
 
+### Option 2 - Pip
 ```
-#(option - use pip or similar)
 pip install -R requirements.lock
 
+```
+
+### Option 3 - Conda and Pip
+```
+conda env create -f environment.yaml 
+conda activate variome
+pip install -r requirements.lock
 ```
 
 2. Set up the database

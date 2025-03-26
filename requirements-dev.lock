@@ -12,18 +12,18 @@
 asgiref==3.8.1
     # via django
     # via django-cors-headers
-black==24.4.2
-certifi==2024.6.2
+black==25.1.0
+certifi==2025.1.31
     # via requests
-cffi==1.16.0
+cffi==1.17.1
     # via cryptography
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via black
-cryptography==42.0.7
+cryptography==44.0.2
     # via django-auth-adfs
-dj-database-url==2.1.0
+dj-database-url==2.3.0
     # via variome
 django==4.2.13
     # via dj-database-url
@@ -35,65 +35,65 @@ django==4.2.13
     # via django-tracking2
     # via djangorestframework
     # via variome
-django-auth-adfs==1.14.0
+django-auth-adfs==1.15.0
     # via variome
-django-cors-headers==4.3.1
+django-cors-headers==4.7.0
     # via variome
 django-extensions==3.2.3
     # via variome
-django-pghistory==3.2.0
+django-pghistory==3.5.4
     # via variome
-django-pgtrigger==4.11.1
+django-pgtrigger==4.13.3
     # via django-pghistory
 django-tracking2==0.5.1
     # via variome
-djangorestframework==3.15.1
+djangorestframework==3.15.2
     # via variome
-idna==3.7
+idna==3.10
     # via requests
 mypy-extensions==1.0.0
     # via black
 natsort==8.4.0
     # via variome
-numpy==1.26.4
+numpy==2.2.4
     # via pandas
     # via variome
-packaging==24.0
+packaging==24.2
     # via black
-pandas==2.2.2
+pandas==2.2.3
     # via variome
 pathspec==0.12.1
     # via black
-platformdirs==4.2.2
+platformdirs==4.3.7
     # via black
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via variome
 pycparser==2.22
     # via cffi
-pyjwt==2.8.0
+pyjwt==2.10.1
     # via django-auth-adfs
 python-dateutil==2.9.0.post0
     # via pandas
-python-dotenv==1.0.1
+python-dotenv==1.1.0
     # via variome
-pytz==2024.1
+pytz==2025.2
     # via pandas
 requests==2.32.3
     # via django-auth-adfs
-six==1.16.0
+six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.30
+sqlalchemy==2.0.39
     # via sqlalchemy-utils
     # via variome
 sqlalchemy-utils==0.41.2
     # via variome
-sqlparse==0.5.0
+sqlparse==0.5.3
     # via django
-typing-extensions==4.12.0
+typing-extensions==4.13.0
     # via dj-database-url
     # via sqlalchemy
-tzdata==2024.1
+tzdata==2025.2
     # via pandas
-urllib3==2.2.1
+urllib3==2.3.0
     # via django-auth-adfs
     # via requests

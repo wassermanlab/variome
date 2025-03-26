@@ -24,6 +24,8 @@ IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
 DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
 
+print(f"...connecting to {DB}...")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = (
     os.environ.get("DJANGO_SECRET_KEY")
@@ -69,10 +71,10 @@ EMAIL_SSL_KEYFILE = os.environ.get("EMAIL_SSL_KEYFILE", False)
 
 if EMAIL_HOST:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    print(f"using smtp email backend at {EMAIL_HOST}")
+#    print(f"using smtp email backend at {EMAIL_HOST}")
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    print("using console email backend")
+#    print("using console email backend")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
