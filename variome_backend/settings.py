@@ -57,7 +57,7 @@ if manager_email:
     MANAGERS = [("Manager", manager_email)]
 
 # internal alert emails
-EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", f"[{os.environ.get("BVL_TITLE","bvl")}] ")
+EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", f"[{os.environ.get('BVL_TITLE','bvl')}] ")
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "variome-admin-alerts-noreply@example.com")
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", False)
@@ -233,14 +233,14 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    f"http://localhost:{os.environ.get("FRONTEND_PORT")}",
-    f"https://localhost:{os.environ.get("FRONTEND_PORT")}",
-    f"http://127.0.0.1:{os.environ.get("FRONTEND_PORT")}",
-    f"https://127.0.0.1:{os.environ.get("FRONTEND_PORT")}",
+    f"http://localhost:{os.environ.get('FRONTEND_PORT')}",
+    f"https://localhost:{os.environ.get('FRONTEND_PORT')}",
+    f"http://127.0.0.1:{os.environ.get('FRONTEND_PORT')}",
+    f"https://127.0.0.1:{os.environ.get('FRONTEND_PORT')}",
     "http://" + DOMAIN,
     "https://" + DOMAIN,
-    "http://" + DOMAIN + f":{os.environ.get("FRONTEND_PORT")}",
-    "https://" + DOMAIN + f":{os.environ.get("FRONTEND_PORT")}",
+    "http://" + DOMAIN + f":{os.environ.get('FRONTEND_PORT')}",
+    "https://" + DOMAIN + f":{os.environ.get('FRONTEND_PORT')}",
     "http://" + DOMAIN + ":8000",
     "https://" + DOMAIN + ":8000",
 ]
@@ -248,7 +248,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # for the "View Site" link in admin dashboard toolbar
 if IS_DEVELOPMENT:
-    SITE_URL = f"http://localhost:{os.environ.get("FRONTEND_PORT")}"
+    SITE_URL = f"http://localhost:{os.environ.get('FRONTEND_PORT')}"
 else:
     SITE_URL = "https://" + DOMAIN
     

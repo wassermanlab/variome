@@ -3,8 +3,8 @@ from variome_backend.library.models.variant import Variant
 
 class VariomeSettings(models.Model):
     """Singleton container for user-editable (Admin) settings and config."""
-    site_title = models.CharField(max_length=255) 
-    home_page_message = models.TextField(blank=True, default="This is a test database. All data used is open source and does not include Indigenous data.")
+#    site_title = models.CharField(max_length=255) 
+    home_page_message = models.TextField(blank=True, default="This is a test version of a brand new Variome BVL.")
     example_snv = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
 #    example_mt = models.ForeignKey('library.snv', on_delete=models.CASCADE, blank=True, null=True)
 #    example_sv = models.ForeignKey('library.snv', on_delete=models.CASCADE, blank=True, null=True)
