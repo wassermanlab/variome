@@ -57,16 +57,19 @@ python manage.py createsuperuser
 ```
 {
     "backend_url":"http://localhost:8000/api/",
-    "backend_root":"http://localhost:8000/",
-    "frontend_url":"/"
+    "backend_root":"http://localhost:8000/"
 }
 ```
 
 ## Run the Django app
 ```
-rye sync
 python manage.py runserver
 ```
+(optional) - Run on a specific port
+```
+python manage.py runserver 8888
+```
+
 
 ## Run the Frontend
 
@@ -75,6 +78,4 @@ cd frontend
 npm install
 npm run dev
 ```
-
-Please note the port number that the dev frontend is being run on, you will get CORS errors if the domain is not in the list of CORS_ALLOWED_ORIGINS in variome_backend/settings.py L187
 
