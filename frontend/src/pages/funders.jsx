@@ -12,6 +12,7 @@ import Grid from '@mui/material/Grid'
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import Link from '@mui/material/Link';
 
 const PREFIX = 'Home';
 const classes = {
@@ -30,14 +31,14 @@ const Root = styled('div')(({ theme }) => ({
 }))
 
 
-export default function Contact() {
+export default function Funders() {
 
   return (
     <Container maxWidth="xl" >
       <Grid container direction="row" >
         <Grid item xs={12}>
           <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-            Contact
+            Funders
           </Typography>
         </Grid>
       </Grid>
@@ -45,7 +46,7 @@ export default function Contact() {
       <Grid item xs={12} sx={{ marginTop: 2 }}>
         <Card>
           <CardContent>
-            Enquiries regarding becoming a user of He Kākano should in the first instance be directed to Professor Stephen Robertson: <br/><p> stephen.robertson@otago.ac.nz </p>
+          Special acknowledgement to the funders of this project which include <Link color="inherit" href="https://www.genomics-aotearoa.org.nz/" target="_blank" rel="noopener noreferrer">Genomics Aotearoa </Link> and <Link href="https://www.curekids.org.nz/" color="inherit" target="_blank" rel="noopener noreferrer">Curekids</Link>. 
           </CardContent>
         </Card>
       </Grid>

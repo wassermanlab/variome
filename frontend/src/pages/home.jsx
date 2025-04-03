@@ -60,7 +60,7 @@ export default function Home({
           <Grid item xs={7}>
             {/* BH TODO: Pick a better font for this */}
             <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-              Welcome to {pageTitle ? pageTitle : "Variome"}
+            He Kākano: The Aotearoa Māori Variome
             </Typography>
           </Grid>
           <Grid item xs={5}>

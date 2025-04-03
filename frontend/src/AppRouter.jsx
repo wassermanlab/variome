@@ -18,6 +18,7 @@ import Variant from './pages/variant.jsx';
 import About from './pages/about.jsx';
 import TermsOfUse from './pages/terms.jsx';
 import FAQ from './pages/faq.jsx';
+import Funders from './pages/funders.jsx';
 import Contact from './pages/contact.jsx';
 
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
@@ -70,6 +71,7 @@ function AppRouter() {
                 <Route path="/about" exact element={<About />} />
                 <Route path="/terms" exact element={<TermsOfUse />} />
                 <Route path="/faq" exact element={<FAQ />} />
+                <Route path="/funders" exact element={<Funders />} />
                 <Route path="/contact" exact element={<Contact />} />
                 {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
                 {user && <Route path="/profile" element={<Profile user={user} />} />}
