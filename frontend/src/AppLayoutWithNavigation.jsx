@@ -159,7 +159,14 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="Terms of Use" />
             </ListItem>
           </Link>
-
+          <Link to="/funders" color="inherit" underline="none">
+            <ListItem button key="faq">
+              <ListItemIcon>
+                <Star />
+              </ListItemIcon>
+              <ListItemText primary="Funders" />
+            </ListItem>
+          </Link>
           <Link to="/faq" color="inherit" underline="none">
             <ListItem button key="faq">
               <ListItemIcon>
