@@ -28,5 +28,9 @@ export default defineConfig({
   server:{
     port: 3000,
   },
-  plugins: [react()],
+  plugins: [
+    react()
+  ],
+  assetsInclude: ['**/*.md'], // Include Markdown files as assets
+
 })
