@@ -2,6 +2,6 @@
 
 About goes here
 
-# How do get access
+## How do get access
 
-Instructions for how to get access: 
+Instructions for how to get access
