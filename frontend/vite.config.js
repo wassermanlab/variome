@@ -30,7 +30,6 @@ export default defineConfig({
   },
   plugins: [
     react()
-  ],
-  assetsInclude: ['**/*.md'], // Include Markdown files as assets
+  ]
 
 })
