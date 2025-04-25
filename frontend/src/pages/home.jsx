@@ -40,11 +40,11 @@ const Root = styled("div")(({ theme }) => ({
 
 
 export default function Home({
-    user,
-    pageTitle,
-    setPageTitle,
-    message,
-    examples
+  user,
+  pageTitle,
+  setPageTitle,
+  message,
+  examples
 }) {
 
   return (
@@ -53,19 +53,20 @@ export default function Home({
         <Grid
           container
           direction="row"
-          justifyContent="center"
-          alignItems="center"
           spacing={2}
         >
-          <Grid item xs={7}>
+          <Grid item >
             {/* BH TODO: Pick a better font for this */}
             <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-            He Kākano: The Aotearoa Māori Variome
+              Variant Library Title
             </Typography>
           </Grid>
-          <Grid item xs={5}>
-            {!_.isEmpty(message) && <Alert severity="info">{message}</Alert>}
-          </Grid>
+          {!_.isEmpty(message) && <>
+            <Grid item xs={5}>
+              <Alert severity="info">{message}</Alert>
+            </Grid>
+          </>
+          }
           <Grid item xs={12}>
             {user ? (
               <Card>
@@ -79,7 +80,7 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>
@@ -174,28 +175,11 @@ export default function Home({
                 <Grid container>
                   <Grid item xs={6}>
                     <Typography
-                      variant="h4"
-                      sx={{ fontWeight: "bold", paddingBottom: "5%" }}
-                    >
-                      The Project
+                      variant="body1"
+                      sx={{ fontWeight: "light" }}
+                    > Example content about your background variant library goes here.
                     </Typography>
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: "light", paddingBottom: "5%" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-
+                      {/*}
                     <Link href="/" target="_blank" rel="noopener noreferrer">
                       <Button
                         size="large"
@@ -207,7 +191,7 @@ export default function Home({
                       >
                         Learn More
                       </Button>
-                    </Link>
+                    </Link>{*/}
                   </Grid>
                   <Grid item xs={6}>
                     <Box

@@ -44,7 +44,7 @@ import Link from "./components/Link";
 import VariomeToolbar from "./components/VariomeToolbar"
 
 const drawerWidth = 240;
-import { loadMarkdown } from "./ContentParsing";
+import Content from "./ContentParsing";
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
@@ -98,23 +98,6 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
   const theme = useTheme();
   const [navDrawerOpen, setNavDrawerOpen] = React.useState(true);
 
-  const [sections, setSections] = useState([]);
-
-  useEffect(() => {
-    const fetchMarkdown = async () => {
-      const loadedSections = await loadMarkdown();
-      setSections(
-        loadedSections.map(({ name, content, html }) => ({
-          name,
-          html,
-          urlPath: name.replace(/ /g, "-").toLowerCase()
-        }))
-      );
-    };
-
-    fetchMarkdown();
-  }, []);
-
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -162,7 +145,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          {sections.map((section) => (
+          {Content.map((section) => (
             <Link
               key={section.name}
               to={`/${section.urlPath}`}
@@ -171,7 +154,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
             >
               <ListItem button>
                 <ListItemIcon>
-                  <Article />
+                  {<section.icon/>}
                 </ListItemIcon>
                 <ListItemText primary={_.capitalize(section.name)} />
               </ListItem>

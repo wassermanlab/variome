@@ -1,7 +1,7 @@
 # About our background variant library
 
-lorem ipsum
+About goes here
 
 # How do get access
 
-Example access
+Instructions for how to get access: 
