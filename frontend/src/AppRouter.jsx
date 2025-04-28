@@ -4,25 +4,17 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
+import {Container, Box} from '@mui/material';
 
-import './App.css';
 import theme from './styles/theme.jsx';
 import Api from './Api.jsx';
-
 import Profile from './pages/profile.jsx'
 import Logout from './pages/logout.jsx'
-
-
 import Home from './pages/home.jsx';
 import Variant from './pages/variant.jsx';
-import About from './pages/about.jsx';
-import TermsOfUse from './pages/terms.jsx';
-import FAQ from './pages/faq.jsx';
-import Funders from './pages/funders.jsx';
-import Contact from './pages/contact.jsx';
 
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
-
+import {Content} from './ContentParsing.jsx';
 
 
 function AppRouter() {
@@ -55,9 +47,21 @@ function AppRouter() {
       var user = _.get(response, 'user');
       if (_.isObject(user) && _.has(user, 'email') && user.email) {
         setUser(user);
+      } else if (_.isObject(user) && !_.has(user, 'email') ) {
+        console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
       }
     });
   }, []);
+
+  function PageWithContent(content){
+    return (
+    <Container maxWidth="xl">
+      <Box>
+        {content}
+      </Box>
+    </Container>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -68,11 +72,13 @@ function AppRouter() {
             <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
               <Routes>
                 <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}} message={homePageMessage}/>} />
-                <Route path="/about" exact element={<About />} />
-                <Route path="/terms" exact element={<TermsOfUse />} />
-                <Route path="/faq" exact element={<FAQ />} />
-                <Route path="/funders" exact element={<Funders />} />
-                <Route path="/contact" exact element={<Contact />} />
+                {
+                  Content.map(({name, urlPath, content}) => {
+                    return (
+                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)}/>
+                    );
+                  })
+                }
                 {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
                 {user && <Route path="/profile" element={<Profile user={user} />} />}
                 {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}

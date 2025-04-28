@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import _ from "lodash";
+import { useEffect, useState } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import {
   Box,
@@ -40,9 +41,10 @@ import {
 } from "@mui/icons-material";
 
 import Link from "./components/Link";
-import VariomeToolbar from "./components/VariomeToolbar";
+import VariomeToolbar from "./components/VariomeToolbar"
 
 const drawerWidth = 240;
+import {Content} from "./ContentParsing";
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
@@ -94,7 +96,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 
 export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
   const theme = useTheme();
-  const [navDrawerOpen, setNavDrawerOpen] = React.useState(false);
+  const [navDrawerOpen, setNavDrawerOpen] = React.useState(true);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -143,46 +145,21 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          <Link to="/about" color="inherit" underline="none">
-            <ListItem button key="about">
-              <ListItemIcon>
-                <Info />
-              </ListItemIcon>
-              <ListItemText primary="About" />
-            </ListItem>
-          </Link>
-          <Link to="/terms" color="inherit" underline="none">
-            <ListItem button key="terms">
-              <ListItemIcon>
-                <Article />
-              </ListItemIcon>
-              <ListItemText primary="Terms of Use" />
-            </ListItem>
-          </Link>
-          <Link to="/funders" color="inherit" underline="none">
-            <ListItem button key="faq">
-              <ListItemIcon>
-                <Star />
-              </ListItemIcon>
-              <ListItemText primary="Funders" />
-            </ListItem>
-          </Link>
-          <Link to="/faq" color="inherit" underline="none">
-            <ListItem button key="faq">
-              <ListItemIcon>
-                <HelpCenter />
-              </ListItemIcon>
-              <ListItemText primary="FAQ" />
-            </ListItem>
-          </Link>
-          <Link to="/contact" color="inherit" underline="none">
-            <ListItem button key="contact">
-              <ListItemIcon>
-                <Email />
-              </ListItemIcon>
-              <ListItemText primary="Contact Us" />
-            </ListItem>
-          </Link>
+          {Content.map((section) => (
+            <Link
+              key={section.name}
+              to={`/${section.urlPath}`}
+              color="inherit"
+              underline="none"
+            >
+              <ListItem button>
+                <ListItemIcon>
+                  {<section.icon/>}
+                </ListItemIcon>
+                <ListItemText primary={_.capitalize(section.name)} />
+              </ListItem>
+            </Link>
+          ))}
         </List>
       </Drawer>
       <Main open={navDrawerOpen}>

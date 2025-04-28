@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import _ from "lodash";
+import Markdown from "react-markdown";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -21,6 +22,8 @@ import SearchProvider from "../components/SearchProvider";
 import Link from "../components/Link";
 import Api from "../Api";
 
+import { HomeContent } from "../ContentParsing";
+
 const PREFIX = "Home";
 const classes = {
   root: `${PREFIX}-root`,
@@ -40,11 +43,11 @@ const Root = styled("div")(({ theme }) => ({
 
 
 export default function Home({
-    user,
-    pageTitle,
-    setPageTitle,
-    message,
-    examples
+  user,
+  pageTitle,
+  setPageTitle,
+  message,
+  examples
 }) {
 
   return (
@@ -53,19 +56,17 @@ export default function Home({
         <Grid
           container
           direction="row"
-          justifyContent="center"
-          alignItems="center"
           spacing={2}
         >
-          <Grid item xs={7}>
-            {/* BH TODO: Pick a better font for this */}
-            <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-            He Kākano: The Aotearoa Māori Variome
-            </Typography>
+          <Grid item >
+            <Markdown >{HomeContent["full title"]}</Markdown>
           </Grid>
-          <Grid item xs={5}>
-            {!_.isEmpty(message) && <Alert severity="info">{message}</Alert>}
-          </Grid>
+          {!_.isEmpty(message) && <>
+            <Grid item xs={5}>
+              <Alert severity="info">{message}</Alert>
+            </Grid>
+          </>
+          }
           <Grid item xs={12}>
             {user ? (
               <Card>
@@ -79,7 +80,7 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>
@@ -174,28 +175,11 @@ export default function Home({
                 <Grid container>
                   <Grid item xs={6}>
                     <Typography
-                      variant="h4"
-                      sx={{ fontWeight: "bold", paddingBottom: "5%" }}
-                    >
-                      The Project
+                      variant="body1"
+                      sx={{ fontWeight: "light" }}
+                    > <Markdown>{HomeContent.intro}</Markdown>
                     </Typography>
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: "light", paddingBottom: "5%" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-
+                      {/*}
                     <Link href="/" target="_blank" rel="noopener noreferrer">
                       <Button
                         size="large"
@@ -207,7 +191,7 @@ export default function Home({
                       >
                         Learn More
                       </Button>
-                    </Link>
+                    </Link>{*/}
                   </Grid>
                   <Grid item xs={6}>
                     <Box
@@ -255,17 +239,17 @@ export default function Home({
             style={{ width: "200px", opacity: "0.2" }}
           />
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/about" color="inherit">
+            <Link to="/about" color="inherit">
               About
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/terms" color="inherit">
+            <Link to="/terms" color="inherit">
               Terms of Use
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/contact" color="inherit">
+            <Link to="/contact" color="inherit">
               Contact
             </Link>
           </Typography>
