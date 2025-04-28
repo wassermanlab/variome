@@ -4,21 +4,18 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
+import {Container, Box} from '@mui/material';
 
-import './App.css';
 import theme from './styles/theme.jsx';
 import Api from './Api.jsx';
-
 import Profile from './pages/profile.jsx'
 import Logout from './pages/logout.jsx'
-
-
 import Home from './pages/home.jsx';
 import Variant from './pages/variant.jsx';
 
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
+import {Content} from './ContentParsing.jsx';
 
-import Content from './ContentParsing.jsx';
 
 function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
@@ -56,6 +53,16 @@ function AppRouter() {
     });
   }, []);
 
+  function PageWithContent(content){
+    return (
+    <Container maxWidth="xl">
+      <Box>
+        {content}
+      </Box>
+    </Container>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -68,7 +75,7 @@ function AppRouter() {
                 {
                   Content.map(({name, urlPath, content}) => {
                     return (
-                      <Route key={urlPath} path={`/${urlPath}`} element={<>{content}</>}/>
+                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)}/>
                     );
                   })
                 }

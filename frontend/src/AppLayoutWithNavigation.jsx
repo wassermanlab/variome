@@ -44,7 +44,7 @@ import Link from "./components/Link";
 import VariomeToolbar from "./components/VariomeToolbar"
 
 const drawerWidth = 240;
-import Content from "./ContentParsing";
+import {Content} from "./ContentParsing";
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({

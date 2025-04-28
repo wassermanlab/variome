@@ -8,6 +8,13 @@ const markdownContent = import.meta.glob('../content/*.md', {
   query: "?raw"
 });
 
+const HomeContent = _.fromPairs(_.map(_.toPairs(import.meta.glob('../content/Home/*.md', {
+  eager: true,
+  query: "?raw"
+})), ([key, value]) => {
+  return [key.split('/').pop().split('.')[0], value.default];
+}));
+
 var Content = [];
 
 _.toPairs(markdownContent).forEach(([key, value]) => {
@@ -25,4 +32,4 @@ Content = _.sortBy(Content, c => {
   return _.indexOf(_.keys(IconMap), c.name);
 });
 
-export default Content;
+export {Content, HomeContent};

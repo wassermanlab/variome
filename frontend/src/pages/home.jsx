@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import _ from "lodash";
+import Markdown from "react-markdown";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -20,6 +21,8 @@ import SearchResults from "../components/SearchResults";
 import SearchProvider from "../components/SearchProvider";
 import Link from "../components/Link";
 import Api from "../Api";
+
+import { HomeContent } from "../ContentParsing";
 
 const PREFIX = "Home";
 const classes = {
@@ -56,10 +59,7 @@ export default function Home({
           spacing={2}
         >
           <Grid item >
-            {/* BH TODO: Pick a better font for this */}
-            <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-              Variant Library Title
-            </Typography>
+            <Markdown >{HomeContent["full title"]}</Markdown>
           </Grid>
           {!_.isEmpty(message) && <>
             <Grid item xs={5}>
@@ -177,7 +177,7 @@ export default function Home({
                     <Typography
                       variant="body1"
                       sx={{ fontWeight: "light" }}
-                    > Example content about your background variant library goes here.
+                    > <Markdown>{HomeContent.intro}</Markdown>
                     </Typography>
                       {/*}
                     <Link href="/" target="_blank" rel="noopener noreferrer">
@@ -239,17 +239,17 @@ export default function Home({
             style={{ width: "200px", opacity: "0.2" }}
           />
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/about" color="inherit">
+            <Link to="/about" color="inherit">
               About
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/terms" color="inherit">
+            <Link to="/terms" color="inherit">
               Terms of Use
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/contact" color="inherit">
+            <Link to="/contact" color="inherit">
               Contact
             </Link>
           </Typography>
