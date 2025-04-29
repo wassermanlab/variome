@@ -5,6 +5,7 @@ import {
   HelpCenter,
   Home as HomeIcon,
   Info,
+  Rule,
   Menu as MenuIcon,
   Description,
   ChevronLeft,
@@ -24,7 +25,8 @@ import {
   */
 const IconMap = {
 //  Home: HomeIcon,
-  About: Info,
+  "About He Kākano": Info,
+  "Conditions of Use of the Variome Dataset": Rule,
   Contact: Email,
 }
 

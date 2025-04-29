@@ -156,7 +156,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
                 <ListItemIcon>
                   {<section.icon/>}
                 </ListItemIcon>
-                <ListItemText primary={_.capitalize(section.name)} />
+                <ListItemText primary={section.name} />
               </ListItem>
             </Link>
           ))}
