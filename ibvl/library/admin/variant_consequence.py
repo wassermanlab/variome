@@ -17,5 +17,6 @@ class VariantConsequenceAdmin(admin.ModelAdmin):
     list_display = ('id', 'variant_transcript', 'severity')
     list_display_links = ('id', 'variant_transcript')
     list_filter = (VariantIdFilter,)
+    autocomplete_fields = ('variant_transcript',)
 
 admin.site.register(VariantConsequence, VariantConsequenceAdmin)
