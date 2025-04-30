@@ -1,14 +1,34 @@
-An implementation of the Wasserman Lab IBVL portal
+# He Kākano
+
+The Aotearoa implementation of the Wasserman Lab Background Variant Library web application.
+
+For the general-purpose community version, see the community-version branch: https://github.com/wassermanlab/variome/tree/community-version 
 
 ## Dev Environment Setup
-1. Create an environment for the backend and activate if you did not do it yet
-```
-install rye for dependency management:
-https://rye.astral.sh/guide/installation/
+1. Initial setup
 
+```
 git clone git@github.com:wassermanlab/variome.git
 cd variome
+```
+
+Option 1 - use Rye for dependency management
+
+see https://rye.astral.sh/guide/installation/
+```
 rye sync
+```
+
+Option 2 - using venv and pip
+```
+python3 -m venv variome-env
+source variome-env/bin/activate
+pip install -R requirements.lock
+```
+
+Option 3 - Conda
+```
+... tba ...
 ```
 
 2. Set up the database
@@ -29,7 +49,7 @@ cp .env-sample .env
 
 ```
 
-4. Load the data and create a superuser account
+4. Load the test fixture data and create a superuser account
 ```
 python manage.py migrate
 python manage.py import_ibvl
