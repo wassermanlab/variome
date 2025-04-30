@@ -19,7 +19,7 @@ var Content = [];
 
 _.toPairs(markdownContent).forEach(([key, value]) => {
   var name = key.split('/').pop().split('.')[0];
-  var nameLower = name.toLowerCase();
+  var nameLower = _.replace(name.toLowerCase(),/\s+/g, '-');// ' ', '-');
   Content.push({
     name,
     content: <Markdown>{value.default}</Markdown>,
