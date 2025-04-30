@@ -1,7 +1,7 @@
 
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
 import {Container, Box} from '@mui/material';
@@ -53,7 +53,18 @@ function AppRouter() {
     });
   }, []);
 
+  function ScrollToTop(){
+    const { pathname } = useLocation();
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, [pathname]);
+
+    return null;
+  }
+
   function PageWithContent(content){
+
+
     return (
     <Container maxWidth="xl">
       <Box>
@@ -67,6 +78,7 @@ function AppRouter() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
+      <ScrollToTop />
         <Routes>
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
