@@ -130,7 +130,6 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
         open={navDrawerOpen}
       >
         <DrawerHeader>
-          {/* BH TODO: Add Logo here */}
           <IconButton onClick={() => setNavDrawerOpen(false)}>
             {theme.direction === "ltr" ? <ChevronLeft /> : <ChevronRight />}
           </IconButton>

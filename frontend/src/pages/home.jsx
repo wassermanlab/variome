@@ -68,6 +68,42 @@ export default function Home({
             </Grid>
           </>
           }
+
+          <Grid item xs={12} >
+            <Card>
+              <CardContent>
+                <Grid container gap="1em" justifyContent={"space-between"}>
+                  <Grid item xs={5}>
+                    <Typography
+                      variant="div"
+                      sx={{ fontWeight: "light" }}
+                    > <Markdown>{HomeContent.intro}</Markdown>
+                    </Typography>
+                      {/*}
+                    <Link href="/" target="_blank" rel="noopener noreferrer">
+                      <Button
+                        size="large"
+                        sx={{
+                          marginTop: "20px",
+                          fontWeight: "bold",
+                          border: "1px solid grey"
+                        }}
+                      >
+                        Learn More
+                      </Button>
+                    </Link>{*/}
+                  </Grid>
+                  <Grid item xs={6} justifyContent={"center"} flexGrow={2} >
+                    <Markdown components={{
+                      p: ({ node, ...props }) => <div style={HomeImageStyle} className="home-image" {...props} />
+                    }}>
+                        {HomeContent.image}
+                      </Markdown>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
           <Grid item xs={12}>
             {user ? (
               <Card>
@@ -170,52 +206,6 @@ export default function Home({
               </Card>
             ) : null}
           </Grid>
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Grid container>
-                  <Grid item xs={6}>
-                    <Typography
-                      variant="div"
-                      sx={{ fontWeight: "light" }}
-                    > <Markdown>{HomeContent.intro}</Markdown>
-                    </Typography>
-                      {/*}
-                    <Link href="/" target="_blank" rel="noopener noreferrer">
-                      <Button
-                        size="large"
-                        sx={{
-                          marginTop: "20px",
-                          fontWeight: "bold",
-                          border: "1px solid grey"
-                        }}
-                      >
-                        Learn More
-                      </Button>
-                    </Link>{*/}
-                  </Grid>
-                  <Grid item xs={6}>{/*}
-                    <Box
-                      component="img"
-                      alt="Temporary Logo"
-                      src="/temp-logo.svg"
-                      style={{
-                        width: "200px",
-                        marginLeft: "80px",
-                        marginTop: "20px",
-                        opacity: "0.2"
-                      }}
-                    />{*/}
-                      <div style={HomeImageStyle}>
-                    <Markdown>
-                        {HomeContent.image}
-                      </Markdown>
-                        </div>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
         </Grid>
       </Box>
 
@@ -238,12 +228,12 @@ export default function Home({
             gap: "30px"
           }}
         >
-          <Box
-            component="img"
-            alt="Temporary Logo"
-            src="/temp-logo.svg"
-            style={{ width: "200px", opacity: "0.2" }}
-          />
+            <Markdown components={{
+                      p: ({ node, ...props }) => <div style={{width:"250px"}} className="home-image" {...props} />
+                    }}>
+                        {HomeContent["footer image"]}
+                      </Markdown>
+                      {/*}
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
             <Link to="/about" color="inherit">
               About
@@ -258,7 +248,7 @@ export default function Home({
             <Link to="/contact" color="inherit">
               Contact
             </Link>
-          </Typography>
+          </Typography>{*/}
         </Box>
       </Box>
     </Container>

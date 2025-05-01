@@ -1,1 +1,1 @@
-!["alt text"](/temp-logo.svg)
+!["He Kākano - Aotearoa Variome Logo"](/He_Kākano_Vertical.svg)

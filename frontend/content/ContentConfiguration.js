@@ -34,10 +34,12 @@ const IconMap = {
 }
 
 const HomeImageStyle = {
-  width: "250px",
-  marginLeft: "80px",
-  marginTop: "20px",
-  opacity: "0.2"
+  maxWidth: "100%",
+//  border:"1px solid green",
+  margin:"0 4em"
+  //marginLeft: "80px",
+  //marginTop: "20px",
+  //opacity: "0.2"
 }
 
 IconMap.default = Description;
