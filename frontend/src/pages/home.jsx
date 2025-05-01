@@ -23,6 +23,7 @@ import Link from "../components/Link";
 import Api from "../Api";
 
 import { HomeContent } from "../ContentParsing";
+import {HomeImageStyle} from "../../content/ContentConfiguration";
 
 const PREFIX = "Home";
 const classes = {
@@ -175,7 +176,7 @@ export default function Home({
                 <Grid container>
                   <Grid item xs={6}>
                     <Typography
-                      variant="body1"
+                      variant="div"
                       sx={{ fontWeight: "light" }}
                     > <Markdown>{HomeContent.intro}</Markdown>
                     </Typography>
@@ -193,7 +194,7 @@ export default function Home({
                       </Button>
                     </Link>{*/}
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item xs={6}>{/*}
                     <Box
                       component="img"
                       alt="Temporary Logo"
@@ -204,7 +205,12 @@ export default function Home({
                         marginTop: "20px",
                         opacity: "0.2"
                       }}
-                    />
+                    />{*/}
+                      <div style={HomeImageStyle}>
+                    <Markdown>
+                        {HomeContent.image}
+                      </Markdown>
+                        </div>
                   </Grid>
                 </Grid>
               </CardContent>
