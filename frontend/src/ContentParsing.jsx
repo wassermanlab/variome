@@ -1,7 +1,7 @@
 
 import Markdown from 'react-markdown'
 import _ from 'lodash';
-import IconMap from '../content/ContentConfiguration';
+import {IconMap} from '../content/ContentConfiguration';
 
 const markdownContent = import.meta.glob('../content/*.md', { 
   eager: true, 

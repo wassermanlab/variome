@@ -33,6 +33,14 @@ const IconMap = {
   Contact: Email,
 }
 
+const HomeImageStyle = {
+  width: "250px",
+  marginLeft: "80px",
+  marginTop: "20px",
+  opacity: "0.2"
+}
+
 IconMap.default = Description;
 
-export default IconMap;
+export { IconMap };
+export { HomeImageStyle };
