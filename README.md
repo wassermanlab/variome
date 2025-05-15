@@ -1,4 +1,4 @@
-An implementation of the Wasserman Lab bvl portal
+# Wasserman Lab BVL
 
 ## Dev Environment Setup (Python / Django module)
 

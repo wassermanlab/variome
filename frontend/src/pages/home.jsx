@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import _ from "lodash";
+import Markdown from "react-markdown";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -21,6 +22,9 @@ import SearchProvider from "../components/SearchProvider";
 import Link from "../components/Link";
 import Api from "../Api";
 
+import { HomeContent } from "../ContentParsing";
+import {HomeImageStyle} from "../../content/ContentConfiguration";
+
 const PREFIX = "Home";
 const classes = {
   root: `${PREFIX}-root`,
@@ -40,11 +44,11 @@ const Root = styled("div")(({ theme }) => ({
 
 
 export default function Home({
-    user,
-    pageTitle,
-    setPageTitle,
-    message,
-    examples
+  user,
+  pageTitle,
+  setPageTitle,
+  message,
+  examples
 }) {
 
   return (
@@ -53,18 +57,52 @@ export default function Home({
         <Grid
           container
           direction="row"
-          justifyContent="center"
-          alignItems="center"
           spacing={2}
         >
-          <Grid item xs={7}>
-            {/* BH TODO: Pick a better font for this */}
-            <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-              Welcome to {pageTitle ? pageTitle : "Variome"}
-            </Typography>
+          <Grid item >
+            <Markdown >{HomeContent["full title"]}</Markdown>
           </Grid>
-          <Grid item xs={5}>
-            {!_.isEmpty(message) && <Alert severity="info">{message}</Alert>}
+          {!_.isEmpty(message) && <>
+            <Grid item xs={5}>
+              <Alert severity="info">{message}</Alert>
+            </Grid>
+          </>
+          }
+
+          <Grid item xs={12} >
+            <Card>
+              <CardContent>
+                <Grid container gap="1em" justifyContent={"space-between"}>
+                  <Grid item xs={5}>
+                    <Typography
+                      variant="div"
+                      sx={{ fontWeight: "light" }}
+                    > <Markdown>{HomeContent.intro}</Markdown>
+                    </Typography>
+                      {/*}
+                    <Link href="/" target="_blank" rel="noopener noreferrer">
+                      <Button
+                        size="large"
+                        sx={{
+                          marginTop: "20px",
+                          fontWeight: "bold",
+                          border: "1px solid grey"
+                        }}
+                      >
+                        Learn More
+                      </Button>
+                    </Link>{*/}
+                  </Grid>
+                  <Grid item xs={6} justifyContent={"center"} flexGrow={2} >
+                    <Markdown components={{
+                      p: ({ node, ...props }) => <div style={HomeImageStyle} className="home-image" {...props} />
+                    }}>
+                        {HomeContent.image}
+                      </Markdown>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
           </Grid>
           <Grid item xs={12}>
             {user ? (
@@ -79,7 +117,7 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw"}}/>
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>
@@ -168,64 +206,6 @@ export default function Home({
               </Card>
             ) : null}
           </Grid>
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Grid container>
-                  <Grid item xs={6}>
-                    <Typography
-                      variant="h4"
-                      sx={{ fontWeight: "bold", paddingBottom: "5%" }}
-                    >
-                      The Project
-                    </Typography>
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: "light", paddingBottom: "5%" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: "light" }}
-                    ></Typography>
-
-                    <Link href="/" target="_blank" rel="noopener noreferrer">
-                      <Button
-                        size="large"
-                        sx={{
-                          marginTop: "20px",
-                          fontWeight: "bold",
-                          border: "1px solid grey"
-                        }}
-                      >
-                        Learn More
-                      </Button>
-                    </Link>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box
-                      component="img"
-                      alt="Temporary Logo"
-                      src="/temp-logo.svg"
-                      style={{
-                        width: "200px",
-                        marginLeft: "80px",
-                        marginTop: "20px",
-                        opacity: "0.2"
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
         </Grid>
       </Box>
 
@@ -248,27 +228,27 @@ export default function Home({
             gap: "30px"
           }}
         >
-          <Box
-            component="img"
-            alt="Temporary Logo"
-            src="/temp-logo.svg"
-            style={{ width: "200px", opacity: "0.2" }}
-          />
+            <Markdown components={{
+                      p: ({ node, ...props }) => <div style={{width:"250px"}} className="home-image" {...props} />
+                    }}>
+                        {HomeContent["footer image"]}
+                      </Markdown>
+                      {/*}
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/about" color="inherit">
+            <Link to="/about" color="inherit">
               About
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/terms" color="inherit">
+            <Link to="/terms" color="inherit">
               Terms of Use
             </Link>
           </Typography>
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
-            <Link href="/contact" color="inherit">
+            <Link to="/contact" color="inherit">
               Contact
             </Link>
-          </Typography>
+          </Typography>{*/}
         </Box>
       </Box>
     </Container>

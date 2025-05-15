@@ -60,9 +60,6 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
   var urlObj = new URL("accounts/login", config.backend_root);
   loginUrl = urlObj.toString();
 
-  console.log("loginUrl", loginUrl);
-
-
   return (
     <>
       <Toolbar sx={{ justifyContent: "start" }} >

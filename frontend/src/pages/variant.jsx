@@ -32,6 +32,7 @@ export default function Variant({pageTitle}) {
   const varId = params.varId;
 
   const [loading, setLoading] = useState(true);
+  const [gnomadLoading, setGnomadLoading] = useState(true);
   const [variant, setVariant] = useState({});
   const [variantMetadata, setVariantMetadata] = useState({});
   const [gnomadFrequencies, setGnomadFrequencies] = useState({});
@@ -74,6 +75,8 @@ export default function Variant({pageTitle}) {
   }, [varId]);
 
   useEffect(() => {
+
+    setGnomadLoading(true);
     if (variant && variant.variant_id) {
       const QUERY = `
     query getVariant($variantId: String!) {
@@ -120,7 +123,10 @@ export default function Variant({pageTitle}) {
             _.get(variant, "joint.homozygote_count", 0)
 
           //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
-          setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot });
+          setTimeout(() => {
+            setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot });
+            setGnomadLoading(false);
+          }, 5000);
         });
     }
   }, [variant]);
@@ -177,6 +183,7 @@ export default function Variant({pageTitle}) {
                 bvlFrequencies={bvlFrequencies}
                 gnomadFrequencies={gnomadFrequencies}
                 pageTitle={pageTitle}
+                gnomadLoading={gnomadLoading}
               />
             </Grid>
 

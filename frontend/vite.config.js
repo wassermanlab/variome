@@ -36,8 +36,8 @@ export default defineConfig({
   server:{
     port: process.env.FRONTEND_PORT * 1,
   },
-  plugins: [react()],
-  define:{
-    ...exposedEnvVariables
-  }
+  plugins: [
+    react()
+  ]
+
 })

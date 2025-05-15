@@ -224,7 +224,7 @@ export default function Annotations({ variantAnnotations }) {
               {variantAnnotations.map((geneAnnotations) => {
                 return (
                   <Card key={geneAnnotations.gene}>
-                    <h3 style={{fontStyle:"italic"}}>{geneAnnotations.gene || "(no gene)"}</h3>
+                    <Typography variant={"h6"} sx={{fontStyle:"italic", margin:"0.4em 0"}}>{geneAnnotations.gene || "(no gene)"}</Typography>
                     {geneAnnotations.transcripts &&
                     geneAnnotations.transcripts.length > 0 ? (
                       <TranscriptsAnnotationsTable
