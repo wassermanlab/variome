@@ -172,8 +172,5 @@ node_modules
 data/import_script/jobs/*
 data/backups/*
 
-# rye's requirements file is dependent on OS,
-# so best to exclude from version control. same for package-lock.json
-requirements.lock
-requirements-dev.lock
+# because it depends on OS and is generated dynamically
 package-lock.json

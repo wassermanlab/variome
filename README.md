@@ -4,31 +4,29 @@ The Aotearoa implementation of the Wasserman Lab Background Variant Library web 
 
 For the general-purpose community version, see the community-version branch: https://github.com/wassermanlab/variome/tree/community-version 
 
-## Dev Environment Setup
-1. Initial setup
-
 ```
-git clone git@github.com:wassermanlab/variome.git
+git clone -b he-kakano git@github.com:wassermanlab/variome.git
 cd variome
 ```
 
-Option 1 - use Rye for dependency management
+### Option 1 - Rye (recommended)
+install rye for dependency management: https://rye.astral.sh/guide/installation/ then run:
 
-see https://rye.astral.sh/guide/installation/
 ```
 rye sync
 ```
 
-Option 2 - using venv and pip
+### Option 2 - Pip
 ```
-python3 -m venv variome-env
-source variome-env/bin/activate
 pip install -R requirements.lock
+
 ```
 
-Option 3 - Conda
+### Option 3 - Conda and Pip
 ```
-... tba ...
+conda env create -f environment.yaml 
+conda activate variome
+pip install -r requirements.lock
 ```
 
 2. Set up the database
@@ -52,7 +50,7 @@ cp .env-sample .env
 4. Load the test fixture data and create a superuser account
 ```
 python manage.py migrate
-python manage.py import_ibvl
+python manage.py import_bvl
 python manage.py createsuperuser
 ```
 
@@ -61,16 +59,19 @@ python manage.py createsuperuser
 ```
 {
     "backend_url":"http://localhost:8000/api/",
-    "backend_root":"http://localhost:8000/",
-    "frontend_url":"/"
+    "backend_root":"http://localhost:8000/"
 }
 ```
 
 ## Run the Django app
 ```
-rye sync
 python manage.py runserver
 ```
+(optional) - Run on a specific port
+```
+python manage.py runserver 8888
+```
+
 
 ## Run the Frontend
 
@@ -79,6 +80,4 @@ cd frontend
 npm install
 npm run dev
 ```
-
-Please note the port number that the dev frontend is being run on, you will get CORS errors if the domain is not in the list of CORS_ALLOWED_ORIGINS in ibvl/settings.py L187
 

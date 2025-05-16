@@ -42,39 +42,39 @@ function createData(name, total, xx, xy, gnomad) {
 }
 
 
-export default function PopFrequencies({ ibvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading }) {
+export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading }) {
   var rows = []
 
-  console.log("ibvl", ibvlFrequencies);
+  console.log("bvl", bvlFrequencies);
   console.log("gnomad", gnomadFrequencies);
 
   rows = [
     createData(
       'Allele Count',
-      _.get(ibvlFrequencies, "ac_tot", "-"),
-      _.get(ibvlFrequencies, "ac_xx", "-"),
-      _.get(ibvlFrequencies, "ac_xy", "-"),
+      _.get(bvlFrequencies, "ac_tot", "-"),
+      _.get(bvlFrequencies, "ac_xx", "-"),
+      _.get(bvlFrequencies, "ac_xy", "-"),
       _.get(gnomadFrequencies, "ac_tot", "-"),
     ),
     createData(
       'Allele Number',
-      _.get(ibvlFrequencies, "an_tot", "-"),
-      _.get(ibvlFrequencies, "an_xx", "-"),
-      _.get(ibvlFrequencies, "an_xy", "-"),
+      _.get(bvlFrequencies, "an_tot", "-"),
+      _.get(bvlFrequencies, "an_xx", "-"),
+      _.get(bvlFrequencies, "an_xy", "-"),
       _.get(gnomadFrequencies, "an_tot", "-"),
     ),
     createData(
       'Allele Frequency',
-      _.get(ibvlFrequencies, "af_tot", "-"),
-      _.get(ibvlFrequencies, "af_xx", "-"),
-      _.get(ibvlFrequencies, "af_xy", "-"),
+      _.get(bvlFrequencies, "af_tot", "-"),
+      _.get(bvlFrequencies, "af_xx", "-"),
+      _.get(bvlFrequencies, "af_xy", "-"),
       _.get(gnomadFrequencies, "af_tot", "-"),
     ),
     createData(
       'No. of Homozygotes',
-      _.get(ibvlFrequencies, "hom_tot", "-"),
-      _.get(ibvlFrequencies, "hom_xx", "-"),
-      _.get(ibvlFrequencies, "hom_xy", "-"),
+      _.get(bvlFrequencies, "hom_tot", "-"),
+      _.get(bvlFrequencies, "hom_xx", "-"),
+      _.get(bvlFrequencies, "hom_xy", "-"),
       _.get(gnomadFrequencies, "hom_tot", "-"),
     ),
   ];

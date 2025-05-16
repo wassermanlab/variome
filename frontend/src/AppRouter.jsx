@@ -21,7 +21,7 @@ function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
   const [user, setUser] = useState(null);
   const [settingsFetched, setSettingsFetched] = useState(false);
-  const [pageTitle, setPageTitle] = useState(null);
+  const [pageTitle, setPageTitle] = useState(import.meta.env.BVL_TITLE);
   const [homePageMessage, setHomePageMessage] = useState(null);
 
   const [exampleSnv, setExampleSnv] = useState(null);
@@ -34,7 +34,7 @@ function AppRouter() {
           Api.get('settings').then((data) => {
               console.log(data);
               setExampleSnv(_.get(data,'settings.example_snv'));
-              setPageTitle(_.get(data,'settings.site_title'));
+//              setPageTitle(_.get(data,'settings.site_title'));
               setHomePageMessage(_.get(data,'settings.home_page_message'));
               setSettingsFetched(true);
           });
