@@ -33,7 +33,6 @@ import SearchProvider, { SearchContext } from "./SearchProvider";
 import AssemblyPicker from "./AssemblyPicker";
 import Link from "./Link";
 
-import config from "../config";
 
 
 export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, pageTitle }) {
@@ -57,7 +56,8 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
 
   var loginUrl = "";
 
-  var urlObj = new URL("accounts/login", config.backend_root);
+  var urlObj = new URL(import.meta.env.LOGIN_PATH, import.meta.env.BACKEND_ROOT);
+
   loginUrl = urlObj.toString();
 
   return (

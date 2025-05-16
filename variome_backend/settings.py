@@ -23,6 +23,8 @@ dotenv.load_dotenv()
 IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
 DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
+os.environ.setdefault("FRONTEND_PORT", "3000")
+FRONTEND_PORT = os.environ.get("FRONTEND_PORT", '3000')
 
 print(f"...connecting to {DB}...")
 
@@ -233,14 +235,14 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    f"http://localhost:{os.environ.get('FRONTEND_PORT')}",
-    f"https://localhost:{os.environ.get('FRONTEND_PORT')}",
-    f"http://127.0.0.1:{os.environ.get('FRONTEND_PORT')}",
-    f"https://127.0.0.1:{os.environ.get('FRONTEND_PORT')}",
+    f"http://localhost:{FRONTEND_PORT}",
+    f"https://localhost:{FRONTEND_PORT}",
+    f"http://127.0.0.1:{FRONTEND_PORT}",
+    f"https://127.0.0.1:{FRONTEND_PORT}",
     "http://" + DOMAIN,
     "https://" + DOMAIN,
-    "http://" + DOMAIN + f":{os.environ.get('FRONTEND_PORT')}",
-    "https://" + DOMAIN + f":{os.environ.get('FRONTEND_PORT')}",
+    "http://" + DOMAIN + f":{FRONTEND_PORT}",
+    "https://" + DOMAIN + f":{FRONTEND_PORT}",
     "http://" + DOMAIN + ":8000",
     "https://" + DOMAIN + ":8000",
 ]
@@ -248,7 +250,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # for the "View Site" link in admin dashboard toolbar
 if IS_DEVELOPMENT:
-    SITE_URL = f"http://localhost:{os.environ.get('FRONTEND_PORT')}"
+    SITE_URL = f"http://localhost:{FRONTEND_PORT}"
 else:
     SITE_URL = "https://" + DOMAIN
     

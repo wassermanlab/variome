@@ -8,7 +8,6 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import Link from "../components/Link";
-import config from "../config";
 import Api from "../Api";
 
 export default function Logout({user, setUser}){
@@ -17,7 +16,7 @@ export default function Logout({user, setUser}){
 
     var logoutUrl = "";
 
-    var urlObj = new URL("accounts/logout", config.backend_root);
+    var urlObj = new URL(import.meta.env.LOGOUT_PATH, import.meta.env.BACKEND_ROOT);
     logoutUrl = urlObj.toString();
 
     return (

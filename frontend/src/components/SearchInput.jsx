@@ -12,11 +12,6 @@ import {
 }
   from "@mui/material/styles";
 
-import config from '../config.json';
-
-
-
-
 export default function SearchInput({ width, marginLeft, inputElementId, variant, sx }) {
 
   const searchContext = useContext(SearchContext);

@@ -9,6 +9,8 @@ git clone -b he-kakano git@github.com:wassermanlab/variome.git
 cd variome
 ```
 
+1. Set up dependencies
+
 ### Option 1 - Rye (recommended)
 install rye for dependency management: https://rye.astral.sh/guide/installation/ then run:
 
@@ -43,7 +45,7 @@ GRANT ALL PRIVILEGES on DATABASE variome to variome;
 3. Set up configuration files (.env)
 ```
 cp .env-sample .env
-(edit .env DB to match with your database environment, set timezone)
+(edit .env DB to match with your database environment, set timezone, other variables)
 
 ```
 
@@ -54,16 +56,8 @@ python manage.py import_bvl
 python manage.py createsuperuser
 ```
 
-
-5. (for frontend) make config.json file in frontend/src/ that contains the following. Replace 8000 with the port number of the Django app, if necessary
-```
-{
-    "backend_url":"http://localhost:8000/api/",
-    "backend_root":"http://localhost:8000/"
-}
-```
-
 ## Run the Django app
+
 ```
 python manage.py runserver
 ```
