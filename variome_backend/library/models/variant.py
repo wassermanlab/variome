@@ -1,12 +1,7 @@
 from django.db import models
 
 
-VAR_CHOICES = [
-    ("SNV", "SNV"),
-    ("M", "Mitochondrial"),
-    ("SV", "SV"),
-    ("INDEL", "INDEL")
-]
+VAR_CHOICES = [("SNV", "SNV"), ("M", "Mitochondrial"), ("SV", "SV"), ("INDEL", "INDEL")]
 
 
 class Variant(models.Model):

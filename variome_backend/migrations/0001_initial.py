@@ -3,37 +3,61 @@
 from django.db import migrations, models
 import django.db.models.deletion
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('library', '0001_initial'),
+        ("library", "0001_initial"),
     ]
 
     def create_singleton_instance(apps, schema_editor):
         from variome_backend.models.variome_settings import VariomeSettings
+
         VariomeSettings().save()
-        
+
     def remove(apps, schema_editor):
         try:
             from variome_backend.models.variome_settings import VariomeSettings
+
             VariomeSettings.objects.all().delete()
-        except: 
+        except:
             pass
-                  
+
     operations = [
         migrations.CreateModel(
-            name='VariomeSettings',
+            name="VariomeSettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('home_page_message', models.TextField(blank=True, default='This is a test version of a brand new Variome BVL.')),
-                ('example_snv', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='library.variant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "home_page_message",
+                    models.TextField(
+                        blank=True,
+                        default="This is a test version of a brand new Variome BVL.",
+                    ),
+                ),
+                (
+                    "example_snv",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="library.variant",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Settings',
-                'verbose_name_plural': 'Settings',
+                "verbose_name": "Settings",
+                "verbose_name_plural": "Settings",
             },
         ),
-        migrations.RunPython( create_singleton_instance, remove )
+        migrations.RunPython(create_singleton_instance, remove),
     ]

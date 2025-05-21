@@ -11,7 +11,6 @@ import pgtrigger.migrations
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [

@@ -1,19 +1,15 @@
 from rest_framework import viewsets
 from django.contrib.auth.decorators import login_required
 
-from ..models import (
-    Variant,
-    VariantTranscript
-)
+from ..models import Variant, VariantTranscript
 
 
 def snv_annotations(variant_id, database=None):
-    """ gets the annotations for a variant's transcripts, organized by gene name """
+    """gets the annotations for a variant's transcripts, organized by gene name"""
     errors = []
     transcripts_by_gene = []
-    
-    try:
 
+    try:
         values_names = {
             "transcript__gene__short_name": "gene",
             "transcript__transcript_id": "transcript",
@@ -23,23 +19,21 @@ def snv_annotations(variant_id, database=None):
             "transcript__transcript_type": "database",
             "hgvsc": "hgvsc",
             "annotation__hgvsp": "hgvsp",
-#            "annotation__polyphen": "polyphen",
-#            "annotation__sift": "sift",
-#            "variant__snv__cadd_intr": "cadd intr",
-#            "variant__snv__cadd_score": "cadd score",
+            #            "annotation__polyphen": "polyphen",
+            #            "annotation__sift": "sift",
+            #            "variant__snv__cadd_intr": "cadd intr",
+            #            "variant__snv__cadd_score": "cadd score",
         }
-        
+
         variant_effects = (
-            VariantTranscript.objects.filter(
-                variant__variant_id=variant_id
-            )
+            VariantTranscript.objects.filter(variant__variant_id=variant_id)
             .values(*values_names.keys())
             .all()
         )
 
         if len(variant_effects) == 0:
             raise VariantTranscript.DoesNotExist
-#        print("transcripts", transcripts)
+        #        print("transcripts", transcripts)
         variant_effects = [
             {values_names[key]: value for key, value in transcript.items()}
             for transcript in variant_effects
@@ -64,6 +58,6 @@ def snv_annotations(variant_id, database=None):
 
     except VariantTranscript.DoesNotExist:
         return None
-#        errors.append("No Transcripts were found for variant: " + variant_id)
+    #        errors.append("No Transcripts were found for variant: " + variant_id)
 
     return {"annotations": transcripts_by_gene, "errors": errors}
