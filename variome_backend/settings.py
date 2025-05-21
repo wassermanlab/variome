@@ -91,6 +91,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Application definition
 
 INSTALLED_APPS = [
+    "variome_backend",
+    "variome_backend.library",
+    "variome_backend.library_access",
     "pghistory.admin",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -104,9 +107,6 @@ INSTALLED_APPS = [
     "tracking",
     "pghistory",
     "pgtrigger",
-    "variome_backend",
-    "variome_backend.library",
-    "variome_backend.library_access",
 ]
 
 MIDDLEWARE = [
