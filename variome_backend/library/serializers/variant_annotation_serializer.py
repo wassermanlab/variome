@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
-from ..models import (
-    VariantAnnotation
-)
+from ..models import VariantAnnotation
 
 from ..serializers import (
     VariantTranscriptSerializer,
@@ -10,11 +8,8 @@ from ..serializers import (
 
 
 class VariantAnnotationSerializer(serializers.ModelSerializer):
-    """
-    """
+    """ """
 
     class Meta:
         model = VariantAnnotation
-        fields = [
-            "id", "hgvsp", "polyphen", "sift"
-        ]
+        fields = ["id", "hgvsp", "polyphen", "sift"]

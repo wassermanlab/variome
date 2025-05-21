@@ -6,7 +6,7 @@ class Severity(models.Model):
     consequence = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        verbose_name_plural = 'Severities'
+        verbose_name_plural = "Severities"
 
     def __str__(self):
         return self.consequence

@@ -7,7 +7,6 @@ import json
 
 
 def notify_access_limit_reached(user, limit):
-
     data = serializers.serialize(
         "json",
         [

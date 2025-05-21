@@ -1,11 +1,13 @@
 
 import _ from 'lodash';
 
-import config from './config.json';
-const API_URL_BASE = config.backend_url;//'http://127.0.0.1:8000/api/';
+var urlObj = new URL(import.meta.env.API_PATH, import.meta.env.BACKEND_ROOT);
+const API_URL_BASE = urlObj.toString();
+//const API_URL_BASE = import.meta.env.BACKEND_URL;//'http://127.0.0.1:8000/api/';
 
 var map = {};
 
+/*
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -19,7 +21,7 @@ function getCookie(name) {
     }
   }
   return cookieValue;
-}
+}*/
 
 var csrftoken;
 
@@ -93,16 +95,16 @@ const Api = {
       return Promise.reject(response);
     }
     return json;
-  },
+  }/*,
   post: async (path, data, query) => {
     try {
-      return cachedFetch(config.backend_root + path, query, 'POST', data);
+      return cachedFetch(import.meta.env.BACKEND_ROOT + path, query, 'POST', data);
     } catch ({ error, status, response }) {
       // ... i don't think this gets run (catches are in the fetch call above)
       console.error('Error fetching ' + path, error);
       return { errors: ["something went wrong"] };
     }
-  }
+  }*/
 }
 
 
