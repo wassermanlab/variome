@@ -3,11 +3,10 @@ from ..models import Gene
 
 
 class GeneAdmin(admin.ModelAdmin):
+    list_display = ("id", "short_name")
+    list_display_links = ("id", "short_name")
+    search_fields = ("short_name",)
+    # list_filter = (IdFilter,)
 
-
-    list_display = ('id', 'short_name')
-    list_display_links = ('id', 'short_name')
-    search_fields = ('short_name',)
-    #list_filter = (IdFilter,)
 
 admin.site.register(Gene, GeneAdmin)

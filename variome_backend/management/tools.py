@@ -1325,6 +1325,7 @@ class ConsequenceImporter(Importer):
             .filter(q, pos__gte=position, pos__lte=position + self.cache_positions)
             .values("pk", "variant__variant_id", "transcript__transcript_id")
         )
+
         self.vts = {
             (obj["variant__variant_id"], obj["transcript__transcript_id"]): obj["pk"]
             for obj in qs

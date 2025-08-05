@@ -1,1 +1,1 @@
-!["He Kākano - Aotearoa Variome Logo"](/He_Kākano_Vertical.svg)
+!["Your Variome Logo Alt Text"](/dna.png)

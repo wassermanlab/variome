@@ -1,17 +1,13 @@
 from rest_framework import serializers
 
-from ..models import (
-    GenomicGnomadFrequency
-)
+from ..models import GenomicGnomadFrequency
 
-from ..serializers import (
-    VariantSerializer
-)
+from ..serializers import VariantSerializer
 
 
 class GenomicGnomadFrequencySerializer(serializers.ModelSerializer):
-    """
-    """
+    """ """
+
     variant = VariantSerializer(read_only=True)
 
     class Meta:

@@ -1,11 +1,9 @@
-# He Kākano
+# Wasserman Lab BVL
 
-The Aotearoa implementation of the Wasserman Lab Background Variant Library web application.
-
-For the general-purpose community version, see the community-version branch: https://github.com/wassermanlab/variome/tree/community-version 
+## Dev Environment Setup (Python / Django module)
 
 ```
-git clone -b he-kakano git@github.com:wassermanlab/variome.git
+git clone git@github.com:wassermanlab/variome.git
 cd variome
 ```
 

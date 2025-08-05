@@ -28,7 +28,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     filter_horizontal = ()
     fieldsets = ((None, {"fields": ("user", "accesses_per_day")}),)
 
-    #prevents changing the associated user on the UserProfile object
+    # prevents changing the associated user on the UserProfile object
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
             return self.readonly_fields + ("user",)
@@ -49,83 +49,101 @@ admin.site.unregister(Pageview)
 
 # move them under library_access for organization, using proxy models
 
+
 @admin.register(LibraryUser)
 class LibraryUserAdmin(UserAdmin):
-    
     readonly_fields = [
-        'date_joined',
-        'last_login',
-        'username',
-        'email',
-        'password',
-        'first_name',
-        'last_name',
-        'user_permissions', #enforces using groups only to manage perms
+        "date_joined",
+        "last_login",
+        "username",
+        "email",
+        "password",
+        "first_name",
+        "last_name",
+        "user_permissions",  # enforces using groups only to manage perms
     ]
-    if (settings.IS_DEVELOPMENT):
-        
+    if settings.IS_DEVELOPMENT:
         readonly_fields = [
-            'date_joined',
-            'last_login',
-            'user_permissions', 
+            "date_joined",
+            "last_login",
+            "user_permissions",
         ]
-            
+
     def has_add_permission(self, request):
-        if (settings.IS_DEVELOPMENT):
+        if settings.IS_DEVELOPMENT:
             return True
-        else :
+        else:
             return False
-    
+
     def get_form(self, request, obj=None, **kwargs):
         is_superuser = request.user.is_superuser
         form = super().get_form(request, obj, **kwargs)
         disabled_fields = set()
-            
+
         # Prevent non-superusers from elevating to superuser
         if not is_superuser:
-            disabled_fields |= {
-                'is_superuser'
-            }
+            disabled_fields |= {"is_superuser"}
 
         # Prevent non-superusers and non-staff from editing their own permissions (in case of intrusion)
-        if (
-            not is_superuser
-            and obj == request.user
-        ):
+        if not is_superuser and obj == request.user:
             disabled_fields |= {
-                'is_staff',
-                'groups',
-            }            
+                "is_staff",
+                "groups",
+            }
 
         for f in disabled_fields:
             if f in form.base_fields:
                 form.base_fields[f].disabled = True
-                
+
         return form
+
     pass
+
 
 @admin.register(LibraryGroup)
 class LibraryGroupAdmin(GroupAdmin):
-    
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields['permissions'].queryset = Permission.objects.exclude(
-            Q(content_type__app_label__in=['auth','admin', 'contenttypes', 'sessions', 'tracking']) |
-            Q(content_type__app_label='library_access', content_type__model__in=['librarygroupevent', 'libraryuserevent','userprofileevent', 'librarysession']) |
-            Q(content_type__app_label='pghistory', content_type__model__in=['context', 'middlewareevents'])
+        form.base_fields["permissions"].queryset = Permission.objects.exclude(
+            Q(
+                content_type__app_label__in=[
+                    "auth",
+                    "admin",
+                    "contenttypes",
+                    "sessions",
+                    "tracking",
+                ]
+            )
+            | Q(
+                content_type__app_label="library_access",
+                content_type__model__in=[
+                    "librarygroupevent",
+                    "libraryuserevent",
+                    "userprofileevent",
+                    "librarysession",
+                ],
+            )
+            | Q(
+                content_type__app_label="pghistory",
+                content_type__model__in=["context", "middlewareevents"],
+            )
         )
         return form
+
 
 @admin.register(LibrarySession)
 class LibrarySessionAdmin(VisitorAdmin):
     def has_add_permission(self, request):
         return False
+
     def has_change_permission(self, request, obj=None):
         return False
+
 
 @admin.register(LibraryPageview)
 class LibraryPageviewAdmin(PageviewAdmin):
     def has_add_permission(self, request):
         return False
+
     def has_change_permission(self, request, obj=None):
         return False

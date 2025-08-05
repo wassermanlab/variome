@@ -182,16 +182,21 @@ class Command(BaseCommand):
         vts_counts = None
         ann_counts = None
         con_counts = None
-        
 
         if options["severities"]:
-            sev_errors, sev_warnings, sev_counts = bvltools.SeverityImporter(options).import_data()
+            sev_errors, sev_warnings, sev_counts = bvltools.SeverityImporter(
+                options
+            ).import_data()
 
         if options["genes"]:
-            gen_errors, gen_warnings, gen_counts = bvltools.GeneImporter(options).import_data()
+            gen_errors, gen_warnings, gen_counts = bvltools.GeneImporter(
+                options
+            ).import_data()
 
         if options["variants"]:
-            var_errors, var_warnings, var_counts = bvltools.VariantImporter(options).import_data()
+            var_errors, var_warnings, var_counts = bvltools.VariantImporter(
+                options
+            ).import_data()
 
         if options["transcripts"]:
             tra_errors, tra_warnings, tra_counts = bvltools.TranscriptImporter(
@@ -199,13 +204,19 @@ class Command(BaseCommand):
             ).import_data()
 
         if options["snvs"]:
-            snv_errors, snv_warnings, snv_counts = bvltools.SNVImporter(options).import_data()
+            snv_errors, snv_warnings, snv_counts = bvltools.SNVImporter(
+                options
+            ).import_data()
 
         if options["gvfs"]:
-            gvf_errors, gvf_warnings, gvf_counts = bvltools.GVFImporter(options).import_data()
+            gvf_errors, gvf_warnings, gvf_counts = bvltools.GVFImporter(
+                options
+            ).import_data()
 
         if options["ggfs"]:
-            ggf_errors, ggf_warnings, ggf_counts = bvltools.GGFImporter(options).import_data()
+            ggf_errors, ggf_warnings, ggf_counts = bvltools.GGFImporter(
+                options
+            ).import_data()
 
         if options["vts"]:
             vts_errors, vts_warnings, vts_counts = bvltools.VariantTranscriptImporter(
@@ -267,7 +278,7 @@ class Command(BaseCommand):
             transaction.rollback()
         else:
             transaction.commit()
-            
+
         def report_counts(model, counts):
             if counts:
                 (total, success) = counts
@@ -276,7 +287,7 @@ class Command(BaseCommand):
                 else:
                     percent = round(100 * success / total, 5)
                 sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
-            
+
         report_counts("Severity", sev_counts)
         report_counts("Gene", gen_counts)
         report_counts("Variant", var_counts)

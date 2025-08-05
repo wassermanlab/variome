@@ -1,1 +1,1 @@
-!["He Kākano - Aotearoa Variome Horizontal Logo"](/He_Kākano_White_Horizontal.svg)
+!["Your Variome Logo Alt Text"](/temp-logo.svg)

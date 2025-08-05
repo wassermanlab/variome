@@ -24,7 +24,7 @@ IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
 DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
 os.environ.setdefault("FRONTEND_PORT", "3000")
-FRONTEND_PORT = os.environ.get("FRONTEND_PORT", '3000')
+FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "3000")
 
 print(f"...connecting to {DB}...")
 
@@ -48,18 +48,20 @@ USE_I18N = True
 
 admin_email = os.environ.get("ADMIN_EMAIL", False)
 manager_email = os.environ.get("MANAGER_EMAIL", False)
-#admins receive technical bug reports / stack traces
-#ADMINS = [("Admin Name", "admin@example.com")]
+# admins receive technical bug reports / stack traces
+# ADMINS = [("Admin Name", "admin@example.com")]
 if admin_email:
     ADMINS = [("Admin", admin_email)]
 
-#managers are emailed alerts pertaining to data access limits (potential data abuse)
-#MANAGERS = [("Manager Name", "manager@example.com")]
+# managers are emailed alerts pertaining to data access limits (potential data abuse)
+# MANAGERS = [("Manager Name", "manager@example.com")]
 if manager_email:
     MANAGERS = [("Manager", manager_email)]
 
 # internal alert emails
-EMAIL_SUBJECT_PREFIX = os.environ.get("EMAIL_SUBJECT_PREFIX", f"[{os.environ.get('BVL_TITLE','bvl')}] ")
+EMAIL_SUBJECT_PREFIX = os.environ.get(
+    "EMAIL_SUBJECT_PREFIX", f"[{os.environ.get('BVL_TITLE', 'bvl')}] "
+)
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "variome-admin-alerts-noreply@example.com")
 
 EMAIL_HOST = os.environ.get("EMAIL_HOST", False)
@@ -86,7 +88,7 @@ DEBUG = IS_DEVELOPMENT
 
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", DOMAIN]
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
@@ -123,11 +125,11 @@ MIDDLEWARE = [
 ]
 AUTHENTICATION_BACKENDS = []
 
-if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
+if os.getenv("AUTH_AZUREAD", "False").lower() == "true":
     INSTALLED_APPS.append("django_auth_adfs")
     MIDDLEWARE.append("django_auth_adfs.middleware.LoginRequiredMiddleware")
     AUTHENTICATION_BACKENDS = [
-        'django_auth_adfs.backend.AdfsAuthCodeBackend',
+        "django_auth_adfs.backend.AdfsAuthCodeBackend",
     ] + AUTHENTICATION_BACKENDS
 
     AUTH_ADFS = {
@@ -147,10 +149,7 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
         },
         "TENANT_ID": AUTH_TENANT_ID,
         "RELYING_PARTY_ID": AUTH_CLIENT_ID,
-        "LOGIN_EXEMPT_URLS": [
-            "api/user",
-            "accounts/login"
-        ]
+        "LOGIN_EXEMPT_URLS": ["api/user", "accounts/login"],
     }
     if AUTH_CA_BUNDLE:
         AUTH_ADFS["CA_BUNDLE"] = AUTH_CA_BUNDLE
@@ -158,11 +157,11 @@ if os.getenv("AUTH_AZUREAD", 'False').lower() == 'true':
     LOGIN_URL = "django_auth_adfs:login"
     LOGIN_REDIRECT_URL = f"/{os.getenv('URL_PREFIX')}admin/"
 
-    CUSTOM_FAILED_RESPONSE_VIEW = 'variome_backend.library_access.views.login_failed'
+    CUSTOM_FAILED_RESPONSE_VIEW = "variome_backend.library_access.views.login_failed"
 
 else:
     AUTHENTICATION_BACKENDS = AUTHENTICATION_BACKENDS + [
-        'django.contrib.auth.backends.ModelBackend'
+        "django.contrib.auth.backends.ModelBackend"
     ]
     LOGIN_URL = "/"
 
@@ -262,7 +261,7 @@ if IS_DEVELOPMENT:
     SITE_URL = f"http://localhost:{FRONTEND_PORT}"
 else:
     SITE_URL = "https://" + DOMAIN
-    
+
 
 # Authentication
 CSRF_COOKIE_SAMESITE = "Lax"
@@ -286,12 +285,12 @@ if DEBUG:
             "handlers": ["console"],
             "level": "DEBUG",
         },
-#        "loggers": {
-#            "django.db.backends": {
-#                "handlers": ["console"],
-#                "level": "DEBUG",
-#            },
-#        },
+        #        "loggers": {
+        #            "django.db.backends": {
+        #                "handlers": ["console"],
+        #                "level": "DEBUG",
+        #            },
+        #        },
     }
 else:
     LOGGING = {}
