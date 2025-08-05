@@ -90,7 +90,7 @@ class Importer:
     @transaction.atomic
     def import_data(self):
         """Locate the appropriate data file and load objects from it"""
-        if (self.delete):
+        if self.delete:
             self.model.objects.all().delete()
         errors = []
         warnings = []
@@ -131,19 +131,19 @@ class Importer:
                             else:
                                 errors.append(obj)
                                 if self.failfast:
-                                    return errors, warnings, (0,0)
+                                    return errors, warnings, (0, 0)
                         elif self.update_existing:
                             success, obj = self.update(row)
                             if not success:
                                 errors.append(obj)
                                 if self.failfast:
-                                    return errors, warnings, (0,0)
+                                    return errors, warnings, (0, 0)
                     else:
                         success, obj = self.update_or_create(row)
                         if not success:
                             errors.append(obj)
                             if self.failfast:
-                                return errors, warnings, (0,0)
+                                return errors, warnings, (0, 0)
 
                     if len(bulk_create) >= self.batch_size:
                         try:
@@ -156,7 +156,7 @@ class Importer:
                             )
                             errors.append(msg)
                             if self.failfast:
-                                return errors, warnings, (0,0)
+                                return errors, warnings, (0, 0)
                 # Run out of input rows, tidy up outstanding create/updates
                 if len(bulk_create):
                     try:
@@ -169,11 +169,11 @@ class Importer:
                         )
                         errors.append(msg)
                         if self.failfast:
-                            return errors, warnings, (0,0)
+                            return errors, warnings, (0, 0)
             except csv.Error as e:
                 errors.append(f"error reading line {self.reader.line_num}: {e}")
                 if self.failfast:
-                    return errors, warnings, (0,0)
+                    return errors, warnings, (0, 0)
 
         n_success = self.model.objects.count()
         return errors, warnings, (n_count, n_success)
@@ -324,7 +324,7 @@ class VariantImporter(Importer):
 
     model = bvlmodels.Variant
     path_component = "variants"
-    variant_id_length = model._meta.get_field('variant_id').max_length
+    variant_id_length = model._meta.get_field("variant_id").max_length
 
     def populate_caches(self):
         # This costs a bit at startup but is necessary to enable bulk creates, which
@@ -341,9 +341,7 @@ class VariantImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in (
-            "filter",
-        ):
+        for field in ("filter",):
             if row[field] == ".":
                 row[field] = ""
         if len(row["variant_id"]) > self.variant_id_length:
@@ -420,12 +418,10 @@ class TranscriptImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in (
-            "gene",
-        ):
+        for field in ("gene",):
             if row[field] in (".", "NA"):
                 row[field] = None
-        if row["transcript_id"] in (".","NA",""):
+        if row["transcript_id"] in (".", "NA", ""):
             return False, [f"transcript ID missing: got {row['transcript_id']} "]
         return True, row
 
@@ -843,16 +839,10 @@ class GGFImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in (
-            "af_tot",
-            "ac_tot",
-            "hom_tot"
-        ):
+        for field in ("af_tot", "ac_tot", "hom_tot"):
             if row[field] in (".", "NA"):
                 row[field] = None
-        for field in (
-            "an_tot",
-        ):
+        for field in ("an_tot",):
             if row[field] in (".", "NA"):
                 return False, [f"variant {row['variant']} has {field} '{row[field]}'"]
         return True, row
@@ -977,9 +967,9 @@ class VariantTranscriptImporter(Importer):
                 False,
                 [f"transcript {row['transcript']} but variant missing from input"],
             )
-        if row["transcript"] in ("", "NA","."):
+        if row["transcript"] in ("", "NA", "."):
             row["transcript"] = None
-        if row["hgvsc"] in ("", "NA","."):
+        if row["hgvsc"] in ("", "NA", "."):
             row["hgvsc"] = ""
 
         return True, row
@@ -1123,41 +1113,38 @@ class AnnotationImporter(Importer):
 
     def cache_chromosome(self, chromosome, position):
         sys.stderr.write(
-            f"Caching chromosome {chromosome} from positions: {position} to {position+self.cache_positions}\n"
+            f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
         )
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
-                "variant_transcript__transcript__transcript_id", "pk"
+                "variant_transcript__transcript__transcript_id",
+                "pk",
             )
             self.existing = {
                 (
                     obj["variant_transcript__variant__variant_id"],
-                    obj["variant_transcript__transcript__transcript_id"]
-                ): (
-                    obj["pk"]
-                )
+                    obj["variant_transcript__transcript__transcript_id"],
+                ): (obj["pk"])
                 for obj in qs
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = bvlmodels.VariantTranscript.objects.annotate(
-            first=StrIndex("variant__variant_id", V("-"))+1,
-            length=StrIndex(Substr("variant__variant_id", F("first")), V("-"))-1,
-            pos=Cast(Substr("variant__variant_id", F("first"), F("length")), IntegerField()),
-        ).filter(
-            q,
-            pos__gte=position,
-            pos__lte=position+self.cache_positions
-        ).values(
-            "pk", "variant__variant_id", "transcript__transcript_id"
+        qs = (
+            bvlmodels.VariantTranscript.objects.annotate(
+                first=StrIndex("variant__variant_id", V("-")) + 1,
+                length=StrIndex(Substr("variant__variant_id", F("first")), V("-")) - 1,
+                pos=Cast(
+                    Substr("variant__variant_id", F("first"), F("length")),
+                    IntegerField(),
+                ),
+            )
+            .filter(q, pos__gte=position, pos__lte=position + self.cache_positions)
+            .values("pk", "variant__variant_id", "transcript__transcript_id")
         )
         self.vts = {
-            (
-                obj["variant__variant_id"],
-                obj["transcript__transcript_id"]
-            ): obj["pk"]
+            (obj["variant__variant_id"], obj["transcript__transcript_id"]): obj["pk"]
             for obj in qs
         }
         self.current_chromosome = chromosome
@@ -1175,9 +1162,9 @@ class AnnotationImporter(Importer):
         chromosome, position, _ = row["variant"].split("-", 2)
         position = int(position)
         if (
-            self.current_chromosome != chromosome or
-            position is None or
-            position > self.cached_position + self.cache_positions
+            self.current_chromosome != chromosome
+            or position is None
+            or position > self.cached_position + self.cache_positions
         ):
             self.cache_chromosome(chromosome, position)
         errors = []
@@ -1305,43 +1292,41 @@ class ConsequenceImporter(Importer):
         }
 
     def cache_chromosome(self, chromosome, position):
-        sys.stderr.write(f"Caching chromosome {chromosome} from positions: {position} to {position+self.cache_positions}\n")
+        sys.stderr.write(
+            f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
+        )
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
                 "severity__severity_number",
-                "pk"
+                "pk",
             )
             self.existing = {
                 (
                     obj["variant_transcript__variant__variant_id"],
                     obj["variant_transcript__transcript__transcript_id"],
                     str(obj["severity__severity_number"]),
-                ): (
-                    obj["pk"]
-                )
+                ): (obj["pk"])
                 for obj in qs
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = bvlmodels.VariantTranscript.objects.annotate(
-            first=StrIndex("variant__variant_id", V("-"))+1,
-            length=StrIndex(Substr("variant__variant_id", F("first")), V("-"))-1,
-            pos=Cast(Substr("variant__variant_id", F("first"), F("length")), IntegerField()),
-        ).filter(
-            q,
-            pos__gte=position,
-            pos__lte=position+self.cache_positions
-        ).values(
-            "pk", "variant__variant_id", "transcript__transcript_id"
+        qs = (
+            bvlmodels.VariantTranscript.objects.annotate(
+                first=StrIndex("variant__variant_id", V("-")) + 1,
+                length=StrIndex(Substr("variant__variant_id", F("first")), V("-")) - 1,
+                pos=Cast(
+                    Substr("variant__variant_id", F("first"), F("length")),
+                    IntegerField(),
+                ),
+            )
+            .filter(q, pos__gte=position, pos__lte=position + self.cache_positions)
+            .values("pk", "variant__variant_id", "transcript__transcript_id")
         )
         self.vts = {
-            (
-                obj["variant__variant_id"],
-                obj["transcript__transcript_id"]
-            ): obj["pk"]
+            (obj["variant__variant_id"], obj["transcript__transcript_id"]): obj["pk"]
             for obj in qs
         }
         self.current_chromosome = chromosome
@@ -1359,9 +1344,9 @@ class ConsequenceImporter(Importer):
         chromosome, position, _ = row["variant"].split("-", 2)
         position = int(position)
         if (
-            self.current_chromosome != chromosome or
-            position is None or
-            position > self.cached_position + self.cache_positions
+            self.current_chromosome != chromosome
+            or position is None
+            or position > self.cached_position + self.cache_positions
         ):
             self.cache_chromosome(chromosome, position)
         errors = []
