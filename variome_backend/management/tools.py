@@ -4,7 +4,8 @@ import sys
 
 from pathlib import Path
 
-from django.db.models import Q
+from django.db.models import IntegerField, Q, F, Value as V
+from django.db.models.functions import Substr, StrIndex, Cast
 from django.db import transaction
 
 import variome_backend.library.models as bvlmodels
@@ -980,7 +981,7 @@ class VariantTranscriptImporter(Importer):
             row["transcript"] = None
         if row["hgvsc"] in ("", "NA","."):
             row["hgvsc"] = ""
-            
+
         return True, row
 
     def cache_chromosome(self, chromosome):
@@ -1087,10 +1088,12 @@ class AnnotationImporter(Importer):
 
     model = bvlmodels.VariantAnnotation
     path_component = "variants_annotations"
+    cache_positions = 10000000
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
         self.current_chromosome = None
+        self.cached_position = 0
         self.existing = {}
         self.vts = {}
 
@@ -1118,7 +1121,10 @@ class AnnotationImporter(Importer):
         #     )
         # }
 
-    def cache_chromosome(self, chromosome):
+    def cache_chromosome(self, chromosome, position):
+        sys.stderr.write(
+            f"Caching chromosome {chromosome} from positions: {position} to {position+self.cache_positions}\n"
+        )
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
             qs = self.model.objects.filter(q).values(
@@ -1136,7 +1142,15 @@ class AnnotationImporter(Importer):
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = bvlmodels.VariantTranscript.objects.filter(q).values(
+        qs = bvlmodels.VariantTranscript.objects.annotate(
+            first=StrIndex("variant__variant_id", V("-"))+1,
+            length=StrIndex(Substr("variant__variant_id", F("first")), V("-"))-1,
+            pos=Cast(Substr("variant__variant_id", F("first"), F("length")), IntegerField()),
+        ).filter(
+            q,
+            pos__gte=position,
+            pos__lte=position+self.cache_positions
+        ).values(
             "pk", "variant__variant_id", "transcript__transcript_id"
         )
         self.vts = {
@@ -1147,6 +1161,7 @@ class AnnotationImporter(Importer):
             for obj in qs
         }
         self.current_chromosome = chromosome
+        self.cached_position = position
 
     def check_existing(self, row):
         """Return true if row represents an object that already exists in
@@ -1157,9 +1172,14 @@ class AnnotationImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        chromosome, _ = row["variant"].split("-", 1)
-        if self.current_chromosome != chromosome:
-            self.cache_chromosome(chromosome)
+        chromosome, position, _ = row["variant"].split("-", 2)
+        position = int(position)
+        if (
+            self.current_chromosome != chromosome or
+            position is None or
+            position > self.cached_position + self.cache_positions
+        ):
+            self.cache_chromosome(chromosome, position)
         errors = []
         if row["variant"] == "":
             errors.append(f"no variant specified")
@@ -1183,7 +1203,7 @@ class AnnotationImporter(Importer):
             row["impact"] = ""
         if row["hgvsp"] in ("", "NA", "."):
             row["hgvsp"] = ""
-        
+
         return True, row
 
     def created_row_object(self, row):
@@ -1271,10 +1291,12 @@ class ConsequenceImporter(Importer):
 
     model = bvlmodels.VariantConsequence
     path_component = "variants_consequences"
+    cache_positions = 10000000
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
         self.current_chromosome = None
+        self.cached_position = 0
         self.existing = {}
         self.vts = {}
         self.severities = {
@@ -1282,7 +1304,8 @@ class ConsequenceImporter(Importer):
             for obj in bvlmodels.Severity.objects.values("pk", "severity_number")
         }
 
-    def cache_chromosome(self, chromosome):
+    def cache_chromosome(self, chromosome, position):
+        sys.stderr.write(f"Caching chromosome {chromosome} from positions: {position} to {position+self.cache_positions}\n")
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
             qs = self.model.objects.filter(q).values(
@@ -1303,10 +1326,17 @@ class ConsequenceImporter(Importer):
             }
 
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
-        qs = bvlmodels.VariantTranscript.objects.filter(q).values(
+        qs = bvlmodels.VariantTranscript.objects.annotate(
+            first=StrIndex("variant__variant_id", V("-"))+1,
+            length=StrIndex(Substr("variant__variant_id", F("first")), V("-"))-1,
+            pos=Cast(Substr("variant__variant_id", F("first"), F("length")), IntegerField()),
+        ).filter(
+            q,
+            pos__gte=position,
+            pos__lte=position+self.cache_positions
+        ).values(
             "pk", "variant__variant_id", "transcript__transcript_id"
         )
-        
         self.vts = {
             (
                 obj["variant__variant_id"],
@@ -1315,6 +1345,7 @@ class ConsequenceImporter(Importer):
             for obj in qs
         }
         self.current_chromosome = chromosome
+        self.cached_position = position
 
     def check_existing(self, row):
         """Return true if row represents an object that already exists in
@@ -1325,13 +1356,18 @@ class ConsequenceImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        chromosome, _ = row["variant"].split("-", 1)
-        if self.current_chromosome != chromosome:
-            self.cache_chromosome(chromosome)
+        chromosome, position, _ = row["variant"].split("-", 2)
+        position = int(position)
+        if (
+            self.current_chromosome != chromosome or
+            position is None or
+            position > self.cached_position + self.cache_positions
+        ):
+            self.cache_chromosome(chromosome, position)
         errors = []
         if row["variant"] == "":
             errors.append(f"no variant specified")
-            
+
         if row["transcript"] in ("", "NA", "."):
             row["transcript"] = None
         if errors:
