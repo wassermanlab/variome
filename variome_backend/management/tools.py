@@ -174,15 +174,8 @@ class Importer:
                 errors.append(f"error reading line {self.reader.line_num}: {e}")
                 if self.failfast:
                     return errors, warnings, (0, 0)
-        if not self.failfast:
-            # errors in middle of transaction get swallowed without try / except here
-            try:
-                n_success = self.model.objects.count()
-            except Exception as e:
-                errors.append(f"error counting {self.object_name_plural}: {e}")
-                n_success = 0
-        else:
-            n_success = self.model.objects.count()
+
+        n_success = self.model.objects.count()
         return errors, warnings, (n_count, n_success)
 
 
