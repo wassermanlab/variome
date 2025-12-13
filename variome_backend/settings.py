@@ -198,7 +198,16 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {"default": dj_database_url.parse(DB)}
+DATABASES = {
+    "default": dj_database_url.parse(
+        DB,
+        conn_max_age=None,
+        conn_health_checks=True
+    ),
+    "OPTIONS": {
+        "connect_timeout":0,
+    }
+}
 
 
 # Password validation
