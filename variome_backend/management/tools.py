@@ -720,6 +720,9 @@ class GVFImporter(Importer):
             "hom_tot",
             "hom_xx",
             "hom_xy",
+            "hemi_tot",
+            "hemi_xx",
+            "hemi_xy",
         ):
             if row[field] in (".", "NA"):
                 row[field] = None
@@ -745,6 +748,9 @@ class GVFImporter(Importer):
                 hom_tot=row["hom_tot"],
                 hom_xx=row["hom_xx"],
                 hom_xy=row["hom_xy"],
+                hemi_tot=row["hemi_tot"],
+                hemi_xx=row["hemi_xx"],
+                hemi_xy=row["hemi_xy"],
                 quality=row["quality"],
                 an_xx=row["an_xx"],
                 an_xy=row["an_xy"],
@@ -774,6 +780,9 @@ class GVFImporter(Importer):
                 hom_tot=row["hom_tot"],
                 hom_xx=row["hom_xx"],
                 hom_xy=row["hom_xy"],
+                hemi_tot=row["hemi_tot"],
+                hemi_xx=row["hemi_xx"],
+                hemi_xy=row["hemi_xy"],
                 quality=row["quality"],
             )
             if updated != 1:
@@ -805,6 +814,9 @@ class GVFImporter(Importer):
                     "hom_tot": row["hom_tot"],
                     "hom_xx": row["hom_xx"],
                     "hom_xy": row["hom_xy"],
+                    "hemi_tot": row["hemi_tot"],
+                    "hemi_xx": row["hemi_xx"],
+                    "hemi_xy": row["hemi_xy"],
                     "quality": row["quality"],
                 },
             )
@@ -839,7 +851,7 @@ class GGFImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in ("af_tot", "ac_tot", "hom_tot"):
+        for field in ("af_tot", "ac_tot", "hom_tot", "hemi_tot"): # add hemi_tot too ??
             if row[field] in (".", "NA"):
                 row[field] = None
         for field in ("an_tot",):
@@ -862,6 +874,7 @@ class GGFImporter(Importer):
                 ac_tot=row["ac_tot"],
                 an_tot=row["an_tot"],
                 hom_tot=row["hom_tot"],
+                hemi_tot=row["hemi_tot"],
             )
         except Exception as e:
             msg = (
@@ -882,6 +895,7 @@ class GGFImporter(Importer):
                 ac_tot=row["ac_tot"],
                 an_tot=row["an_tot"],
                 hom_tot=row["hom_tot"],
+                hemi_tot=row["hemi_tot"],
             )
             if updated != 1:
                 msg = (
@@ -910,6 +924,7 @@ class GGFImporter(Importer):
                     "ac_tot": row["ac_tot"],
                     "an_tot": row["an_tot"],
                     "hom_tot": row["hom_tot"],
+                    "hemi_tot": row["hemi_tot"],
                 },
             )
             return True, obj
@@ -1409,7 +1424,8 @@ class ConsequenceImporter(Importer):
             ).update(
                 severity_id=self.severities[row["severity"]],
             )
-            if updated != 1:
+            if updated < 1: 
+              # variant-transcript pairs can have multiple consequences
                 msg = (
                     f"error, updated {updated} DB rows for variant {row['variant']} "
                     f"/ transcript {row['transcript']} from line {self.reader.line_num}"

@@ -8,6 +8,7 @@ class GenomicGnomadFrequency(models.Model):
     ac_tot = models.PositiveIntegerField(null=True)
     an_tot = models.PositiveIntegerField()
     hom_tot = models.PositiveIntegerField(null=True)
+    hemi_tot = models.PositiveIntegerField(null=True)
 
     class Meta:
         verbose_name_plural = "Genomic Gnomad Frequencies"
