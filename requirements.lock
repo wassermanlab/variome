@@ -23,7 +23,7 @@ cryptography==44.0.2
     # via django-auth-adfs
 dj-database-url==2.3.0
     # via variome
-django==4.2.24
+django==4.2.27
     # via dj-database-url
     # via django-auth-adfs
     # via django-cors-headers
