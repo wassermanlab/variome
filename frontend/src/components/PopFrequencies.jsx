@@ -18,6 +18,7 @@ import _ from 'lodash';
 const DECIMALS = 4;
 
 function createData(name, total, xx, xy, gnomad) {
+//  console.log(`create data for ${name}, total: ${total}, xx: ${xx}, xy: ${xy}, gnomad: ${gnomad}`);
   if (_.isNumber(gnomad)) {
     if (!_.isInteger(gnomad)) {
       gnomad = gnomad.toFixed(DECIMALS);
@@ -38,15 +39,29 @@ function createData(name, total, xx, xy, gnomad) {
     xy = _.round(xy, DECIMALS);
   }
 
+  function numberOrDash(value) {
+    if (_.isUndefined(value) || _.isNull(value)) {
+      return '-';
+    } else {
+      return value;
+    }
+  }
+
+  total = numberOrDash(total);
+  xx = numberOrDash(xx);
+  xy = numberOrDash(xy);
+
+//  console.log(`result for ${name} is total: ${total}, xx: ${xx}, xy: ${xy}, gnomad: ${gnomad}`);
   return { name, total, xx, xy, gnomad };
 }
 
 
-export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading }) {
+export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading, variantMetadata }) {
   var rows = []
 
-  console.log("bvl", bvlFrequencies);
-  console.log("gnomad", gnomadFrequencies);
+//  console.log("bvl", bvlFrequencies);
+//  console.log("gnomad", gnomadFrequencies);
+//  console.log("variantMetadata", variantMetadata);
 
   rows = [
     createData(
@@ -76,9 +91,18 @@ export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, page
       _.get(bvlFrequencies, "hom_xx", "-"),
       _.get(bvlFrequencies, "hom_xy", "-"),
       _.get(gnomadFrequencies, "hom_tot", "-"),
-    ),
+    )
   ];
-
+  if (_.includes(['X','Y'], _.get(variantMetadata, 'chr'))) {
+    rows = [...rows, 
+    createData(
+      'No. of Hemizygotes',
+      _.get(bvlFrequencies, "hemi_tot", "-"),
+      _.get(bvlFrequencies, "hemi_xx", "-"),
+      _.get(bvlFrequencies, "hemi_xy", "-"),
+      _.get(gnomadFrequencies, "hemi_tot", "-"),
+    )];
+  }
 
   return (
     <React.Fragment>

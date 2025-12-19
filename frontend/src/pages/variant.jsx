@@ -78,7 +78,7 @@ export default function Variant({pageTitle}) {
 
     setGnomadLoading(true);
     if (variant && variant.variant_id) {
-      const QUERY = `
+      var QUERY = `
     query getVariant($variantId: String!) {
       variant(variantId: $variantId, dataset: gnomad_r4) {
         joint {
@@ -89,6 +89,20 @@ export default function Variant({pageTitle}) {
       }
     }
     `;
+      if (_.includes(["X","Y"], _.get(variantMetadata, 'chr'))) {
+      QUERY = `
+    query getVariant($variantId: String!) {
+      variant(variantId: $variantId, dataset: gnomad_r4) {
+        joint {
+          ac
+          an
+          homozygote_count
+          hemizygote_count
+        }
+      }
+    }
+    `;
+      }
       //    console.log(QUERY);
       var body = JSON.stringify(
         {
@@ -114,17 +128,19 @@ export default function Variant({pageTitle}) {
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);
           var ac_tot =
-            _.get(variant, "joint.ac", 0);
+            _.get(variant, "joint.ac");
           var an_tot =
-            _.get(variant, "joint.an", 0);
+            _.get(variant, "joint.an");
             //handle 0??
           var af_tot = _.divide(ac_tot, an_tot);
           var hom_tot =
-            _.get(variant, "joint.homozygote_count", 0)
+            _.get(variant, "joint.homozygote_count")
+          var hemi_tot =
+            _.get(variant, "joint.hemizygote_count")
 
           //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
           setTimeout(() => {
-            setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot });
+            setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot, hemi_tot });
             setGnomadLoading(false);
           }, 5000);
         });
@@ -184,6 +200,7 @@ export default function Variant({pageTitle}) {
                 gnomadFrequencies={gnomadFrequencies}
                 pageTitle={pageTitle}
                 gnomadLoading={gnomadLoading}
+                variantMetadata={variantMetadata}
               />
             </Grid>
 
