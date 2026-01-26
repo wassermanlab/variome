@@ -2,6 +2,7 @@ import logging
 import pprint
 import argparse
 import sys
+from time import time
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -151,6 +152,7 @@ class Command(BaseCommand):
     def handle(self, **options):
         transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
+        start_time = time()
 
         sev_errors = None
         gen_errors = None
@@ -298,3 +300,7 @@ class Command(BaseCommand):
         report_counts("Variant Transcript", vts_counts)
         report_counts("Annotation", ann_counts)
         report_counts("Consequence", con_counts)
+
+        end_time = time()
+        elapsed_time = end_time - start_time
+        sys.stdout.write(f"\n\nElapsed time: {elapsed_time // 3600} hours {(elapsed_time % 3600) // 60} minutes {elapsed_time % 60} seconds\n")
