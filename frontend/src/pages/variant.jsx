@@ -103,27 +103,7 @@ export default function Variant({pageTitle}) {
     }
     `;
       }
-      //    console.log(QUERY);
-      var body = JSON.stringify(
-        {
-          query: QUERY,
-          variables: {
-            variantId: variant.variant_id
-          }
-        },
-        null,
-        2
-      );
-      //    console.log(body);
-
-      fetch("https://gnomad.broadinstitute.org/api", {
-        method: "POST",
-        body,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-        .then((response) => response.json())
+      Api.gnomadGraphQLRequest(QUERY, { variantId: variant.variant_id })
         .then((data) => {
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);

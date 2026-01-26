@@ -25,7 +25,7 @@ function getCookie(name) {
 
 var csrftoken;
 
-function cachedFetch(url, query, method = 'GET', data) {
+function cachedFetch(url, query, method = 'GET', data, includeCredentials = true) {
 
   // NOTE: in settings.py CSRF_COOKIE_HTTPONLY = True blocks getting csrftoken from the cookie
   // we only need it for POST requests
@@ -39,7 +39,7 @@ function cachedFetch(url, query, method = 'GET', data) {
   if (!map[key]) {
     //    console.log('new', key);
     var options = {
-      credentials: 'include',
+      credentials: includeCredentials ? 'include' : 'omit',
       method,
       headers: {
         'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ function cachedFetch(url, query, method = 'GET', data) {
       body: data ? JSON.stringify(data) : null,
     };
 
-    if (_.isString(csrftoken)) {
+    if (_.isString(csrftoken) && includeCredentials) {
       //      console.log('set csrftoken', csrftoken);
       options.headers['X-Csrftoken'] = csrftoken;
     }
@@ -88,14 +88,31 @@ const Api = {
     var json;
     try {
       json = await cachedFetch(API_URL_BASE + path, query);
-//      console.log('api get', path, query, json)
+      //      console.log('api get', path, query, json)
     } catch (response) {
       // BW note: it would be nice to still be able to read the response body
       // for server-provided error messages even if fetch fails
       return Promise.reject(response);
     }
     return json;
-  }/*,
+  },
+  gnomadGraphQLRequest: async (query, variables) => {
+    var json;
+      try {
+        json = await cachedFetch("https://gnomad.broadinstitute.org/api",
+          null,
+          'POST',
+          {
+            query,
+            variables
+          },
+          false
+        );
+      } catch (response) {
+        return Promise.reject(response);
+      }
+      return json;
+    }/*,
   post: async (path, data, query) => {
     try {
       return cachedFetch(import.meta.env.BACKEND_ROOT + path, query, 'POST', data);
