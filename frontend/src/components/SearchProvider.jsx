@@ -82,7 +82,7 @@ function SearchProvider({ children }) {
   const [resultsMessage, setResultsMessage] = useState(null);
   const [results, setResults] = useState([]);
   const [nearby, setNearby] = useState([]);
-  const [summary, setSummary] = useState("");
+  const [matchPairs, setMatchPairs] = useState([]);
   const [hideResultsOverride, setHideResultsOverride] = useState(false);
 
   const cancelledQueriesRef = useRef([]);
@@ -154,7 +154,7 @@ function SearchProvider({ children }) {
     if (_.isEmpty(parameters) || !_.get(parameters, "searchParameters") || !_.get(parameters, "groups")) {
 
       setLoading(() => false);
-      setSummary("");
+      setMatchPairs([]);
       setResultsMessage("No results ( query format is not recognized )");
     } else {
       try {
@@ -169,25 +169,7 @@ function SearchProvider({ children }) {
           }
         });
 
-        setSummary(
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", background: "#f0f0f0", padding: "8px" }}>
-            <label>Your search:</label>
-            {pairs.map(([key, val]) => {
-              return (
-                <span key={key}>
-                  <span style={{ fontWeight: "bold" }}>
-                    {" "}
-                    {key}
-                    {": "}
-                  </span>
-                  <span style={{}}>{val}</span>
-                </span>
-              );
-            })}
-          </div>
-        );
-
-
+        setMatchPairs(pairs);
 
         const variantData = await Api.get("search", parameters.searchParameters);
 
@@ -234,7 +216,7 @@ function SearchProvider({ children }) {
     <SearchContext.Provider
       value={{
         debounceUpdateSearch,
-        summary,
+        matchPairs,
         loading,
         results,
         nearby,

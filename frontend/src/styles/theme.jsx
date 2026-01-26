@@ -10,7 +10,11 @@ const theme = createTheme({
     },
     background: {
       default: '#f3f3f3'
-    }
+    },
+    highlight: {
+      main: '#b3eca4',
+      contrastText: '#fff'
+    },
   }
 });
 

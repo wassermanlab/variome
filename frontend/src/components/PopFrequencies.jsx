@@ -13,12 +13,12 @@ import {
   CircularProgress
 } from '@mui/material';
 import { alpha } from '@mui/system';
+import { useTheme } from '@mui/material/styles'; // <-- Add this import
 import _ from 'lodash';
 
 const DECIMALS = 4;
 
 function createData(name, total, xx, xy, gnomad) {
-//  console.log(`create data for ${name}, total: ${total}, xx: ${xx}, xy: ${xy}, gnomad: ${gnomad}`);
   if (_.isNumber(gnomad)) {
     if (!_.isInteger(gnomad)) {
       gnomad = gnomad.toFixed(DECIMALS);
@@ -26,8 +26,6 @@ function createData(name, total, xx, xy, gnomad) {
   } else if (!_.isString(gnomad)) {
     gnomad = '...'
   }
-  //^ gnomad is treated differently because it is fetched from the gnomad API
-  // the values being set here are a default fallback
 
   if (!_.isEmpty(total)) {
     total = _.round(total, DECIMALS);
@@ -51,17 +49,13 @@ function createData(name, total, xx, xy, gnomad) {
   xx = numberOrDash(xx);
   xy = numberOrDash(xy);
 
-//  console.log(`result for ${name} is total: ${total}, xx: ${xx}, xy: ${xy}, gnomad: ${gnomad}`);
   return { name, total, xx, xy, gnomad };
 }
 
 
 export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading, variantMetadata }) {
+  const {palette} = useTheme();
   var rows = []
-
-//  console.log("bvl", bvlFrequencies);
-//  console.log("gnomad", gnomadFrequencies);
-//  console.log("variantMetadata", variantMetadata);
 
   rows = [
     createData(
@@ -127,7 +121,7 @@ export default function PopFrequencies({ bvlFrequencies, gnomadFrequencies, page
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ borderBottom: 'none' }} />
-                      <TableCell colSpan={3} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#b3eca4', 0.25) }}>{pageTitle}</TableCell>
+                      <TableCell colSpan={3} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha(palette.highlight.main, 0.25) }}>{pageTitle}</TableCell>
                       <TableCell colSpan={1} align="center" sx={{ borderBottom: 'none', backgroundColor: alpha('#ffbcbc', 0.25) }}>gnomAD v4</TableCell>
                     </TableRow>
                     {/* BH TODO: Change the font of the headings in this table */}

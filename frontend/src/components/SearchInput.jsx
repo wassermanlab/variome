@@ -26,8 +26,18 @@ export default function SearchInput({ width, marginLeft, inputElementId, variant
     } else {
       //      console.log("searchcontext q", searchContext.query, "inputQuery", inputQuery);
     }
-  }, [searchContext.query])
+  }, [searchContext.query]);
 
+  // if url has ?q=... set inputQuery to that on initial load (and hmr refresh?)
+  // primarily for dev aid, but also could be used to hyperlink to search results
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q && _.trim(q) != _.trim(inputQuery)) {
+      setInputQuery(q);
+      searchContext.debounceUpdateSearch(q);
+    }
+  }, []);
 
   return (<>
 
