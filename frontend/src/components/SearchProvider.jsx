@@ -1,6 +1,10 @@
 import _ from "lodash";
 import { createContext, useState, useRef, useEffect } from "react";
 
+import Constants from '../Constants';
+
+const ASSEMBLY_LABEL = Constants.assemblyVersions[2];
+
 import Api from '../Api';
 
 let variant_groups_regex = new RegExp(
@@ -46,7 +50,6 @@ const parseParameters = (query) => {
   var resultSets = _.filter(_.keys(resultsSetTests), (setName) => {
     return resultsSetTests[setName](query);
   });
-  console.log("r", resultSets);
 
   if (_.size(resultSets) > 0) {
     var searchSummaryGroups = groups;
@@ -82,6 +85,7 @@ function SearchProvider({ children }) {
   const [resultsMessage, setResultsMessage] = useState(null);
   const [results, setResults] = useState([]);
   const [nearby, setNearby] = useState([]);
+  const [warnings, setWarnings] = useState([]);
   const [matchPairs, setMatchPairs] = useState([]);
   const [hideResultsOverride, setHideResultsOverride] = useState(false);
 
@@ -106,8 +110,8 @@ function SearchProvider({ children }) {
       setQuery(newQuery);
       setResults([]);
       setLoading(true);
+      setWarnings([]);
       
-      console.log("new query", newQuery);
       searchTimeoutRef.current = setTimeout(async () => {
 
         if (_.includes(cancelledQueriesRef.current, newQuery)) {
@@ -134,6 +138,7 @@ function SearchProvider({ children }) {
 
 
     } else {
+      setWarnings([]);
       setResults([]);
       setNearby([]);
       setResultsMessage(null);
@@ -147,7 +152,7 @@ function SearchProvider({ children }) {
     var nearby = [];
     var results = [];
 
-    console.log("searching", query);
+
     var parameters = parseParameters(query);
     console.log("parameters", parameters);
 
@@ -170,9 +175,32 @@ function SearchProvider({ children }) {
         });
 
         setMatchPairs(pairs);
+        const variantPromise = Api.get("search", parameters.searchParameters);
+        const referenceCheck = Promise.race([
+          Api.ensemblRefCheck(parameters.searchParameters.pos, "2"),
+          new Promise(resolve => setTimeout(() => resolve(null), 5000))
+        ]);
 
-        const variantData = await Api.get("search", parameters.searchParameters);
+        const referenceResult = await referenceCheck;
 
+        if (_.isObject(referenceResult) && _.get(referenceResult, "seq")) {
+          if (referenceResult.seq == _.get(parameters, "groups.ref", "").toUpperCase()) {
+            console.log("check passes");
+            setWarnings([]);
+          } else {
+            console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
+            console.log(referenceResult);
+            setWarnings([...warnings, {
+              label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`,
+              link: `./search?q=${parameters.searchParameters.chr}-${parameters.searchParameters.pos}-${referenceResult.seq}`,
+            }]);
+            console.log("warnings", warnings);
+          }
+
+        }
+
+        const variantData = await variantPromise;
+        
         results = _.compact(
           _.flatten([
             _.get(variantData, "results.dbsnp", []),
@@ -225,7 +253,7 @@ function SearchProvider({ children }) {
         onInputFocus,
         hideResultsOverride,
         setHideResultsOverride,
-
+        warnings,
         resultsMessage
       }}
     >

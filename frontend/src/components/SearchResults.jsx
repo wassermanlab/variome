@@ -80,6 +80,17 @@ export default function SearchResults({ sx, overlay }) {
           </div>
 
           <List>
+            {searchContext.warnings.map((warning, index) => (
+              <ListItem key={index} style={{background: alpha(palette.warning.main, 0.15) }} button={!!warning.link} onClick={() => {
+                if (warning.link) {
+                  // TODO
+//                  searchContext.setHideResultsOverride(true);
+//                  navigate(warning.link);
+                }
+              }}>
+                <ListItemText primary={warning.label} />
+              </ListItem>
+            ))}
             {isExactMatch() ? null : _.map(searchContext.results, renderSearchResult)}
           </List>
           {searchContext.resultsMessage}

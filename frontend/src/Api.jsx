@@ -1,6 +1,8 @@
 
 import _ from 'lodash';
 
+import Constants from './Constants';
+
 var urlObj = new URL(import.meta.env.API_PATH, import.meta.env.BACKEND_ROOT);
 const API_URL_BASE = urlObj.toString();
 //const API_URL_BASE = import.meta.env.BACKEND_URL;//'http://127.0.0.1:8000/api/';
@@ -30,9 +32,11 @@ function cachedFetch(url, query, method = 'GET', data, includeCredentials = true
   // NOTE: in settings.py CSRF_COOKIE_HTTPONLY = True blocks getting csrftoken from the cookie
   // we only need it for POST requests
 
-  var params = new URLSearchParams(query);
-  if (params.toString()) {
-    url += '?' + params.toString();
+  if (query){
+    var params = new URLSearchParams(query);
+    if (params.toString()) {
+      url += '?' + params.toString();
+    }
   }
   var key = url;
   //  console.log('cr', key);
@@ -83,6 +87,10 @@ function cachedFetch(url, query, method = 'GET', data, includeCredentials = true
   return map[key];
 }
 
+function getFetch(url){
+  return cachedFetch(url, null, 'GET', null, false);
+}
+
 const Api = {
   get: async (path, query) => {
     var json;
@@ -112,6 +120,22 @@ const Api = {
         return Promise.reject(response);
       }
       return json;
+    },
+    ensemblRefCheck: async (position, assemblyVersion) => {
+      var json;
+      var coordSystemVersion = Constants.assemblyVersions[assemblyVersion];
+
+      if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
+        try {
+          json = await getFetch(`https://rest.ensembl.org/sequence/region/human/X:${position}..${position}:1?content-type=application/json;coord_system_version=${coordSystemVersion}`);
+        } catch (response) {
+          return Promise.reject(response);
+        }
+        return json;
+      } else {
+        return Promise.reject({ error: `Unsupported assembly version: ${assemblyVersion}. use "1" or "2". (2 is GRCh38)` });
+      }
+      
     }/*,
   post: async (path, data, query) => {
     try {
