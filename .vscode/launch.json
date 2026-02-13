@@ -51,6 +51,14 @@
             "django": true
         },
         {
+            "name": "Debug vcf import script",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "vcf_import.VCF_publish",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Debug vcf import tests",
             "type": "debugpy",
             "request": "launch",

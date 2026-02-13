@@ -15,23 +15,23 @@ import hashlib
 import json
 from datetime import datetime
 
-from constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
+from vcf_import.constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
 
 
 logger = logging.getLogger(__name__)
 
-from filters.GenesCallFilter import GenesCallFilter
-from filters.TranscriptsCallFilter import TranscriptsCallFilter
-from filters.VariantsCallFilter import VariantsCallFilter
-from filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
-from filters.SnvsCallFilter import SnvsCallFilter
-from filters.MtsCallFilter import MtsCallFilter
-from filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
-# from filters.GenomicGnomadFrequenciesCallFilter import GenomicGnomadFrequenciesCallFilter
-from filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
-# from filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
+from vcf_import.filters.GenesCallFilter import GenesCallFilter
+from vcf_import.filters.TranscriptsCallFilter import TranscriptsCallFilter
+from vcf_import.filters.VariantsCallFilter import VariantsCallFilter
+from vcf_import.filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
+from vcf_import.filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
+from vcf_import.filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from vcf_import.filters.SnvsCallFilter import SnvsCallFilter
+from vcf_import.filters.MtsCallFilter import MtsCallFilter
+from vcf_import.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+# from vcf_import.filters.GenomicGnomadFrequenciesCallFilter import GenomicGnomadFrequenciesCallFilter
+from vcf_import.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+# from vcf_import.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
 
 #    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/HG002-4_chr21_SNV_v7.vcf')

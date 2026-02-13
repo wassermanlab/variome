@@ -59,12 +59,43 @@ python manage.py createsuperuser
 ```
 python manage.py runserver
 ```
-## Running VCF_test.py (VCF Import Tests)
 
-
-To run the VCF_import tests using uv and pytest:
+## Run the Frontend
 
 ```
+cd frontend
+npm install
+npm run dev
+```
+
+
+# VCF Publisher (WIP)
+
+Import directly into the database directly from a VCF, no intermediate TSV file step necessary.
+
+Current status: Right now this script writes TSV files as a sanity check to ensure consistency with existing pipeline tsv output
+
+Mitochondrial tables are omitted because these are left out of the currently used vcf reference files
+
+Gnomad information is left out currently because it is easily fetched dynamically from the frontend. However, the value of the bulk gnomad data availability is recognized when it comes to analysis activity, but this is not what the reference library is for as a central feature, so it is not a priority.
+
+## Importing a VCF
+
+```
+uv run -m vcf_import.VCF_publish
+```
+To watch for changes and rerun automatically:
+
+```
+uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m vcf_import.VCF_publish'
+```
+
+
+## Testing VCF Importing 
+
+
+```
+uv sync --dev
 uv run -m pytest vcf_import/VCF_test.py
 ```
 
@@ -76,32 +107,5 @@ uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -
 ```
 
 
-### Debugging VCF_test.py in VS Code
 
-1. Open the Command Palette (⇧⌘P) and select "Debug: Add Configuration..." if you don't have a launch config.
-2. Add the following to your `.vscode/launch.json`:
-
-```
-{
-	"name": "Debug VCF_test.py",
-	"type": "debugpy",
-	"request": "launch",
-	"program": "${workspaceFolder}/vcf_import/VCF_test.py",
-	"console": "integratedTerminal",
-	"justMyCode": false
-}
-```
-
-3. Start debugging by selecting "Debug VCF_test.py" from the Run & Debug panel.
-
-You can use watchmedo for auto-reload, and debug with VS Code using the above configuration.
-
-
-## Run the Frontend
-
-```
-cd frontend
-npm install
-npm run dev
-```
 
