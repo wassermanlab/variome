@@ -1,6 +1,7 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
 import logging
+from vcf_import.constants import NA
 logger = logging.getLogger(__name__)
 
 class VariantsTranscriptsCallFilter(CallFilter):
@@ -23,8 +24,10 @@ class VariantsTranscriptsCallFilter(CallFilter):
                 for i in range(l):
                     t = transcript[i]
                     h = hgvsc[i]
-                    if t == "NA" or t == "":
-                        continue
+                    if t == "NA" or t == "" or t is None:
+                      t = NA
+                    if h == "NA" or h == "" or h is None:
+                      h = NA
                     variantsTranscripts.append({
                         'transcript': t,
                         'variant': variant,
