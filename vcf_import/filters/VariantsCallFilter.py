@@ -1,7 +1,7 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
 
-from constants import NA
+from vcf_import.constants import NA
 
 class VariantsCallFilter(CallFilter):
     """

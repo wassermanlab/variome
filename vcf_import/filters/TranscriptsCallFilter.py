@@ -1,8 +1,8 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from constants import NA, DEFAULT_TRANSCRIPT_SOURCE
+from vcf_import.constants import NA, DEFAULT_TRANSCRIPT_SOURCE
 import logging
-from tools import validate_get
+from vcf_import.tools import validate_get
 logger = logging.getLogger(__name__)
 
 class TranscriptsCallFilter(CallFilter):

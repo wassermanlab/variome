@@ -1,7 +1,7 @@
 from venv import logger
 from .CallFilter import CallFilter
 from typing import List, Dict, Any, Optional
-from constants import NA, CHR_NOTATION, CADD_DAMAGING_THRESHOLD
+from vcf_import.constants import NA, CHR_NOTATION, CADD_DAMAGING_THRESHOLD
 
 class SnvsCallFilter(CallFilter):
     """

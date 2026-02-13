@@ -49,7 +49,15 @@
                 "--no-progress"
             ],
             "django": true
-        
+        },
+        {
+            "name": "Debug vcf import tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["vcf_import/VCF_test.py"],
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "Python Debugger: Django",

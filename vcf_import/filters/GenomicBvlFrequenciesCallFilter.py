@@ -4,8 +4,8 @@ import logging
 from numpy import record
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from constants import NA
-from tools import validate_get
+from vcf_import.constants import NA
+from vcf_import.tools import validate_get
 
 class GenomicBvlFrequenciesCallFilter(CallFilter):
     """

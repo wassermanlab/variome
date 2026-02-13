@@ -10,11 +10,11 @@ To focus on a single test (similar to fit() in Mocha):
    @unittest.skip("Temporarily skipping")
    
 2. Run specific test from command line:
-   python -m unittest publisher.VCF_test.TestTranscriptsCallFilter
-   python -m unittest publisher.VCF_test.TestTranscriptsCallFilter.test_transform_output_structure
+    python -m unittest vcf_import.VCF_test.TestTranscriptsCallFilter
+    python -m unittest vcf_import.VCF_test.TestTranscriptsCallFilter.test_transform_output_structure
    
 3. Use pytest with -k flag (if pytest is installed):
-   pytest publisher/VCF_test.py -k "Transcripts"
+    pytest vcf_import/VCF_test.py -k "Transcripts"
    
 4. Use environment variable or attribute (demonstrated below with FOCUS_TEST)
 """
@@ -23,7 +23,7 @@ import unittest
 import os
 from pathlib import Path
 
-from publisher.constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
+from vcf_import.constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
 
 # Set to True to enable focus mode - only focused tests will run
 FOCUS_MODE = os.environ.get('FOCUS_TEST', 'false').lower() == 'true'
@@ -39,19 +39,19 @@ def skipUnlessFocused(cls):
         return unittest.skip("Skipping - not focused")(cls)
     return cls
 
-from publisher.filters.CallFilter import CallFilter
-from publisher.filters.GenesCallFilter import GenesCallFilter
-from publisher.filters.TranscriptsCallFilter import TranscriptsCallFilter
-from publisher.filters.VariantsCallFilter import VariantsCallFilter
-from publisher.filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from publisher.filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from publisher.filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
-from publisher.filters.SnvsCallFilter import SnvsCallFilter
-from publisher.filters.MtsCallFilter import MtsCallFilter
-from publisher.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
-# from publisher.filters.GenomicGnomadFrequenciesCallFilter import GenomicGnomadFrequenciesCallFilter
-from publisher.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
-# from publisher.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
+from vcf_import.filters.CallFilter import CallFilter
+from vcf_import.filters.GenesCallFilter import GenesCallFilter
+from vcf_import.filters.TranscriptsCallFilter import TranscriptsCallFilter
+from vcf_import.filters.VariantsCallFilter import VariantsCallFilter
+from vcf_import.filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
+from vcf_import.filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
+from vcf_import.filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from vcf_import.filters.SnvsCallFilter import SnvsCallFilter
+from vcf_import.filters.MtsCallFilter import MtsCallFilter
+from vcf_import.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+# from vcf_import.filters.GenomicGnomadFrequenciesCallFilter import GenomicGnomadFrequenciesCallFilter
+from vcf_import.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+# from vcf_import.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
 # Helper function to get fixture paths
 def get_fixture_path(filename: str) -> str:
@@ -271,7 +271,9 @@ class TestVariantsConsequencesCallFilter(unittest.TestCase):
             self.assertIn('variant', result[0])
             self.assertIn('transcript', result[0])
             
-            self.assertEqual(result[0]['severity'], 27)
+            self.assertEqual(result[0]['severity'], 40)
+            self.assertEqual(result[1]['severity'], 27)
+
 
 @skipUnlessFocused
 class TestSnvsCallFilter(unittest.TestCase):

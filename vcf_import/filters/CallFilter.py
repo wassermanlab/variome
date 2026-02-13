@@ -4,8 +4,8 @@ CallFilter base class and global VCF options.
 
 
 # Global VCF options (imported from constants)
-from constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, NA
-from tools import validate_get
+from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, NA, SEVERITIES_TSV_PATH
+from vcf_import.tools import validate_get
 
 import vcfpy
 import os
@@ -32,7 +32,7 @@ class CallFilter(ABC):
         logger.info("booting up %s", child_class_name)
         
         #read severity table file
-        severity_table_path = os.path.join(os.path.dirname(__file__), "../severities.tsv")
+        severity_table_path = SEVERITIES_TSV_PATH
         try:
             with open(severity_table_path, "r") as f:
                 for line in f.readlines()[1:]:

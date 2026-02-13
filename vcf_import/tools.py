@@ -1,4 +1,4 @@
-from constants import NA
+from vcf_import.constants import NA
 
 def validate_get(v, index):
     if v is [] or v is None:

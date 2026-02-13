@@ -1,6 +1,6 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any, Optional
-from constants import NA
+from vcf_import.constants import NA
 
 class MtsCallFilter(CallFilter):
     """

@@ -23,6 +23,7 @@ dependencies = [
     "django-pghistory>=3.2.0",
     "python-dotenv>=1.0.1",
     "django>=4, <5",
+    "vcfpy>=0.14.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
@@ -42,3 +43,9 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["variome"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "watchdog>=6.0.0",
+]

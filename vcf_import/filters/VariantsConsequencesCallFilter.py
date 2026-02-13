@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 import logging
 logger = logging.getLogger(__name__)
 
-from constants import NA
+from vcf_import.constants import NA
 
 class VariantsConsequencesCallFilter(CallFilter):
     """

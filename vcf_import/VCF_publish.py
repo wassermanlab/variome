@@ -1,6 +1,6 @@
 
 """
-VCF Publisher
+VCF Import
 This module orchestrates the transformation of VCF files and related data sources
 into database tables
 """
@@ -56,7 +56,7 @@ def log_warning(message, *args, **kwargs):
 logger.info("importing from vcfs: SNV VCF=%s, MT VCF=%s", snv_vcf, mt_vcf)
 
 
-class VariantPublisher:
+class VariantImporter:
     
     def __init__(self):
         pass
@@ -233,7 +233,7 @@ def main():
     )
     parser.add_argument('--assembly', choices=['GRCh37', 'GRCh38'],
                        help='Genome assembly', default='GRCh38')
-    parser.add_argument('--severity-table', default='severities.tsv', 
+    parser.add_argument('--severity-table', default='data/fixtures/severities.tsv', 
                        help='Path to severity_table.tsv')
     parser.add_argument('--gnomad-snv-tsv', help='Path to gnomAD SNV TSV')
     parser.add_argument('--gnomad-mt-tsv', help='Path to gnomAD MT TSV')
@@ -246,7 +246,7 @@ def main():
     }
     logger.info("configuration:\n%s", pprint.pformat(config))
     
-    publish_job = VariantPublisher()
+    publish_job = VariantImporter()
     publish_job.start(config)
     logger.info("completed")
 

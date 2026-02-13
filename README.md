@@ -59,10 +59,42 @@ python manage.py createsuperuser
 ```
 python manage.py runserver
 ```
-(optional) - Run on a specific port
+## Running VCF_test.py (VCF Import Tests)
+
+
+To run the VCF_import tests using uv and pytest:
+
 ```
-python manage.py runserver 8888
+uv run -m pytest vcf_import/VCF_test.py
 ```
+
+
+To watch for changes and rerun tests automatically:
+
+```
+uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest vcf_import/VCF_test.py'
+```
+
+
+### Debugging VCF_test.py in VS Code
+
+1. Open the Command Palette (⇧⌘P) and select "Debug: Add Configuration..." if you don't have a launch config.
+2. Add the following to your `.vscode/launch.json`:
+
+```
+{
+	"name": "Debug VCF_test.py",
+	"type": "debugpy",
+	"request": "launch",
+	"program": "${workspaceFolder}/vcf_import/VCF_test.py",
+	"console": "integratedTerminal",
+	"justMyCode": false
+}
+```
+
+3. Start debugging by selecting "Debug VCF_test.py" from the Run & Debug panel.
+
+You can use watchmedo for auto-reload, and debug with VS Code using the above configuration.
 
 
 ## Run the Frontend
