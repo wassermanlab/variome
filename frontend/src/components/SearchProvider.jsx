@@ -111,7 +111,7 @@ function SearchProvider({ children }) {
       setResults([]);
       setLoading(true);
       setWarnings([]);
-      
+
       searchTimeoutRef.current = setTimeout(async () => {
 
         if (_.includes(cancelledQueriesRef.current, newQuery)) {
@@ -175,32 +175,35 @@ function SearchProvider({ children }) {
         });
 
         setMatchPairs(pairs);
+        setWarnings([]);
         const variantPromise = Api.get("search", parameters.searchParameters);
-        const referenceCheck = Promise.race([
-          Api.ensemblRefCheck(parameters.searchParameters.pos, "2"),
-          new Promise(resolve => setTimeout(() => resolve(null), 5000))
-        ]);
 
-        const referenceResult = await referenceCheck;
+        if (parameters.searchParameters.ref) {
+          const referenceCheck = Promise.race([
+            Api.ensemblRefCheck(parameters.searchParameters.pos, "2"),
+            new Promise(resolve => setTimeout(() => resolve(null), 5000))
+          ]);
 
-        if (_.isObject(referenceResult) && _.get(referenceResult, "seq")) {
-          if (referenceResult.seq == _.get(parameters, "groups.ref", "").toUpperCase()) {
-            console.log("check passes");
-            setWarnings([]);
-          } else {
-            console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
-            console.log(referenceResult);
-            setWarnings([...warnings, {
-              label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`,
-              link: `./search?q=${parameters.searchParameters.chr}-${parameters.searchParameters.pos}-${referenceResult.seq}`,
-            }]);
-            console.log("warnings", warnings);
+          const referenceResult = await referenceCheck;
+
+          if (_.isObject(referenceResult) && _.get(referenceResult, "seq")) {
+            if (referenceResult.seq == _.get(parameters, "groups.ref", "").toUpperCase()) {
+              console.log("check passes");
+            } else {
+              console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
+              console.log(referenceResult);
+              setWarnings([...warnings, {
+                label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`,
+                link: `./search?q=${parameters.searchParameters.chr}-${parameters.searchParameters.pos}-${referenceResult.seq}`,
+              }]);
+              console.log("warnings", warnings);
+            }
+
           }
 
         }
-
         const variantData = await variantPromise;
-        
+
         results = _.compact(
           _.flatten([
             _.get(variantData, "results.dbsnp", []),
@@ -239,7 +242,7 @@ function SearchProvider({ children }) {
   function onInputFocus() {
     setHideResultsOverride(false);
   }
-  
+
   return (
     <SearchContext.Provider
       value={{
