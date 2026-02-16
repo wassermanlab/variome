@@ -26,7 +26,10 @@ import {
   */
 const IconMap = {
 //  Home: HomeIcon,
-  About: Info,
+  "About He Kākano": Info,
+  "Conditions of Use of the Variome Dataset": Rule,
+  "Governance of the Resource": Gavel,
+  "Applying to be a User of He Kākano": Person,
   Contact: Email,
 }
 
