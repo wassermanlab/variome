@@ -23,7 +23,7 @@ import Link from "../components/Link";
 import Api from "../Api";
 
 import { HomeContent } from "../ContentParsing";
-import {HomeImageStyle} from "../../content/ContentConfiguration";
+import {HomeImageStyle} from "../../public/ContentConfiguration";
 
 const PREFIX = "Home";
 const classes = {
