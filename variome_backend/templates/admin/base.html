@@ -53,7 +53,7 @@ This file is included so that we can show the link to the tracking dashboard in 
             {% endblock %}
             {% block userlinks %}
                 {% if frontend_url %}
-                    <a href="{{ frontend_url }}">{% translate 'View site' %}</a> /
+                    <a href="{{ frontend_url }}" target="_blank">{% translate 'View site' %}</a> /
                 {% endif %}
                 <a href="{% url "tracking_dashboard" %}">Tracking Dashboard</a> /
                 {% if user.is_active and user.is_staff %}
