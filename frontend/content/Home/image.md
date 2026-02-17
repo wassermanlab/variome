@@ -1,1 +1,0 @@
-!["Your Variome Logo Alt Text"](/dna.png)
