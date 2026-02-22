@@ -65,6 +65,21 @@ python manage.py runserver 8888
 ```
 
 
+# Frontend setup 
+
+1. Install NodeJS and install the dependencies
+
+```
+cd frontend
+npm install
+```
+
+2. Set up the frontend content files:
+
+```
+cp -r public-example public
+```
+
 ## Run the Frontend
 
 ```
@@ -73,3 +88,16 @@ npm install
 npm run dev
 ```
 
+It runs at localhost:3000 by default. You can press "o" and hit the enter key in the terminal window to open in a browser easily. Use "h" for more shortcuts
+
+### how to customize the content
+
+You can edit the `frontend/public` files to customize according to branding, access policy information, and any other content.
+
+Markdown format files in the /public folder are treated as full pages, available in the navigation sidebar. You can add more, rename them. To set the icons and sorting order, add them to the IconMap object in public/ContentConfiguration.js.
+
+Markdown format files in /public/Home are individual, "hard-coded" page elements on the Home page, so you shouldn't add more or rename these.
+
+### attributions
+
+example DNA image: https://commons.wikimedia.org/wiki/File:202104_Laboratory_instrument_dna.svg
