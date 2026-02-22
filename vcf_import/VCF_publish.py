@@ -20,7 +20,7 @@ import json
 import dotenv
 from datetime import datetime
 
-from vcf_import.constants import VCF_FILE
+from vcf_import.constants import VCF_FILE, HASH_COMPARE
 
 if not VCF_FILE:
     raise ValueError("VCF_FILE environment variable is not set. Please set it to the path of the input VCF file.")
@@ -64,7 +64,7 @@ class VariantImporter:
         def log_timing(name):
             nonlocal last_now
             duration = datetime.now() - last_now
-            logger.info(f"{name} took {str(duration)}")
+            logger.info(f"{name} took {str(duration)} h:m:s")
             last_now = datetime.now()
             
         results = {}
@@ -159,12 +159,6 @@ class VariantImporter:
 #        export_to_tsv("mt_bvl_frequencies", mt_bvl_frequencies)
 #        del mt_bvl_frequencies
         
-        
-        for table_name, records in results.items():
-            for r in records[:5]:
-                logger.info(f"SNV Table {table_name} record: {r}")
-            #send it to the database
-            
 
         logger.info(f"TSV files written to {output_dir}")
         logger.info(f"Processing completed at {datetime.now()}")
@@ -202,9 +196,17 @@ class VariantImporter:
         logger.info(f"Hash list: \n {hash_list}")
         logger.info(f"Final hash of all output files: \n {final_hash}")
         
-        hash_list2, m2, final_hash2 = compute_dir_hash(os.path.join(os.path.dirname(__file__), "output/benhash"))
-        logger.info(f"Hash list 2: \n {hash_list2}")
-        logger.info(f"Final hash 2 of all output files: \n {final_hash2}")
+        if HASH_COMPARE:
+        
+          hash_list2, m2, final_hash2 = compute_dir_hash(HASH_COMPARE)
+          logger.info(f"Hash list 2: \n {hash_list2}")
+          logger.info(f"Final hash 2 of all output files: \n {final_hash2}")
+          for k, v in m.items():
+            hash_list_2_v = m2.get(k)
+            if v == hash_list_2_v:
+                logger.info(f"File {k} hashes match. ✅")
+            else:
+                logger.warning(f"File {k} hashes don't match ❌")
         
         def sort_tsv_file(tsv_path):
             """
@@ -230,12 +232,7 @@ class VariantImporter:
 #            logger.info(f"Sorted file written to: {sorted_path}")
         
         
-        for k, v in m.items():
-            hash_list_2_v = m2.get(k)
-            if v == hash_list_2_v:
-                logger.info(f"File {k} hashes match. ✅")
-            else:
-                logger.warning(f"File {k} hashes don't match ❌")
+        
 
 def main():
     """Command-line entry point."""
