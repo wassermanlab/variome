@@ -29,7 +29,7 @@ class CallFilter(ABC):
         self.vcf_header = None
         
         child_class_name = self.__class__.__name__
-        logger.info("booting up %s", child_class_name)
+        logger.info(f"booting up {child_class_name}...")
         
         #read severity table file
         severity_table_path = SEVERITIES_TSV_PATH
@@ -81,8 +81,6 @@ class CallFilter(ABC):
                 
                 for record in reader:
                     try:
-                        
-                        
                         self.vcf_records.append(record)
                     except Exception as e:
                         logger.error(f"Error processing record {record} in file {file}: {e}")

@@ -8,17 +8,19 @@ into database tables
 from typing import Dict, List, Any, Optional
 
 import logging
+
+import gzip
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 from pathlib import Path
 import os
+import io
+import vcfpy
 import hashlib
 import json
 import dotenv
 from datetime import datetime
 
-
-
-from vcf_import.constants import VCF_FILE, NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
+from vcf_import.constants import VCF_FILE
 
 if not VCF_FILE:
     raise ValueError("VCF_FILE environment variable is not set. Please set it to the path of the input VCF file.")
@@ -43,17 +45,11 @@ snv_vcf = VCF_FILE #os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fi
 
 #os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/crop3.vcf')
 
-
-
 mt_vcf = None
-
 
 # Add a helper to log warnings
 def log_warning(message, *args, **kwargs):
     logger.warning(message, *args, **kwargs)
-
-logger.info("importing from vcfs: SNV VCF=%s, MT VCF=%s", snv_vcf, mt_vcf)
-
 
 class VariantImporter:
     
@@ -88,6 +84,25 @@ class VariantImporter:
                         f.write("\t".join(str(row.get(col, "")) for col in header) + "\n")
             logger.info(f"TSV file written: {output_path}")
             
+            
+        # examine input VCF file
+        
+        if snv_vcf.endswith('.gz'):
+            logger.info("checking vcf file...")
+            with gzip.open(snv_vcf, 'rb') as gz:
+                n = 0
+                last_record = None
+                with io.TextIOWrapper(gz, encoding='utf-8') as text_f:
+                    try:
+                        vcf_reader = vcfpy.Reader(stream=text_f)
+                        for record in vcf_reader:
+                            n += 1
+                            last_record = record
+                            pass  # just iterate to check for errors
+                    except Exception as e:
+                        logger.warning(f"Error reading VCF file {snv_vcf}: {e}. The last successful record was number {n}:")
+                        logger.warning(f"{last_record}")
+                        logger.warning("The VCF file will continue to be processed, but this may indicate a problem with the file that could lead to incomplete or incorrect results.")
 
         # Process and export each table one by one to avoid accumulating all in RAM
         genesCallFilter = GenesCallFilter(snv_vcf)
@@ -243,7 +258,6 @@ def main():
         'assembly': args.assembly,
         'severity_table_path': args.severity_table,
     }
-    logger.info("configuration:\n%s", pprint.pformat(config))
     
     publish_job = VariantImporter()
     publish_job.start(config)
