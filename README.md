@@ -6,48 +6,96 @@
 git clone git@github.com:wassermanlab/variome.git
 cd variome
 ```
+### 1. Set up project dependencies using preferred method:
 
-1. Set up dependencies
-
-### Option 1 - Rye (recommended)
-install rye for dependency management: https://rye.astral.sh/guide/installation/ then run:
+#### Option 1 - Uv (recommended)
+- Install uv for dependency management (it will be available anywhere on your system, but won't collide with other projects): [https://rye.astral.sh/guide/installation/](https://docs.astral.sh/uv/getting-started/installation/)
+- NOTE: example commands in the rest of the document starting with "python" should start with "uv run" instead
+- run:
 
 ```
-rye sync
+uv sync
 ```
 
-### Option 2 - Pip
+#### Option 2 - Pip
+- Setup pip based on your OS and preferred Python environment solution (eg, venv or similar)
+- run:
 ```
 pip install -R requirements.lock
-
 ```
 
-### Option 3 - Conda and Pip
+#### Option 3 - Conda and Pip
 ```
 conda env create -f environment.yaml 
 conda activate variome
 pip install -r requirements.lock
 ```
 
-2. Set up the database
+### 2. Set up the database
+Postgres is included as an example, but any [database backend supported by Django](https://docs.djangoproject.com/en/5.2/ref/databases/) will work
+
 ```
+# mac/linux - with homebrew
+
 brew install postgresql (if necessary)
-brew services start postgresql (if necessary) 
+brew services start postgresql (if necessary)
+```
+```
+# windows - with chocolatey
+
+choco install postgresql
+net start postgresql
+
+# If psql is not recognized, add PostgreSQL’s bin directory to your PATH environment variable.
+# Example: C:\Program Files\PostgreSQL\15\bin
+
+```
+
+```
+# Opening psql command line)
+
+# mac / linux
+
 psql
+
+#windows
+
+psql -U postgres
+```
+
+```
+# commands to enter into psql command interface
 
 CREATE DATABASE variome;
 CREATE USER variome WITH PASSWORD 'variome';
 GRANT ALL PRIVILEGES on DATABASE variome to variome;
 ```
 
-3. Set up configuration files (.env)
+### 3. Set up configuration files (.env)
+Edit .env DB to match with your database environment, set timezone, other options
+
 ```
 cp .env-sample .env
-(edit .env DB to match with your database environment, set timezone, other variables)
-
 ```
 
-4. Load the test fixture data and create a superuser account
+
+### 4. Check your installation:
+```
+python manage.py check
+```
+
+or, the UV equivalent:
+```
+uv run manage.py check
+```
+
+It should show something similar to this if it's working:
+```
+...connecting to postgresql://variome:variome@localhost:5432/variome...
+System check identified no issues (0 silenced).
+```
+
+### 5. Load the test fixture data and create a superuser account
 ```
 python manage.py migrate
 python manage.py import_bvl
@@ -59,7 +107,7 @@ python manage.py createsuperuser
 ```
 python manage.py runserver
 ```
-(optional) - Run on a specific port
+(optional) - Run on a specific port. If you do, also specify BACKEND_ROOT=http://localhost:8888 in .env so the frontend can talk to the backend properly
 ```
 python manage.py runserver 8888
 ```
