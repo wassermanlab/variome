@@ -175,3 +175,5 @@ data/backups/*
 
 # because it depends on OS and is generated dynamically
 package-lock.json
+
+vcf_import/output
