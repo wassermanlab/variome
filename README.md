@@ -146,6 +146,7 @@ Markdown format files in the /public folder are treated as full pages, available
 
 Markdown format files in /public/Home are individual, "hard-coded" page elements on the Home page, so you shouldn't add more or rename these.
 
+
 # VCF Publisher (WIP)
 
 Import directly into the database directly from a VCF, no intermediate TSV file step necessary.
@@ -158,7 +159,10 @@ Gnomad information is left out currently because it is easily fetched dynamicall
 
 ## Importing a VCF
 
+See the environment variable examples in the bottom of .env-sample and set accordingly:
+VCF_FILE, NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION, SEVERITIES_TSV_PATH, CADD_DAMAGING_THRESHOLD, DEFAULT_TRANSCRIPT_SOURCE accordingly
 ```
+uv sync
 uv run -m vcf_import.VCF_publish
 ```
 To watch for changes and rerun automatically:
@@ -179,42 +183,6 @@ To watch for changes and rerun tests automatically:
 ```
 uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest vcf_import/VCF_test.py'
 ```
-
-# VCF Publisher (WIP)
-
-Import directly into the database directly from a VCF, no intermediate TSV file step necessary.
-
-Current status: Right now this script writes TSV files as a sanity check to ensure consistency with existing pipeline tsv output
-
-Mitochondrial tables are omitted because these are left out of the currently used vcf reference files
-
-Gnomad information is left out currently because it is easily fetched dynamically from the frontend. However, the value of the bulk gnomad data availability is recognized when it comes to analysis activity, but this is not what the reference library is for as a central feature, so it is not a priority.
-
-## Importing a VCF
-
-```
-uv run -m vcf_import.VCF_publish
-```
-To watch for changes and rerun automatically:
-
-```
-uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m vcf_import.VCF_publish'
-```
-
-## Testing VCF Importing 
-
-```
-uv sync --dev
-uv run -m pytest vcf_import/VCF_test.py
-```
-
-To watch for changes and rerun tests automatically:
-
-```
-uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest vcf_import/VCF_test.py'
-```
-
-It runs at localhost:3000 by default. You can press "o" and hit the enter key in the terminal window to open in a browser easily. Use "h" for more shortcuts
 
 ### attributions
 

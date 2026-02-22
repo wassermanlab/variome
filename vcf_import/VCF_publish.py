@@ -13,10 +13,15 @@ from pathlib import Path
 import os
 import hashlib
 import json
+import dotenv
 from datetime import datetime
 
-from vcf_import.constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
 
+
+from vcf_import.constants import VCF_FILE, NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
+
+if not VCF_FILE:
+    raise ValueError("VCF_FILE environment variable is not set. Please set it to the path of the input VCF file.")
 
 logger = logging.getLogger(__name__)
 
@@ -33,13 +38,7 @@ from vcf_import.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequen
 from vcf_import.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
 # from vcf_import.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
-
-#    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/HG002-4_chr21_SNV_v7.vcf')
-#    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/ben.vcf')
-#    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/ben-big.vcf.gz')
-#snv_vcf = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/ben-big.vcf.gz')
-
-snv_vcf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures/vcf/variome.vcf')
+snv_vcf = VCF_FILE #os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures/vcf/variome.vcf')
 #snv_vcf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures/vcf/mock_snv.vcf')
 
 #os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/crop3.vcf')

@@ -22,8 +22,8 @@ dependencies = [
     "django-tracking2>=0.5.1",
     "django-auth-adfs>=1.14.0",
     "django-pghistory>=3.2.0",
-    "python-dotenv>=1.0.1"
-    "vcfpy>=0.14.2",
+    "python-dotenv>=1.0.1",
+    "vcfpy>=0.14.2"
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
