@@ -47,9 +47,43 @@ snv_vcf = VCF_FILE #os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fi
 
 mt_vcf = None
 
+
 # Add a helper to log warnings
 def log_warning(message, *args, **kwargs):
     logger.warning(message, *args, **kwargs)
+
+# Utility function to check VCF file for UTF-8 errors (supports gzipped and plain text)
+def check_vcf_utf8(vcf_path):
+    """
+    Checks a VCF file (gzipped or not) for UTF-8 errors by iterating through records.
+    Logs warnings if errors are found.
+    """
+    is_gz = vcf_path.endswith('.gz')
+    logger.info(f"Checking VCF file: {vcf_path}")
+    open_func = gzip.open if is_gz else open
+    mode = 'rb' if is_gz else 'r'
+    n = 0
+    last_record = None
+    with open_func(vcf_path, mode) as f:
+        if is_gz:
+            text_f = io.TextIOWrapper(f, encoding='utf-8')
+        else:
+            text_f = f
+        try:
+            vcf_reader = vcfpy.Reader(stream=text_f)
+            for record in vcf_reader:
+                n += 1
+                last_record = record
+                pass  # just iterate to check for errors
+        except Exception as e:
+            logger.warning(f"Error reading VCF file {vcf_path}: {e}")
+            if last_record is not None:
+              logger.warning(f"The last successful record was number {n}:")
+              logger.warning(f"{last_record}")
+              logger.warning("The VCF file will continue to be processed, but this may indicate a problem with the file that could lead to incomplete or incorrect results.")
+            else:
+              logger.warning("No records were successfully read from the VCF file.")
+              exit(1)
 
 class VariantImporter:
     
@@ -85,24 +119,8 @@ class VariantImporter:
             logger.info(f"TSV file written: {output_path}")
             
             
-        # examine input VCF file
-        
-        if snv_vcf.endswith('.gz'):
-            logger.info("checking vcf file...")
-            with gzip.open(snv_vcf, 'rb') as gz:
-                n = 0
-                last_record = None
-                with io.TextIOWrapper(gz, encoding='utf-8') as text_f:
-                    try:
-                        vcf_reader = vcfpy.Reader(stream=text_f)
-                        for record in vcf_reader:
-                            n += 1
-                            last_record = record
-                            pass  # just iterate to check for errors
-                    except Exception as e:
-                        logger.warning(f"Error reading VCF file {snv_vcf}: {e}. The last successful record was number {n}:")
-                        logger.warning(f"{last_record}")
-                        logger.warning("The VCF file will continue to be processed, but this may indicate a problem with the file that could lead to incomplete or incorrect results.")
+        # examine input VCF file for UTF-8 errors (supports gzipped and non-gzipped)
+        check_vcf_utf8(snv_vcf)
 
         # Process and export each table one by one to avoid accumulating all in RAM
         genesCallFilter = GenesCallFilter(snv_vcf)
