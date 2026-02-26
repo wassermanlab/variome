@@ -11,11 +11,11 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'genomic_bvl_frequencies' table.
     """
-    def getTableRows(self) -> List[Dict[str, Any]]:
-
-
-        rows = []
-        for record in self.vcf_records:
+    def getTableRows(self):
+        """
+        Generator that yields genomic BVL frequency rows one at a time.
+        """
+        for record in self.vcf_record_stream():
             if (record.POS == 27019487):
                 logger.info(f"Processing record {record.ID} at {record.CHROM}:{record.POS}")
 
@@ -35,7 +35,7 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                 ac_tot, ac_xx, ac_xy = parse_info_field("AC_tot_XX_XY")
                 an_tot, an_xx, an_xy = parse_info_field("AN_tot_XX_XY")
                 hom_tot, hom_xx, hom_xy = parse_info_field("hom_tot_XX_XY")
-                row = {
+                yield {
                     'variant': variant,
                     'af_tot': af_tot,
                     'ac_tot': ac_tot,
@@ -51,7 +51,6 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                     'hom_xy': hom_xy,
                     'quality': qual
                 }
-                rows.append(row)
             else:
                 #variome style
                 af_tot = info.get("AF", None)
@@ -69,11 +68,10 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                 hemi_tot = info.get("numhemi", None)
                 hemi_xx = info.get("numhemi_XX", None)
                 hemi_xy = info.get("numhemi_XY", None)
-                i = 0
-                l = len(ac_tot)
+                l = len(ac_tot) if ac_tot is not None else 0
                 for i in range(l):
                     try:
-                        row = {
+                        yield {
                             'variant': variant,
                             'af_tot': validate_get(af_tot, i),
                             'ac_tot': validate_get(ac_tot, i),
@@ -92,7 +90,5 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                             'hemi_xy': validate_get(hemi_xy, i),
                             'quality': qual
                         }
-                        rows.append(row)
                     except Exception as e:
                         logging.warning(f"Error parsing frequency fields for variant {variant}: {e}")
-        return rows

@@ -7,9 +7,11 @@ class VariantsAnnotationsCallFilter(CallFilter):
     """
     Generates the 'variants_annotations' table.
     """
-    def getTableRows(self) -> List[Dict[str, Any]]:
-        annotations = []
-        for record in self.vcf_records:
+    def getTableRows(self):
+        """
+        Generator that yields annotation rows one at a time.
+        """
+        for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
             hgvsp_list = self.get_csq_values(record, "HGVSp")
             sift_list = self.get_csq_values(record, "SIFT")
@@ -28,12 +30,11 @@ class VariantsAnnotationsCallFilter(CallFilter):
                 polyphen = polyphen_list[i]
                 transcript = transcript_list[i]
                 impact = impact_list[i] if impact_list and len(impact_list) > i else NA
-                annotations.append({
+                yield {
                     'hgvsp': hgvsp,
                     'sift': sift,
                     'polyphen': polyphen,
                     'transcript': transcript if transcript else NA,
                     'variant': variant,
                     'impact': impact
-                })
-        return annotations
+                }

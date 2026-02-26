@@ -53,7 +53,7 @@ def log_warning(message, *args, **kwargs):
     logger.warning(message, *args, **kwargs)
 
 # Utility function to check VCF file for UTF-8 errors (supports gzipped and plain text)
-def check_vcf_utf8(vcf_path):
+def check_vcf(vcf_path):
     """
     Checks a VCF file (gzipped or not) for UTF-8 errors by iterating through records.
     Logs warnings if errors are found.
@@ -71,6 +71,16 @@ def check_vcf_utf8(vcf_path):
             text_f = f
         try:
             vcf_reader = vcfpy.Reader(stream=text_f)
+            # Log available INFO fields and CSQ fields before processing
+            info_fields = " ".join(vcf_reader.header.info_ids())
+            logger.info(f"VCF INFO fields:\n{info_fields}")
+            csq = vcf_reader.header.get_info_field_info("CSQ")
+            if csq:
+                csq_elements = csq.description.split("Format: ")[1]
+                csq_fields = " ".join(csq_elements.split("|"))
+                logger.info(f"VCF CSQ fields:\n{csq_fields}")
+            else:
+                logger.info("No CSQ field found in VCF INFO header.")
             for record in vcf_reader:
                 n += 1
                 last_record = record
@@ -105,61 +115,64 @@ class VariantImporter:
         output_dir = Path(os.path.dirname(os.path.abspath(__file__))) / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        def export_to_tsv(table_name, records):
-            if not records:
-                return
+        def export_to_tsv(table_name, row_iter):
             output_path = output_dir / f"{table_name}.tsv"
+            batch_size = int(os.getenv("TSV_WRITE_BATCH_SIZE", 1000))
+            header = None
             with open(output_path, "w", encoding="utf-8") as f:
-                header = records[0].keys() if isinstance(records[0], dict) else []
-                if header:
-                    f.write("\t".join(header) + "\n")
-                for row in records:
-                    if isinstance(row, dict):
-                        f.write("\t".join(str(row.get(col, "")) for col in header) + "\n")
+                batch = []
+                for row in row_iter:
+                    if header is None:
+                        header = row.keys() if isinstance(row, dict) else []
+                        f.write("\t".join(header) + "\n")
+                    batch.append("\t".join(str(row.get(col, "")) for col in header) + "\n")
+                    if len(batch) >= batch_size:
+                        f.writelines(batch)
+                        batch = []
+                if batch:
+                    f.writelines(batch)
             logger.info(f"TSV file written: {output_path}")
             
             
         # examine input VCF file for UTF-8 errors (supports gzipped and non-gzipped)
-        check_vcf_utf8(snv_vcf)
+        check_vcf(snv_vcf)
 
         # Process and export each table one by one to avoid accumulating all in RAM
         genesCallFilter = GenesCallFilter(snv_vcf)
-        logger.info(genesCallFilter.describe())
-        genes = genesCallFilter.getTableRows()
-        log_timing("genes")
-        export_to_tsv("genes", genes)
-        del genes
+        log_timing("genes (start)")
+        export_to_tsv("genes", genesCallFilter.getTableRows())
+        log_timing("genes (end)")
         
         transcripts = TranscriptsCallFilter(snv_vcf).getTableRows()
         log_timing("transcripts")
         export_to_tsv("transcripts", transcripts)
         del transcripts
-        
+
         variants = VariantsCallFilter(snv_vcf).getTableRows()
         log_timing("variants")
         export_to_tsv("variants", variants)
         del variants
-        
+
         variants_transcripts = VariantsTranscriptsCallFilter(snv_vcf).getTableRows()
         log_timing("variants_transcripts")
         export_to_tsv("variants_transcripts", variants_transcripts)
         del variants_transcripts
-        
+
         variants_annotations = VariantsAnnotationsCallFilter(snv_vcf).getTableRows()
         log_timing("variants_annotations")   
         export_to_tsv("variants_annotations", variants_annotations)
         del variants_annotations
-        
+
         variants_consequences = VariantsConsequencesCallFilter(snv_vcf).getTableRows()
         log_timing("variants_consequences")
         export_to_tsv("variants_consequences", variants_consequences)
         del variants_consequences
-        
+
         snvs = SnvsCallFilter(snv_vcf).getTableRows()
         log_timing("snvs")
         export_to_tsv("snvs", snvs)
         del snvs
-        
+
         genomic_bvl_frequencies = GenomicBvlFrequenciesCallFilter(snv_vcf).getTableRows()
         log_timing("genomic_bvl_frequencies")
         export_to_tsv("genomic_variome_frequencies", genomic_bvl_frequencies)

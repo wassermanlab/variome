@@ -9,15 +9,12 @@ class TranscriptsCallFilter(CallFilter):
     """
     Generates the 'transcripts' table.
     """
-    def getTableRows(self) -> List[Dict[str, Any]]:
+    def getTableRows(self):
         """
-        Associate transcripts with genes from VEP annotations.
-        Returns:
-            List of dicts with structure: 
-            {'transcript_id': str, 'gene': str, 'transcript_type': str, 'tsl': str}
+        Generator that yields transcript rows one at a time.
         """
-        transcripts = {}
-        for record in self.vcf_records:
+        seen = set()
+        for record in self.vcf_record_stream():
             feature = self.get_csq_values(record, "Feature")
             if feature == "" or feature == "NA" or feature is None or len(feature) == 0:
                 logger.warning("skipping transcript with no feature: %s", feature)
@@ -26,35 +23,32 @@ class TranscriptsCallFilter(CallFilter):
             source = self.get_csq_values(record, "SOURCE")
             biotype = self.get_csq_values(record, "BIOTYPE")
             l = len(feature)
-            tsl = [] # variome sets this to none (.)  it could be: self.get_csq_values(record, "TSL")
-            for i in range(l):
-                tsl.append(None)
+            tsl = [None] * l  # variome sets this to none (.)  it could be: self.get_csq_values(record, "TSL")
             if not (l == len(symbol) == len(source) == len(tsl)):
-#                logger.warning("mismatched lengths for transcript feature, symbol, source, tsl: %d vs %d vs %d vs %d", l, len(symbol), len(source), len(tsl))
                 continue
             for i in range(l):
                 transcript_id = validate_get(feature, i)
-
-                if transcript_id not in transcripts:
-                    transcript_type = source[i]
-                    if transcript_type == "Ensembl":
-                        transcript_type = "E"
-                    elif transcript_type == "RefSeq" or transcript_type == "Refseq":
-                        transcript_type = "R"
+                if transcript_id in seen:
+                    continue
+                seen.add(transcript_id)
+                transcript_type = source[i]
+                if transcript_type == "Ensembl":
+                    transcript_type = "E"
+                elif transcript_type == "RefSeq" or transcript_type == "Refseq":
+                    transcript_type = "R"
+                else:
+                    if transcript_id is not NA:
+                        transcript_type = DEFAULT_TRANSCRIPT_SOURCE
                     else:
-                        if transcript_id is not NA:
-                            transcript_type = DEFAULT_TRANSCRIPT_SOURCE
-                        else:
-                            transcript_type = NA
-                    if biotype and biotype[i]:
-                        pass
-                    else:
-                        biotype = NA
-                    transcripts[transcript_id] = {
-                        'transcript_id': transcript_id,
-                        'gene': validate_get(symbol, i),
-                        'transcript_type': transcript_type,
-                        'tsl': validate_get(tsl, i),
-                        'biotype': validate_get(biotype, i)
-                    }
-        return list(transcripts.values())
+                        transcript_type = NA
+                if not (biotype and biotype[i]):
+                    biotype_val = NA
+                else:
+                    biotype_val = biotype[i]
+                yield {
+                    'transcript_id': transcript_id,
+                    'gene': validate_get(symbol, i),
+                    'transcript_type': transcript_type,
+                    'tsl': validate_get(tsl, i),
+                    'biotype': biotype_val
+                }

@@ -5,15 +5,14 @@ class GenesCallFilter(CallFilter):
     """
     Generates the 'genes' table.
     """
-    def getTableRows(self) -> List[Dict[str, Any]]:
+    def getTableRows(self):
         """
-        Extract unique gene symbols from VEP CSQ annotations.
-        Returns:
-            List of dicts with structure: {'short_name': str}
+        Generator that yields unique gene symbols as dicts, one at a time.
         """
         short_names = set()
-        for record in self.vcf_records:
+        for record in self.vcf_record_stream():
             for gene_symbol in self.get_csq_values(record, "SYMBOL"):
                 if gene_symbol and gene_symbol != "NA":
-                    short_names.add(gene_symbol)
-        return [{'short_name': name} for name in sorted(short_names)]
+                    if gene_symbol not in short_names:
+                        short_names.add(gene_symbol)
+                        yield {'short_name': gene_symbol}

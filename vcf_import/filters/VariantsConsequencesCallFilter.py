@@ -9,9 +9,11 @@ class VariantsConsequencesCallFilter(CallFilter):
     """
     Generates the 'variants_consequences' table.
     """
-    def getTableRows(self) -> List[Dict[str, Any]]:
-        variant_consequences = []
-        for record in self.vcf_records:
+    def getTableRows(self):
+        """
+        Generator that yields variant consequence rows one at a time.
+        """
+        for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
             transcript_list = self.get_csq_values(record, "Feature")
             consequence_list = self.get_csq_values(record, "Consequence")
@@ -24,9 +26,8 @@ class VariantsConsequencesCallFilter(CallFilter):
                 for consequence in consequences:
                     severity = self.severity_map.get(consequence)
                     if severity is not None:
-                        variant_consequences.append({
+                        yield {
                             'severity': severity,
                             'variant': variant,
                             'transcript': transcript if transcript else NA,
-                        })
-        return variant_consequences
+                        }

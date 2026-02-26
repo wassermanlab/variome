@@ -9,11 +9,17 @@ class VariantsCallFilter(CallFilter):
     """
     def __init__(self, vcf_file_path: str):
         super().__init__(vcf_file_path)
-    def getTableRows(self) -> List[Dict[str, Any]]:
-        variants = {}
-        for record in self.vcf_records:
+    def getTableRows(self):
+        """
+        Generator that yields variant rows one at a time.
+        """
+        seen = set()
+        for record in self.vcf_record_stream():
             variant_id = self.make_variant_id(record)
-            filter = ";".join(record.FILTER)
+            if variant_id in seen:
+                continue
+            seen.add(variant_id)
+            filter_val = ";".join(record.FILTER)
             type_info = record.INFO.get("TYPE")
             if isinstance(type_info, list) and type_info:
                 # Variome vcf dialect uses TYPE in INFO for variant type
@@ -26,15 +32,8 @@ class VariantsCallFilter(CallFilter):
                 var_type = "INDEL"
             elif var_type is None:
                 var_type = NA
-                
-#           
-#            if var_type == []:
-#                var_type = self.get_info_value(record, "TYPE")
-            if variant_id not in variants:
-                variants[variant_id] = {
-                    'variant_id': variant_id, 
-                    'var_type': var_type,
-                    'filter': filter if filter != "" else NA
-                }
-                
-        return list(variants.values())
+            yield {
+                'variant_id': variant_id,
+                'var_type': var_type,
+                'filter': filter_val if filter_val != "" else NA
+            }

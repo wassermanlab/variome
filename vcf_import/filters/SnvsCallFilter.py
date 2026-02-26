@@ -10,10 +10,16 @@ class SnvsCallFilter(CallFilter):
     def __init__(self, vcf_file_path: str, assembly: Optional[str] = None):
         super().__init__(vcf_file_path)
         self.assembly = assembly
-    def getTableRows(self) -> List[Dict[str, Any]]:
-        snvs = {}
-        for record in self.vcf_records:
+    def getTableRows(self):
+        """
+        Generator that yields SNV rows one at a time.
+        """
+        seen = set()
+        for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
+            if variant in seen:
+                continue
+            seen.add(variant)
             chrom = record.CHROM.replace("chr", "") if not CHR_NOTATION else record.CHROM
             pos = record.POS
             ref = record.REF
@@ -97,48 +103,36 @@ class SnvsCallFilter(CallFilter):
                         max_splice_ai = str(max_splice_ai).replace('.0', '')
                 else:
                     max_splice_ai = NA
-            if snvs.get(variant) is None:
-                # Use exact templates from R script, GRCh38 only, regardless of correctness
-                window = 25
-                chrom_noprefix = chrom.replace("chr", "") if chrom.startswith("chr") else chrom
-                start = max(1, pos - window)
-                end = pos + window
-                # UCSC URL (GRCh38 only)
-                ucsc_url = f"https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&highlight=hg38.{chrom_noprefix}%3A{pos}-{pos}&position={chrom_noprefix}%3A{start}-{end}"
-                # Ensembl URL (GRCh38 only)
-                ensembl_url = f"https://asia.ensembl.org/Homo_sapiens/Location/View?r={chrom_noprefix}%3A{start}-{end}"
-                # GnomAD URL (GRCh38 only)
-                gnomad_url = f"https://gnomad.broadinstitute.org/variant/{chrom_noprefix}-{pos}-{ref}-{alt}?dataset=gnomad_r4"
-                # dbSNP URL
-                dbsnp_url = f"https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={dbsnp_ids[0]}" if dbsnp_ids else NA
-                # ClinVar URL (template: .../variation/<VCV>/)
-                if (clinvar_vcvs and clinvar_vcvs[0].startswith("VCV")):
-                    clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_vcvs[0][3:]}/"
-                elif clinvar_from_info:
-                    clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_from_info}/"
-                else:
-                    clinvar_url = NA
-
-                snvs[variant] = {
-                    'variant': variant,
-                    'type': variant_class,
-                    'length': var_length,
-                    'chr': chrom,
-                    'pos': pos,
-                    'ref': ref,
-                    'alt': alt,
-                    'cadd_score': cadd_score,
-                    'cadd_intr': cadd_intr,
-                    'dbsnp_id': NA, # variome currently is . but it could be: dbsnp_ids[0] if dbsnp_ids else NA,
-                    'dbsnp_url': NA, # variome currently is . but could be: dbsnp_url,
-                    'ucsc_url': ucsc_url,
-                    'ensembl_url': ensembl_url,
-                    'clinvar_url': clinvar_url,
-                    'gnomad_url': gnomad_url,
-                    "clinvar_vcv": clinvar_vcvs[0] if clinvar_vcvs else clinvar_from_info if clinvar_from_info else NA,
-                    "splice_ai": max_splice_ai
-                    ,
-                }
+            window = 25
+            chrom_noprefix = chrom.replace("chr", "") if chrom.startswith("chr") else chrom
+            start = max(1, pos - window)
+            end = pos + window
+            ucsc_url = f"https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&highlight=hg38.{chrom_noprefix}%3A{pos}-{pos}&position={chrom_noprefix}%3A{start}-{end}"
+            ensembl_url = f"https://asia.ensembl.org/Homo_sapiens/Location/View?r={chrom_noprefix}%3A{start}-{end}"
+            gnomad_url = f"https://gnomad.broadinstitute.org/variant/{chrom_noprefix}-{pos}-{ref}-{alt}?dataset=gnomad_r4"
+            dbsnp_url = f"https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={dbsnp_ids[0]}" if dbsnp_ids else NA
+            if (clinvar_vcvs and clinvar_vcvs[0].startswith("VCV")):
+                clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_vcvs[0][3:]}/"
+            elif clinvar_from_info:
+                clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_from_info}/"
             else:
-                continue
-        return list(snvs.values())
+                clinvar_url = NA
+            yield {
+                'variant': variant,
+                'type': variant_class,
+                'length': var_length,
+                'chr': chrom,
+                'pos': pos,
+                'ref': ref,
+                'alt': alt,
+                'cadd_score': cadd_score,
+                'cadd_intr': cadd_intr,
+                'dbsnp_id': NA, # variome currently is . but it could be: dbsnp_ids[0] if dbsnp_ids else NA,
+                'dbsnp_url': NA, # variome currently is . but could be: dbsnp_url,
+                'ucsc_url': ucsc_url,
+                'ensembl_url': ensembl_url,
+                'clinvar_url': clinvar_url,
+                'gnomad_url': gnomad_url,
+                "clinvar_vcv": clinvar_vcvs[0] if clinvar_vcvs else clinvar_from_info if clinvar_from_info else NA,
+                "splice_ai": max_splice_ai
+            }

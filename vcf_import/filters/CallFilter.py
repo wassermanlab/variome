@@ -19,18 +19,17 @@ from abc import ABC, abstractmethod
 logger = logging.getLogger(__name__)
 
 class CallFilter(ABC):
-    vcf_records: List[vcfpy.Record]
-    
     def __init__(self, vcf_file_path: str):
-        self.vcf_records = []
         self.csq_fields = []
         self.csq_index_map = {}
         self.severity_map = {}
         self.vcf_header = None
-        
+        self._vcf_file_path = vcf_file_path
+        self._init_vcf_header_and_csq()
+
+    def _init_vcf_header_and_csq(self):
         child_class_name = self.__class__.__name__
         logger.info(f"booting up {child_class_name}...")
-        
         #read severity table file
         severity_table_path = SEVERITIES_TSV_PATH
         try:
@@ -45,22 +44,48 @@ class CallFilter(ABC):
         except FileNotFoundError:
             logger.warning("Severity table file not found: %s", severity_table_path)
             exit()
-        self.load_vcf_file(vcf_file_path)
+        # Only read header and csq fields, not all records
+        if self._vcf_file_path.endswith('.gz'):
+            with gzip.open(self._vcf_file_path, 'rb') as gz:
+                with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
+                    vcf_reader = vcfpy.Reader(stream=f)
+                    self.vcf_header = vcf_reader.header
+                    csq = vcf_reader.header.get_info_field_info("CSQ")
+                    csq_elements = csq.description.split("Format: ")[1]
+                    self.csq_fields = csq_elements.split("|")
+                    self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+        else:
+            with io.TextIOWrapper(open(self._vcf_file_path, 'rb'), encoding='utf-8', errors='replace') as f:
+                vcf_reader = vcfpy.Reader(stream=f)
+                self.vcf_header = vcf_reader.header
+                csq = vcf_reader.header.get_info_field_info("CSQ")
+                csq_elements = csq.description.split("Format: ")[1]
+                self.csq_fields = csq_elements.split("|")
+                self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+
+    def vcf_record_stream(self):
+        """
+        Generator that yields VCF records one at a time from the file.
+        """
+        if self._vcf_file_path.endswith('.gz'):
+            with gzip.open(self._vcf_file_path, 'rb') as gz:
+                with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
+                    vcf_reader = vcfpy.Reader(stream=f)
+                    for record in vcf_reader:
+                        yield record
+        else:
+            with io.TextIOWrapper(open(self._vcf_file_path, 'rb'), encoding='utf-8', errors='replace') as f:
+                vcf_reader = vcfpy.Reader(stream=f)
+                for record in vcf_reader:
+                    yield record
         
     def describe(self) -> str:
         description = ""
-        # Use info fields from the VCF header (vcfpy style)
         csq_fields = '\n'.join(self.csq_fields)
-        description += f"VCF file has {len(self.vcf_records)} records.\n"
-
         description += f"INFO fields:"
         if hasattr(self, 'vcf_header') and self.vcf_header is not None:
             info_fields = '(from header) \n'
             info_fields += '\n'.join(self.vcf_header.info_ids())
-        elif self.vcf_records:
-            # fallback: use keys from first record
-            info_fields = '(from first record) \n'
-            info_fields += '\n'.join([f"{key}" for key in self.vcf_records[0].INFO.keys()])
         else:
             info_fields = '(not found)'
         description += f"\n{info_fields}\n"
@@ -68,7 +93,7 @@ class CallFilter(ABC):
         return description
     
     def load_vcf_file(self, file, type = "SNV"):
-        
+        return []
         def read_vcf(reader: vcfpy.Reader):
             self.vcf_header = reader.header
                 
