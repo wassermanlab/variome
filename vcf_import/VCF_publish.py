@@ -117,7 +117,7 @@ class VariantImporter:
 
         def export_to_tsv(table_name, row_iter):
             output_path = output_dir / f"{table_name}.tsv"
-            batch_size = int(os.getenv("TSV_WRITE_BATCH_SIZE", 1000))
+            batch_size = int(os.getenv("TSV_WRITE_BATCH_SIZE", 10000))
             header = None
             with open(output_path, "w", encoding="utf-8") as f:
                 batch = []
