@@ -1,14 +1,17 @@
+
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
 import logging
 logger = logging.getLogger(__name__)
 
-from vcf_import.constants import NA
 
 class VariantsConsequencesCallFilter(CallFilter):
     """
     Generates the 'variants_consequences' table.
     """
+    def __init__(self, vcf_file_path, settings):
+        super().__init__(vcf_file_path, settings)
+
     def getTableRows(self):
         """
         Generator that yields variant consequence rows one at a time.
@@ -29,5 +32,5 @@ class VariantsConsequencesCallFilter(CallFilter):
                         yield {
                             'severity': severity,
                             'variant': variant,
-                            'transcript': transcript if transcript else NA,
+                            'transcript': transcript if transcript else self.settings.NA,
                         }

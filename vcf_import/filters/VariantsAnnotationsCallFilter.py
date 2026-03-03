@@ -1,16 +1,19 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from vcf_import.constants import NA
 import urllib.parse
 
 class VariantsAnnotationsCallFilter(CallFilter):
     """
     Generates the 'variants_annotations' table.
     """
+    def __init__(self, vcf_file_path, settings):
+        super().__init__(vcf_file_path, settings)
+
     def getTableRows(self):
         """
         Generator that yields annotation rows one at a time.
         """
+        NA = self.settings.NA
         for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
             hgvsp_list = self.get_csq_values(record, "HGVSp")

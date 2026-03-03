@@ -1,14 +1,17 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from vcf_import.constants import NA
 
 class MtBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'mt_bvl_frequencies' table.
     """
+    def __init__(self, vcf_file_path: str, settings):
+        super().__init__(vcf_file_path, settings)
+
     def getTableRows(self) -> List[Dict[str, Any]]:
         rows = []
-        for record in self.vcf_records:
+        NA = self.settings.NA
+        for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
             gt_fields = record.INFO  # Placeholder; actual GT fields extraction may differ
             an = gt_fields.get("AN", 0)

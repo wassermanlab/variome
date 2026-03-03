@@ -11,28 +11,49 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name
 logger = logging.getLogger(__name__)
 
 # fallback None value filler
-VCF_FILE = os.getenv("VCF_FILE", None)  # Path to the input VCF file, can be set via environment variable
-NA = os.getenv("NA", ".")
-CHR_NOTATION = os.getenv("CHR_NOTATION", "False").lower() in ("true", "1", "t")  # whether to keep 'chr' prefix in chromosome names
-HYPEN_VARIANT_NOTATION = os.getenv("HYPEN_VARIANT_NOTATION", "True").lower() in ("true", "1", "t")  # whether to use hyphen '-' in variant IDs instead of underscores '_'
-DEFAULT_TRANSCRIPT_SOURCE = os.getenv("DEFAULT_TRANSCRIPT_SOURCE", "E")  # Default transcript source if unknown
-CADD_DAMAGING_THRESHOLD = int(os.getenv("CADD_DAMAGING_THRESHOLD", 20))  # CADD phred score threshold (if greater than or equal, counts as damaging)
-SEVERITIES_TSV_PATH = os.getenv("SEVERITIES_TSV_PATH", "data/fixtures/severities.tsv")  # Path to severity table file
-HASH_COMPARE = os.getenv("HASH_COMPARE", None)
 
-OUT_CHR_NOTATION = os.getenv("OUT_CHR_NOTATION", "False").lower() in ("true", "1", "t")  # whether to keep 'chr' prefix in output chromosome names
-RANGES = os.getenv("RANGES", None)  # comma-separated list of genomic ranges to import, e.g. "chr1:1000-2000,chr2:3000-4000"
+import os
+import logging
+from dataclasses import dataclass
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logger = logging.getLogger(__name__)
+
+@dataclass
+class Settings:
+    VCF_FILE: str
+    NA: str
+    CHR_NOTATION: bool
+    HYPEN_VARIANT_NOTATION: bool
+    DEFAULT_TRANSCRIPT_SOURCE: str
+    CADD_DAMAGING_THRESHOLD: int
+    SEVERITIES_TSV_PATH: str
+    HASH_COMPARE: str
+    OUT_CHR_NOTATION: bool
+    RANGES: str
+
+SETTINGS = Settings(
+    VCF_FILE=os.getenv("VCF_FILE", None),
+    NA=os.getenv("NA", "."),
+    CHR_NOTATION=os.getenv("CHR_NOTATION", "False").lower() in ("true", "1", "t"),
+    HYPEN_VARIANT_NOTATION=os.getenv("HYPEN_VARIANT_NOTATION", "True").lower() in ("true", "1", "t"),
+    DEFAULT_TRANSCRIPT_SOURCE=os.getenv("DEFAULT_TRANSCRIPT_SOURCE", "E"),
+    CADD_DAMAGING_THRESHOLD=int(os.getenv("CADD_DAMAGING_THRESHOLD", 20)),
+    SEVERITIES_TSV_PATH=os.getenv("SEVERITIES_TSV_PATH", "data/fixtures/severities.tsv"),
+    HASH_COMPARE=os.getenv("HASH_COMPARE", None),
+    OUT_CHR_NOTATION=os.getenv("OUT_CHR_NOTATION", "False").lower() in ("true", "1", "t"),
+    RANGES=os.getenv("RANGES", None),
+)
 
 logger.info(f"""
 
 VCF Import settings:
-  VCF_FILE={VCF_FILE},
-  NA={NA},
-  CHR_NOTATION={CHR_NOTATION},
-  HYPEN_VARIANT_NOTATION={HYPEN_VARIANT_NOTATION},
-  DEFAULT_TRANSCRIPT_SOURCE={DEFAULT_TRANSCRIPT_SOURCE},
-  CADD_DAMAGING_THRESHOLD={CADD_DAMAGING_THRESHOLD},
-  SEVERITIES_TSV_PATH={SEVERITIES_TSV_PATH},
-  RANGES={RANGES}
-"""
-)
+  VCF_FILE={SETTINGS.VCF_FILE},
+  NA={SETTINGS.NA},
+  CHR_NOTATION={SETTINGS.CHR_NOTATION},
+  HYPEN_VARIANT_NOTATION={SETTINGS.HYPEN_VARIANT_NOTATION},
+  DEFAULT_TRANSCRIPT_SOURCE={SETTINGS.DEFAULT_TRANSCRIPT_SOURCE},
+  CADD_DAMAGING_THRESHOLD={SETTINGS.CADD_DAMAGING_THRESHOLD},
+  SEVERITIES_TSV_PATH={SETTINGS.SEVERITIES_TSV_PATH},
+  RANGES={SETTINGS.RANGES}
+""")

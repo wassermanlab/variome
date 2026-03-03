@@ -1,13 +1,14 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
 import logging
-from vcf_import.constants import NA
 logger = logging.getLogger(__name__)
 
 class VariantsTranscriptsCallFilter(CallFilter):
     """
     Generates the 'variants_transcripts' table.
     """
+    def __init__(self, vcf_file_path, settings):
+        super().__init__(vcf_file_path, settings)
     def getTableRows(self):
         """
         Generator that yields variant-transcript rows one at a time.
@@ -24,10 +25,10 @@ class VariantsTranscriptsCallFilter(CallFilter):
             for i in range(l):
                 t = transcript[i]
                 h = hgvsc[i]
-                if t == "NA" or t == "" or t is None:
-                    t = NA
-                if h == "NA" or h == "" or h is None:
-                    h = NA
+            if t == "NA" or t == "" or t is None:
+                t = self.settings.NA
+            if h == "NA" or h == "" or h is None:
+                h = self.settings.NA
                 yield {
                     'transcript': t,
                     'variant': variant,

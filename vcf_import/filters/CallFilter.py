@@ -3,8 +3,7 @@ CallFilter base class and global VCF options.
 """
 
 
-# Global VCF options (imported from constants)
-from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, OUT_CHR_NOTATION, RANGES, NA, SEVERITIES_TSV_PATH
+# Remove direct imports of config constants
 from vcf_import.tools import validate_get
 
 import vcfpy
@@ -19,19 +18,20 @@ from abc import ABC, abstractmethod
 logger = logging.getLogger(__name__)
 
 class CallFilter(ABC):
-    def __init__(self, vcf_file_path: str):
+    def __init__(self, vcf_file_path: str, settings):
         self.csq_fields = []
         self.csq_index_map = {}
         self.severity_map = {}
         self.vcf_header = None
         self._vcf_file_path = vcf_file_path
+        self.settings = settings
         self._init_vcf_header_and_csq()
 
     def _init_vcf_header_and_csq(self):
         child_class_name = self.__class__.__name__
         logger.info(f"booting up {child_class_name}...")
         #read severity table file
-        severity_table_path = SEVERITIES_TSV_PATH
+        severity_table_path = self.settings.SEVERITIES_TSV_PATH
         try:
             with open(severity_table_path, "r") as f:
                 for line in f.readlines()[1:]:
@@ -67,6 +67,7 @@ class CallFilter(ABC):
         """
         Generator that yields VCF records one at a time from the file.
         """
+        RANGES = self.settings.RANGES
         ranges = RANGES.split(",") if RANGES else []
         range_map = {}
         for r in ranges:
@@ -74,22 +75,19 @@ class CallFilter(ABC):
             start, end = map(int, pos_range.split("-"))
             range_map[str.replace(chrom, "chr", "")] = (start, end)
 
-        
         def yield_records_in_ranges(reader):
             if RANGES is not None:
-              for record in reader:
-                  if record.CHROM in range_map or str.replace(record.CHROM, "chr", "") in range_map or ("chr"+record.CHROM) in range_map:
-                      (start, end) = range_map.get(str.replace(record.CHROM, "chr", ""))
-                      if start <= record.POS <= end:
-                          yield record
-                  return False
-              
-                  if record_in_ranges(record):
-                      yield record
+                for record in reader:
+                    if record.CHROM in range_map or str.replace(record.CHROM, "chr", "") in range_map or ("chr"+record.CHROM) in range_map:
+                        (start, end) = range_map.get(str.replace(record.CHROM, "chr", ""))
+                        if start <= record.POS <= end:
+                            yield record
+                    return False
+                # ...existing code...
             else:
-              for record in reader:
-                  yield record
-        
+                for record in reader:
+                    yield record
+
         if self._vcf_file_path.endswith('.gz'):
             with gzip.open(self._vcf_file_path, 'rb') as gz:
                 with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
@@ -186,7 +184,9 @@ class CallFilter(ABC):
         return record.INFO.get(field_name, fallback)
 
     def make_variant_id(self, record: vcfpy.Record) -> str:
-        from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, OUT_CHR_NOTATION
+        HYPEN_VARIANT_NOTATION = self.settings.HYPEN_VARIANT_NOTATION
+        CHR_NOTATION = self.settings.CHR_NOTATION
+        OUT_CHR_NOTATION = self.settings.OUT_CHR_NOTATION
 
         """
         Helper method to construct a variant ID from VCF record fields.

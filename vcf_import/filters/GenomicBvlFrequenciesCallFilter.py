@@ -4,13 +4,15 @@ import logging
 from numpy import record
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from vcf_import.constants import NA
 from vcf_import.tools import validate_get
 
 class GenomicBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'genomic_bvl_frequencies' table.
     """
+    def __init__(self, vcf_file_path: str, settings):
+        super().__init__(vcf_file_path, settings)
+
     def getTableRows(self):
         """
         Generator that yields genomic BVL frequency rows one at a time.

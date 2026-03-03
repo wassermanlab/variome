@@ -1,6 +1,7 @@
-from vcf_import.constants import NA
+from vcf_import.constants import SETTINGS
 
 def validate_get(v, index):
+    NA = SETTINGS.NA
     if v is [] or v is None:
         return NA
     if not isinstance(v, list):
@@ -15,10 +16,10 @@ def validate_get(v, index):
         return str(val).replace('.0', '')
     
     elif isinstance(val, str):
-      if val == "" or val is None:
-        return NA
-      else:
-        return val
+        if val == "" or val is None:
+            return NA
+        else:
+            return val
     if val in [None, ""]:
         return NA
     

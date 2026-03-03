@@ -1,14 +1,13 @@
 from venv import logger
 from .CallFilter import CallFilter
 from typing import List, Dict, Any, Optional
-from vcf_import.constants import NA, CHR_NOTATION, CADD_DAMAGING_THRESHOLD
 
 class SnvsCallFilter(CallFilter):
     """
     Generates the 'snvs' table (SNV-specific annotations).
     """
-    def __init__(self, vcf_file_path: str, assembly: Optional[str] = None):
-        super().__init__(vcf_file_path)
+    def __init__(self, vcf_file_path: str, settings, assembly: Optional[str] = None):
+        super().__init__(vcf_file_path, settings)
         self.assembly = assembly
     def getTableRows(self):
         """

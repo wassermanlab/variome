@@ -1,6 +1,5 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any
-from vcf_import.constants import NA, DEFAULT_TRANSCRIPT_SOURCE
 import logging
 from vcf_import.tools import validate_get
 logger = logging.getLogger(__name__)
@@ -9,6 +8,8 @@ class TranscriptsCallFilter(CallFilter):
     """
     Generates the 'transcripts' table.
     """
+    def __init__(self, vcf_file_path, settings):
+        super().__init__(vcf_file_path, settings)
     def getTableRows(self):
         """
         Generator that yields transcript rows one at a time.
@@ -18,7 +19,7 @@ class TranscriptsCallFilter(CallFilter):
             feature = self.get_csq_values(record, "Feature")
             if feature == "" or feature == "NA" or feature is None or len(feature) == 0:
                 logger.warning("skipping transcript with no feature: %s", feature)
-                feature = NA
+                feature = self.settings.NA
             symbol = self.get_csq_values(record, "SYMBOL")
             source = self.get_csq_values(record, "SOURCE")
             biotype = self.get_csq_values(record, "BIOTYPE")
@@ -37,12 +38,12 @@ class TranscriptsCallFilter(CallFilter):
                 elif transcript_type == "RefSeq" or transcript_type == "Refseq":
                     transcript_type = "R"
                 else:
-                    if transcript_id is not NA:
-                        transcript_type = DEFAULT_TRANSCRIPT_SOURCE
+                    if transcript_id is not self.settings.NA:
+                        transcript_type = self.settings.DEFAULT_TRANSCRIPT_SOURCE
                     else:
-                        transcript_type = NA
+                        transcript_type = self.settings.NA
                 if not (biotype and biotype[i]):
-                    biotype_val = NA
+                    biotype_val = self.settings.NA
                 else:
                     biotype_val = biotype[i]
                 yield {

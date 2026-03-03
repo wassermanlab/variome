@@ -1,18 +1,19 @@
 from .CallFilter import CallFilter
 from typing import List, Dict, Any, Optional
-from vcf_import.constants import NA
 
 class MtsCallFilter(CallFilter):
     """
     Generates the 'mts' table (mitochondrial variant annotations).
     """
-    def __init__(self, vcf_file_path: str, assembly: Optional[str] = None):
-        super().__init__(vcf_file_path)
+    def __init__(self, vcf_file_path: str, settings, assembly: Optional[str] = None):
+        super().__init__(vcf_file_path, settings)
         self.assembly = assembly
         self.gnomad_variants = set()
+
     def getTableRows(self) -> List[Dict[str, Any]]:
         mts = {}
-        for record in self.vcf_records:
+        NA = self.settings.NA
+        for record in self.vcf_record_stream():
             variant = self.make_variant_id(record)
             pos = record.POS
             ref = record.REF
