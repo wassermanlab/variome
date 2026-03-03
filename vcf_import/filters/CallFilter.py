@@ -4,7 +4,7 @@ CallFilter base class and global VCF options.
 
 
 # Global VCF options (imported from constants)
-from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, NA, SEVERITIES_TSV_PATH
+from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, OUT_CHR_NOTATION, RANGES, NA, SEVERITIES_TSV_PATH
 from vcf_import.tools import validate_get
 
 import vcfpy
@@ -67,17 +67,38 @@ class CallFilter(ABC):
         """
         Generator that yields VCF records one at a time from the file.
         """
+        ranges = RANGES.split(",") if RANGES else []
+        range_map = {}
+        for r in ranges:
+            chrom, pos_range = r.split(":")
+            start, end = map(int, pos_range.split("-"))
+            range_map[str.replace(chrom, "chr", "")] = (start, end)
+
+        
+        def yield_records_in_ranges(reader):
+            if RANGES is not None:
+              for record in reader:
+                  if record.CHROM in range_map or str.replace(record.CHROM, "chr", "") in range_map or ("chr"+record.CHROM) in range_map:
+                      (start, end) = range_map.get(str.replace(record.CHROM, "chr", ""))
+                      if start <= record.POS <= end:
+                          yield record
+                  return False
+              
+                  if record_in_ranges(record):
+                      yield record
+            else:
+              for record in reader:
+                  yield record
+        
         if self._vcf_file_path.endswith('.gz'):
             with gzip.open(self._vcf_file_path, 'rb') as gz:
                 with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
                     vcf_reader = vcfpy.Reader(stream=f)
-                    for record in vcf_reader:
-                        yield record
+                    yield from yield_records_in_ranges(vcf_reader)
         else:
             with io.TextIOWrapper(open(self._vcf_file_path, 'rb'), encoding='utf-8', errors='replace') as f:
                 vcf_reader = vcfpy.Reader(stream=f)
-                for record in vcf_reader:
-                    yield record
+                yield from yield_records_in_ranges(vcf_reader)
         
     def describe(self) -> str:
         description = ""
@@ -165,6 +186,8 @@ class CallFilter(ABC):
         return record.INFO.get(field_name, fallback)
 
     def make_variant_id(self, record: vcfpy.Record) -> str:
+        from vcf_import.constants import HYPEN_VARIANT_NOTATION, CHR_NOTATION, OUT_CHR_NOTATION
+
         """
         Helper method to construct a variant ID from VCF record fields.
         
@@ -179,6 +202,9 @@ class CallFilter(ABC):
             pos = record.POS
             ref = record.REF
             alt = record.ALT[0].value  # assuming single ALT allele
+
+            if OUT_CHR_NOTATION:
+                chrom = "chr"+ chrom
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"
         else:
             variant_id = record.ID[0]

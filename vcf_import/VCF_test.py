@@ -21,6 +21,7 @@ To focus on a single test (similar to fit() in Mocha):
 
 import unittest
 import os
+
 from pathlib import Path
 
 from vcf_import.constants import NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION
@@ -90,6 +91,44 @@ class TestBaseFilter(unittest.TestCase):
         self.assertIn('missense_variant', self.testInstance.severity_map)
         self.assertIsInstance(self.testInstance.severity_map['missense_variant'], int)
 
+    def test_range_parameters(self):
+        import importlib
+        import vcf_import.constants
+        os.environ['RANGES'] = '22:300-350'
+        importlib.reload(vcf_import.constants)
+        from vcf_import.constants import RANGES  # Import inside the function to get the updated value
+        instance = self.MockFilter(get_fixture_path('manychrs.vcf'))
+        
+        records = list(instance.vcf_record_stream())
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0].POS, 300)
+        self.assertEqual(records[1].POS, 350)
+
+
+
+        os.environ['RANGES'] = '1:1002-1003,2:1701-1703'
+        importlib.reload(vcf_import.constants)
+        from vcf_import.constants import RANGES  # Import inside the function to get the updated value
+
+        records = list(self.testInstance.vcf_record_stream())
+        self.assertEqual(len(records), 5)
+        self.assertEqual(records[0].POS, 300)
+        self.assertEqual(records[1].POS, 350)
+
+
+    def test_chr_parameter(self):
+        import importlib
+
+        os.environ['OUT_CHR_NOTATION'] = 'true'
+        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'))
+        first_record = list(instance.vcf_record_stream())[0]
+        self.assertTrue(instance.make_variant_id(first_record).startswith('chr'))
+
+        os.environ['OUT_CHR_NOTATION'] = 'false'
+        importlib.reload(vcf_import.constants)
+        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'))
+        first_record = list(instance.vcf_record_stream())[0]
+        self.assertFalse(instance.make_variant_id(first_record).startswith('chr'))
 @skipUnlessFocused
 class TestGenesCallFilter(unittest.TestCase):
     """Test GenesCallFilter."""

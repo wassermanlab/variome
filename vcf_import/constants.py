@@ -5,7 +5,7 @@ import os
 import dotenv
 import logging
 
-dotenv.load_dotenv()
+#dotenv.load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -20,6 +20,9 @@ CADD_DAMAGING_THRESHOLD = int(os.getenv("CADD_DAMAGING_THRESHOLD", 20))  # CADD 
 SEVERITIES_TSV_PATH = os.getenv("SEVERITIES_TSV_PATH", "data/fixtures/severities.tsv")  # Path to severity table file
 HASH_COMPARE = os.getenv("HASH_COMPARE", None)
 
+OUT_CHR_NOTATION = os.getenv("OUT_CHR_NOTATION", "False").lower() in ("true", "1", "t")  # whether to keep 'chr' prefix in output chromosome names
+RANGES = os.getenv("RANGES", None)  # comma-separated list of genomic ranges to import, e.g. "chr1:1000-2000,chr2:3000-4000"
+
 logger.info(f"""
 
 VCF Import settings:
@@ -29,6 +32,7 @@ VCF Import settings:
   HYPEN_VARIANT_NOTATION={HYPEN_VARIANT_NOTATION},
   DEFAULT_TRANSCRIPT_SOURCE={DEFAULT_TRANSCRIPT_SOURCE},
   CADD_DAMAGING_THRESHOLD={CADD_DAMAGING_THRESHOLD},
-  SEVERITIES_TSV_PATH={SEVERITIES_TSV_PATH}
+  SEVERITIES_TSV_PATH={SEVERITIES_TSV_PATH},
+  RANGES={RANGES}
 """
 )
