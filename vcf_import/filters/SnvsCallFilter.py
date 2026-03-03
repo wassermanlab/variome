@@ -19,7 +19,7 @@ class SnvsCallFilter(CallFilter):
             if variant in seen:
                 continue
             seen.add(variant)
-            chrom = record.CHROM.replace("chr", "") if not CHR_NOTATION else record.CHROM
+            chrom = record.CHROM.replace("chr", "") if not self.settings.CHR_NOTATION else record.CHROM
             pos = record.POS
             ref = record.REF
             alt = record.ALT[0].value  # assuming single ALT allele
@@ -40,6 +40,7 @@ class SnvsCallFilter(CallFilter):
                     dbsnp_ids.append(ev)
                 if ev.startswith("VCV"):
                     clinvar_vcvs.append(ev)
+            NA = self.settings.NA
             variant_class = record.INFO.get("TYPE")[0] if record.INFO.get("TYPE") else (class_list[0] if class_list else NA)
             if cadd_phred_list and cadd_phred_list[0] != "":
                 try:

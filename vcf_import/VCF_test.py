@@ -99,10 +99,14 @@ class TestBaseFilter(unittest.TestCase):
         self.assertEqual(records[1].POS, 350)
 
         SETTINGS.RANGES = '1:1002-1003,2:1701-1703'
-        records = list(self.testInstance.vcf_record_stream())
+        instance = self.MockFilter(get_fixture_path('manychrs.vcf'), SETTINGS)
+        records = list(instance.vcf_record_stream())
         self.assertEqual(len(records), 5)
-        self.assertEqual(records[0].POS, 300)
-        self.assertEqual(records[1].POS, 350)
+        self.assertEqual(records[0].POS, 1002)
+        self.assertEqual(records[1].POS, 1003)
+        self.assertEqual(records[2].POS, 1701)
+        self.assertEqual(records[3].POS, 1702)
+        self.assertEqual(records[4].POS, 1703)
 
 
     def test_chr_parameter(self):

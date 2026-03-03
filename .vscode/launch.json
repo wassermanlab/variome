@@ -65,7 +65,10 @@
             "module": "pytest",
             "args": ["vcf_import/VCF_test.py"],
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "env": {
+                "FOCUS": "true"
+            }
         },
         {
             "name": "Python Debugger: Django",

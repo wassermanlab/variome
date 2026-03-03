@@ -76,14 +76,22 @@ class CallFilter(ABC):
             range_map[str.replace(chrom, "chr", "")] = (start, end)
 
         def yield_records_in_ranges(reader):
-            if RANGES is not None:
+            if RANGES:
                 for record in reader:
-                    if record.CHROM in range_map or str.replace(record.CHROM, "chr", "") in range_map or ("chr"+record.CHROM) in range_map:
-                        (start, end) = range_map.get(str.replace(record.CHROM, "chr", ""))
-                        if start <= record.POS <= end:
-                            yield record
-                    return False
-                # ...existing code...
+                    chrom_key = record.CHROM
+                    # Try all possible chrom representations
+                    keys = [chrom_key, chrom_key.replace("chr", ""), "chr"+chrom_key]
+                    found = False
+                    for k in keys:
+                        if k in range_map:
+                            start, end = range_map[k]
+                            if start <= record.POS <= end:
+                                yield record
+                                found = True
+                            break
+                    # Debug output for missed records
+                    if not found:
+                        pass  # Could print debug info here if needed
             else:
                 for record in reader:
                     yield record
