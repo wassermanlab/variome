@@ -20,9 +20,9 @@ import json
 import dotenv
 from datetime import datetime
 
-from vcf_import.constants import VCF_FILE, HASH_COMPARE
+from vcf_import.constants import SETTINGS
 
-if not VCF_FILE:
+if not SETTINGS.VCF_FILE:
     raise ValueError("VCF_FILE environment variable is not set. Please set it to the path of the input VCF file.")
 
 logger = logging.getLogger(__name__)
@@ -40,11 +40,9 @@ from vcf_import.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequen
 from vcf_import.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
 # from vcf_import.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
-snv_vcf = VCF_FILE #os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures/vcf/variome.vcf')
+snv_vcf = SETTINGS.VCF_FILE
 #snv_vcf = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures/vcf/mock_snv.vcf')
-
 #os.path.join(os.path.dirname(os.path.abspath(__file__)), '../test_case/crop3.vcf')
-
 mt_vcf = None
 
 
@@ -138,42 +136,42 @@ class VariantImporter:
         check_vcf(snv_vcf)
 
         # Process and export each table one by one to avoid accumulating all in RAM
-        genesCallFilter = GenesCallFilter(snv_vcf)
+        genesCallFilter = GenesCallFilter(snv_vcf, SETTINGS)
         log_timing("genes (start)")
         export_to_tsv("genes", genesCallFilter.getTableRows())
         log_timing("genes (end)")
         
-        transcripts = TranscriptsCallFilter(snv_vcf).getTableRows()
+        transcripts = TranscriptsCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("transcripts")
         export_to_tsv("transcripts", transcripts)
         del transcripts
 
-        variants = VariantsCallFilter(snv_vcf).getTableRows()
+        variants = VariantsCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("variants")
         export_to_tsv("variants", variants)
         del variants
 
-        variants_transcripts = VariantsTranscriptsCallFilter(snv_vcf).getTableRows()
+        variants_transcripts = VariantsTranscriptsCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("variants_transcripts")
         export_to_tsv("variants_transcripts", variants_transcripts)
         del variants_transcripts
 
-        variants_annotations = VariantsAnnotationsCallFilter(snv_vcf).getTableRows()
+        variants_annotations = VariantsAnnotationsCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("variants_annotations")   
         export_to_tsv("variants_annotations", variants_annotations)
         del variants_annotations
 
-        variants_consequences = VariantsConsequencesCallFilter(snv_vcf).getTableRows()
+        variants_consequences = VariantsConsequencesCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("variants_consequences")
         export_to_tsv("variants_consequences", variants_consequences)
         del variants_consequences
 
-        snvs = SnvsCallFilter(snv_vcf).getTableRows()
+        snvs = SnvsCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("snvs")
         export_to_tsv("snvs", snvs)
         del snvs
 
-        genomic_bvl_frequencies = GenomicBvlFrequenciesCallFilter(snv_vcf).getTableRows()
+        genomic_bvl_frequencies = GenomicBvlFrequenciesCallFilter(snv_vcf, SETTINGS).getTableRows()
         log_timing("genomic_bvl_frequencies")
         export_to_tsv("genomic_variome_frequencies", genomic_bvl_frequencies)
         del genomic_bvl_frequencies
@@ -227,9 +225,9 @@ class VariantImporter:
         logger.info(f"Hash list: \n {hash_list}")
         logger.info(f"Final hash of all output files: \n {final_hash}")
         
-        if HASH_COMPARE:
+        if SETTINGS.HASH_COMPARE:
         
-          hash_list2, m2, final_hash2 = compute_dir_hash(HASH_COMPARE)
+          hash_list2, m2, final_hash2 = compute_dir_hash(SETTINGS.HASH_COMPARE)
           logger.info(f"Hash list 2: \n {hash_list2}")
           logger.info(f"Final hash 2 of all output files: \n {final_hash2}")
           for k, v in m.items():

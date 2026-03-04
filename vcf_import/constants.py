@@ -4,17 +4,9 @@ Global constants for VCF import module.
 import os
 import dotenv
 import logging
-
-#dotenv.load_dotenv()
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
-logger = logging.getLogger(__name__)
-
-# fallback None value filler
-
-import os
-import logging
 from dataclasses import dataclass
+
+dotenv.load_dotenv()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logger = logging.getLogger(__name__)
