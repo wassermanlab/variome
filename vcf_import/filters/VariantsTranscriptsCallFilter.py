@@ -25,10 +25,10 @@ class VariantsTranscriptsCallFilter(CallFilter):
             for i in range(l):
                 t = transcript[i]
                 h = hgvsc[i]
-            if t == "NA" or t == "" or t is None:
-                t = self.settings.NA
-            if h == "NA" or h == "" or h is None:
-                h = self.settings.NA
+                if t == "NA" or t == "" or t is None:
+                    t = self.settings.NA
+                if h == "NA" or h == "" or h is None:
+                    h = self.settings.NA
                 yield {
                     'transcript': t,
                     'variant': variant,

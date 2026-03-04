@@ -21,6 +21,7 @@ To focus on a single test (similar to fit() in Mocha):
 
 import unittest
 import os
+import copy
 
 from pathlib import Path
 
@@ -91,15 +92,16 @@ class TestBaseFilter(unittest.TestCase):
         self.assertIsInstance(self.testInstance.severity_map['missense_variant'], int)
 
     def test_range_parameters(self):
-        SETTINGS.RANGES = '22:300-350'
-        instance = self.MockFilter(get_fixture_path('manychrs.vcf'), SETTINGS)
+        test_settings = copy.deepcopy(SETTINGS)
+        test_settings.RANGES = '22:300-350'
+        instance = self.MockFilter(get_fixture_path('manychrs.vcf'), test_settings)
         records = list(instance.vcf_record_stream())
         self.assertEqual(len(records), 2)
         self.assertEqual(records[0].POS, 300)
         self.assertEqual(records[1].POS, 350)
 
-        SETTINGS.RANGES = '1:1002-1003,2:1701-1703'
-        instance = self.MockFilter(get_fixture_path('manychrs.vcf'), SETTINGS)
+        test_settings.RANGES = '1:1002-1003,2:1701-1703'
+        instance = self.MockFilter(get_fixture_path('manychrs.vcf'), test_settings)
         records = list(instance.vcf_record_stream())
         self.assertEqual(len(records), 5)
         self.assertEqual(records[0].POS, 1002)
@@ -110,17 +112,18 @@ class TestBaseFilter(unittest.TestCase):
 
 
     def test_chr_parameter(self):
-        original_chr = SETTINGS.OUT_CHR_NOTATION
-        SETTINGS.OUT_CHR_NOTATION = True
-        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), SETTINGS)
+        test_settings = copy.deepcopy(SETTINGS)
+        original_chr = test_settings.OUT_CHR_NOTATION
+        test_settings.OUT_CHR_NOTATION = True
+        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertTrue(instance.make_variant_id(first_record).startswith('chr'))
 
-        SETTINGS.OUT_CHR_NOTATION = False
-        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), SETTINGS)
+        test_settings.OUT_CHR_NOTATION = False
+        instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertFalse(instance.make_variant_id(first_record).startswith('chr'))
-        SETTINGS.OUT_CHR_NOTATION = original_chr
+        test_settings.OUT_CHR_NOTATION = original_chr
 @skipUnlessFocused
 class TestGenesCallFilter(unittest.TestCase):
     """Test GenesCallFilter."""
@@ -199,6 +202,7 @@ class TestVariantsCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("VariantsCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2, "Expected 2 rows from mock_snv.vcf")
         
         self.assertIn('variant_id', result[0])
         self.assertIn('var_type', result[0])
@@ -224,15 +228,17 @@ class TestVariantsTranscriptsCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("VariantsTranscriptsCallFilter.getTableRows() not yet implemented")
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 3, "Expected 3 rows from mock_snv.vcf")
         valid_result = result[1] # sometimes (or with diff config, result 0 will be valid)
-        self.assertIn('transcript', valid_result)
-        self.assertIn('variant', valid_result)
-        self.assertIn('hgvsc', valid_result)
+        
+        self.assertEqual(valid_result['transcript'], 'ENST00000398242.2')
+        if SETTINGS.OUT_CHR_NOTATION:
+            if SETTINGS.HYPEN_VARIANT_NOTATION
+            self.assertEqual(valid_result['variant'], 'chr22-16123121-G-C')
+        else:
+            self.assertEqual(valid_result['variant'], '22-16123121-G-C')
         self.assertEqual(valid_result['hgvsc'], 'ENST00000398242.2:n.402G>C')
 
 @skipUnlessFocused
