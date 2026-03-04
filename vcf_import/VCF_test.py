@@ -142,9 +142,8 @@ class TestGenesCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("GenesCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            self.assertIn('short_name', result[0])
-
+        self.assertEqual(len(result), 2, "Expected 2 rows from mock_snv.vcf")
+        self.assertIn('short_name', result[0])
 
 @skipUnlessFocused
 @focus
@@ -167,15 +166,14 @@ class TestTranscriptsCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("TranscriptsCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            # Check expected keys
-            self.assertIn('transcript_id', result[0])
-            self.assertIn('gene', result[0])
-            self.assertIn('transcript_type', result[0])
-            self.assertIn('tsl', result[0])
-            # Check transcript type is encoded (E or R)
-            self.assertIn(result[0]['transcript_type'], ['.'])
-            self.assertIn(result[1]['transcript_type'], ['E'])
+        
+        self.assertIn('transcript_id', result[0])
+        self.assertIn('gene', result[0])
+        self.assertIn('transcript_type', result[0])
+        self.assertIn('tsl', result[0])
+        # Check transcript type is encoded (E or R)
+        self.assertIn(result[0]['transcript_type'], ['.'])
+        self.assertIn(result[1]['transcript_type'], ['E'])
 
 
 @skipUnlessFocused
@@ -201,11 +199,11 @@ class TestVariantsCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("VariantsCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            self.assertIn('variant_id', result[0])
-            self.assertIn('var_type', result[0])
-            # Check variant type matches
-            self.assertEqual(result[0]['var_type'], 'SNV')
+        
+        self.assertIn('variant_id', result[0])
+        self.assertIn('var_type', result[0])
+        # Check variant type matches
+        self.assertEqual(result[0]['var_type'], 'SNV')
 
 
 @skipUnlessFocused
@@ -231,17 +229,11 @@ class TestVariantsTranscriptsCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("VariantsTranscriptsCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result and len(result) > 1:
-            valid_result = result[1] # sometimes (or with diff config, result 0 will be valid)
-            self.assertIn('transcript', valid_result)
-            self.assertIn('variant', valid_result)
-            self.assertIn('hgvsc', valid_result)
-            self.assertEqual(valid_result['hgvsc'], 'ENST00000398242.2:n.402G>C')
-        elif result:
-            valid_result = result[0]
-            self.assertIn('transcript', valid_result)
-            self.assertIn('variant', valid_result)
-            self.assertIn('hgvsc', valid_result)
+        valid_result = result[1] # sometimes (or with diff config, result 0 will be valid)
+        self.assertIn('transcript', valid_result)
+        self.assertIn('variant', valid_result)
+        self.assertIn('hgvsc', valid_result)
+        self.assertEqual(valid_result['hgvsc'], 'ENST00000398242.2:n.402G>C')
 
 @skipUnlessFocused
 class TestVariantsAnnotationsCallFilter(unittest.TestCase):
@@ -266,12 +258,12 @@ class TestVariantsAnnotationsCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("VariantsAnnotationsCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            self.assertIn('hgvsp', result[0])
-            self.assertIn('sift', result[0])
-            self.assertIn('polyphen', result[0])
-            self.assertIn('transcript', result[0])
-            self.assertIn('variant', result[0])
+        
+        self.assertIn('hgvsp', result[0])
+        self.assertIn('sift', result[0])
+        self.assertIn('polyphen', result[0])
+        self.assertIn('transcript', result[0])
+        self.assertIn('variant', result[0])
 
 @skipUnlessFocused
 class TestVariantsConsequencesCallFilter(unittest.TestCase):
@@ -296,12 +288,12 @@ class TestVariantsConsequencesCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("VariantsConsequencesCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            self.assertIn('severity', result[0])
-            self.assertIn('variant', result[0])
-            self.assertIn('transcript', result[0])
-            self.assertEqual(result[0]['severity'], 40)
-            self.assertEqual(result[1]['severity'], 27)
+        
+        self.assertIn('severity', result[0])
+        self.assertIn('variant', result[0])
+        self.assertIn('transcript', result[0])
+        self.assertEqual(result[0]['severity'], 40)
+        self.assertEqual(result[1]['severity'], 27)
 
 
 @skipUnlessFocused
@@ -330,11 +322,10 @@ class TestSnvsCallFilter(unittest.TestCase):
         
         self.assertIsInstance(result, list)
         
-        if result:
-            self.assertIn('variant', result[0])
-            self.assertIn('type', result[0])
-            self.assertIn('chr', result[0])
-            self.assertIn('pos', result[0])
+        self.assertIn('variant', result[0])
+        self.assertIn('type', result[0])
+        self.assertIn('chr', result[0])
+        self.assertIn('pos', result[0])
 
 
 @skipUnlessFocused
@@ -364,11 +355,11 @@ class TestMtsCallFilter(unittest.TestCase):
         
         self.assertIsInstance(result, list)
         
-        if result:
-            self.assertIn('variant', result[0])
-            self.assertIn('pos', result[0])
-            self.assertIn('ref', result[0])
-            self.assertIn('alt', result[0])
+        
+        self.assertIn('variant', result[0])
+        self.assertIn('pos', result[0])
+        self.assertIn('ref', result[0])
+        self.assertIn('alt', result[0])
 
 
 @skipUnlessFocused
@@ -394,12 +385,11 @@ class TestGenomicBvlFrequenciesCallFilter(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("GenomicBvlFrequenciesCallFilter.getTableRows() not yet implemented")
         self.assertIsInstance(result, list)
-        if result:
-            self.assertIn('variant', result[0])
-            self.assertIn('af_tot', result[0])
-            self.assertIn('ac_tot', result[0])
-            self.assertEqual(result[0]['af_tot'], 0.188889)
-            self.assertEqual(result[0]['hom_tot'], 34)
+        self.assertIn('variant', result[0])
+        self.assertIn('af_tot', result[0])
+        self.assertIn('ac_tot', result[0])
+        self.assertEqual(result[0]['af_tot'], 0.188889)
+        self.assertEqual(result[0]['hom_tot'], 34)
 
 @skipUnlessFocused
 class TestMtBvlFrequenciesCallFilter(unittest.TestCase):
@@ -427,11 +417,10 @@ class TestMtBvlFrequenciesCallFilter(unittest.TestCase):
         
         self.assertIsInstance(result, list)
         
-        if result:
-            self.assertIn('variant', result[0])
-            self.assertIn('an', result[0])
-            self.assertIn('ac_hom', result[0])
-            self.assertIn('ac_het', result[0])
+        self.assertIn('variant', result[0])
+        self.assertIn('an', result[0])
+        self.assertIn('ac_hom', result[0])
+        self.assertIn('ac_het', result[0])
 
 if __name__ == '__main__':
     unittest.main()
