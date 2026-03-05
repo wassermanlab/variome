@@ -1,4 +1,5 @@
 from venv import logger
+
 from .CallFilter import CallFilter
 from typing import List, Dict, Any, Optional
 
@@ -19,7 +20,6 @@ class SnvsCallFilter(CallFilter):
             if variant in seen:
                 continue
             seen.add(variant)
-            chrom = record.CHROM.replace("chr", "") if not self.settings.CHR_NOTATION else record.CHROM
             pos = record.POS
             ref = record.REF
             alt = record.ALT[0].value  # assuming single ALT allele
@@ -104,7 +104,7 @@ class SnvsCallFilter(CallFilter):
                 else:
                     max_splice_ai = NA
             window = 25
-            chrom_noprefix = chrom.replace("chr", "") if chrom.startswith("chr") else chrom
+            chrom_noprefix = record.CHROM.replace("chr", "")
             start = max(1, pos - window)
             end = pos + window
             ucsc_url = f"https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&highlight=hg38.{chrom_noprefix}%3A{pos}-{pos}&position={chrom_noprefix}%3A{start}-{end}"
@@ -121,7 +121,7 @@ class SnvsCallFilter(CallFilter):
                 'variant': variant,
                 'type': variant_class,
                 'length': var_length,
-                'chr': chrom,
+                'chr': chrom_noprefix,#"chr"+chrom_noprefix if self.settings.OUT_CHR_NOTATION else chrom_noprefix,
                 'pos': pos,
                 'ref': ref,
                 'alt': alt,

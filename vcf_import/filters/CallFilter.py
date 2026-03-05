@@ -192,8 +192,7 @@ class CallFilter(ABC):
         return record.INFO.get(field_name, fallback)
 
     def make_variant_id(self, record: vcfpy.Record) -> str:
-        HYPEN_VARIANT_NOTATION = self.settings.HYPEN_VARIANT_NOTATION
-        CHR_NOTATION = self.settings.CHR_NOTATION
+        OUT_USEHYPHENS = self.settings.OUT_USEHYPHENS
         OUT_CHR_NOTATION = self.settings.OUT_CHR_NOTATION
 
         """
@@ -202,20 +201,19 @@ class CallFilter(ABC):
         Args:
             record: VCF record object
         """
-        if HYPEN_VARIANT_NOTATION:
-            if CHR_NOTATION:
-                chrom = record.CHROM
-            else:
-                chrom = record.CHROM.replace("chr", "")
-            pos = record.POS
-            ref = record.REF
-            alt = record.ALT[0].value  # assuming single ALT allele
-
-            if OUT_CHR_NOTATION:
-                chrom = "chr"+ chrom
+        if OUT_CHR_NOTATION:
+            chrom = "chr"+ record.CHROM.replace("chr", "")
+        else:
+            chrom = record.CHROM.replace("chr", "")
+        pos = record.POS
+        ref = record.REF
+        alt = record.ALT[0].value  # assuming single ALT allele
+        if OUT_USEHYPHENS:
+            # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"
         else:
-            variant_id = record.ID[0]
+            # VCF standard seems to store using _ as separators 
+            variant_id = f"{chrom}_{pos}_{ref}_{alt}"
         return variant_id
     @abstractmethod
     def getTableRows(self) -> List[Dict[str, Any]]:

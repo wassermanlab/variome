@@ -160,7 +160,7 @@ Gnomad information is left out currently because it is easily fetched dynamicall
 ## Importing a VCF
 
 See the environment variable examples in the bottom of .env-sample and set accordingly:
-VCF_FILE, NA, CHR_NOTATION, HYPEN_VARIANT_NOTATION, SEVERITIES_TSV_PATH, CADD_DAMAGING_THRESHOLD, DEFAULT_TRANSCRIPT_SOURCE accordingly
+VCF_FILE, NA, OUT_CHR_NOTATION, OUT_USEHYPHENS, SEVERITIES_TSV_PATH, CADD_DAMAGING_THRESHOLD, DEFAULT_TRANSCRIPT_SOURCE accordingly
 ```
 uv sync
 uv run -m vcf_import.VCF_publish

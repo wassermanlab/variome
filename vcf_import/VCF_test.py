@@ -111,19 +111,20 @@ class TestBaseFilter(unittest.TestCase):
         self.assertEqual(records[4].POS, 1703)
 
 
-    def test_chr_parameter(self):
+    def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)
-        original_chr = test_settings.OUT_CHR_NOTATION
         test_settings.OUT_CHR_NOTATION = True
+        test_settings.OUT_USEHYPHENS = True
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
-        self.assertTrue(instance.make_variant_id(first_record).startswith('chr'))
+        self.assertEqual(instance.make_variant_id(first_record),'chr1-100000-A-G')
 
         test_settings.OUT_CHR_NOTATION = False
+        test_settings.OUT_USEHYPHENS = False
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
-        self.assertFalse(instance.make_variant_id(first_record).startswith('chr'))
-        test_settings.OUT_CHR_NOTATION = original_chr
+        self.assertEqual(instance.make_variant_id(first_record),'1_100000_A_G')
+     
 @skipUnlessFocused
 class TestGenesCallFilter(unittest.TestCase):
     """Test GenesCallFilter."""
@@ -232,13 +233,8 @@ class TestVariantsTranscriptsCallFilter(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3, "Expected 3 rows from mock_snv.vcf")
         valid_result = result[1] # sometimes (or with diff config, result 0 will be valid)
-        
+     
         self.assertEqual(valid_result['transcript'], 'ENST00000398242.2')
-        if SETTINGS.OUT_CHR_NOTATION:
-            if SETTINGS.HYPEN_VARIANT_NOTATION
-            self.assertEqual(valid_result['variant'], 'chr22-16123121-G-C')
-        else:
-            self.assertEqual(valid_result['variant'], '22-16123121-G-C')
         self.assertEqual(valid_result['hgvsc'], 'ENST00000398242.2:n.402G>C')
 
 @skipUnlessFocused
@@ -315,8 +311,7 @@ class TestSnvsCallFilter(unittest.TestCase):
         self.vcf_files = get_fixture_path('mock_snv.vcf')
         self.filter = SnvsCallFilter(
             self.vcf_files,
-            SETTINGS,
-            assembly='GRCh37'
+            SETTINGS
         )
     
     def test_getTableRows_output_structure(self):
@@ -348,8 +343,7 @@ class TestMtsCallFilter(unittest.TestCase):
         self.vcf_files = get_fixture_path('mock_mt.vcf')
         self.filter = MtsCallFilter(
             self.vcf_files,
-            SETTINGS,
-            assembly='GRCh37'
+            SETTINGS
         )
     
     def test_getTableRows_output_structure(self):

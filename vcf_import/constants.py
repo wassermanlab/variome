@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 class Settings:
     VCF_FILE: str
     NA: str
-    CHR_NOTATION: bool
-    HYPEN_VARIANT_NOTATION: bool
+    OUT_USEHYPHENS: bool
     DEFAULT_TRANSCRIPT_SOURCE: str
     CADD_DAMAGING_THRESHOLD: int
     SEVERITIES_TSV_PATH: str
@@ -27,23 +26,22 @@ class Settings:
 SETTINGS = Settings(
     VCF_FILE=os.getenv("VCF_FILE", None),
     NA=os.getenv("NA", "."),
-    CHR_NOTATION=os.getenv("CHR_NOTATION", "False").lower() in ("true", "1", "t"),
-    HYPEN_VARIANT_NOTATION=os.getenv("HYPEN_VARIANT_NOTATION", "True").lower() in ("true", "1", "t"),
+    OUT_CHR_NOTATION=os.getenv("OUT_CHR_NOTATION", "False").lower() in ("true", "1", "t"),
+    OUT_USEHYPHENS=os.getenv("OUT_USEHYPHENS", "True").lower() in ("true", "1", "t"),
     DEFAULT_TRANSCRIPT_SOURCE=os.getenv("DEFAULT_TRANSCRIPT_SOURCE", "E"),
     CADD_DAMAGING_THRESHOLD=int(os.getenv("CADD_DAMAGING_THRESHOLD", 20)),
     SEVERITIES_TSV_PATH=os.getenv("SEVERITIES_TSV_PATH", "data/fixtures/severities.tsv"),
     HASH_COMPARE=os.getenv("HASH_COMPARE", None),
-    OUT_CHR_NOTATION=os.getenv("OUT_CHR_NOTATION", "False").lower() in ("true", "1", "t"),
     RANGES=os.getenv("RANGES", None),
 )
-
+logger.info(SETTINGS)
 logger.info(f"""
 
 VCF Import settings:
   VCF_FILE={SETTINGS.VCF_FILE},
   NA={SETTINGS.NA},
-  CHR_NOTATION={SETTINGS.CHR_NOTATION},
-  HYPEN_VARIANT_NOTATION={SETTINGS.HYPEN_VARIANT_NOTATION},
+  OUT_CHR_NOTATION={SETTINGS.OUT_CHR_NOTATION},
+  OUT_USEHYPHENS={SETTINGS.OUT_USEHYPHENS},
   DEFAULT_TRANSCRIPT_SOURCE={SETTINGS.DEFAULT_TRANSCRIPT_SOURCE},
   CADD_DAMAGING_THRESHOLD={SETTINGS.CADD_DAMAGING_THRESHOLD},
   SEVERITIES_TSV_PATH={SETTINGS.SEVERITIES_TSV_PATH},
