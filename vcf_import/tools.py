@@ -1,4 +1,8 @@
 from vcf_import.constants import SETTINGS
+from vcf_import.setup_logs import setup_logging
+
+
+setup_logging()
 
 def validate_get(v, index):
     NA = SETTINGS.NA

@@ -15,6 +15,7 @@ import io
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 
+
 logger = logging.getLogger(__name__)
 
 class CallFilter(ABC):
@@ -192,7 +193,7 @@ class CallFilter(ABC):
         return record.INFO.get(field_name, fallback)
 
     def make_variant_id(self, record: vcfpy.Record) -> str:
-        OUT_HYPENS = self.settings.OUT_HYPENS
+        OUT_HYPHENS = self.settings.OUT_HYPHENS
         OUT_CHR = self.settings.OUT_CHR
 
         """
@@ -208,7 +209,7 @@ class CallFilter(ABC):
         pos = record.POS
         ref = record.REF
         alt = record.ALT[0].value  # assuming single ALT allele
-        if OUT_HYPENS:
+        if OUT_HYPHENS:
             # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"
         else:

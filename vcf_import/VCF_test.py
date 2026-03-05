@@ -23,9 +23,9 @@ import unittest
 import os
 import copy
 
-from pathlib import Path
-
 from vcf_import.constants import SETTINGS
+from vcf_import.setup_logs import setup_logging
+setup_logging()
 
 # Set to True to enable focus mode - only focused tests will run
 FOCUS_MODE = os.environ.get('FOCUS_TEST', 'false').lower() == 'true'
@@ -114,13 +114,13 @@ class TestBaseFilter(unittest.TestCase):
     def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)
         test_settings.OUT_CHR = True
-        test_settings.OUT_HYPENS = True
+        test_settings.OUT_HYPHENS = True
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertEqual(instance.make_variant_id(first_record),'chr1-100000-A-G')
 
         test_settings.OUT_CHR = False
-        test_settings.OUT_HYPENS = False
+        test_settings.OUT_HYPHENS = False
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertEqual(instance.make_variant_id(first_record),'1_100000_A_G')

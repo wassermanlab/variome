@@ -8,9 +8,8 @@ into database tables
 from typing import Dict, List, Any, Optional
 
 import logging
+from vcf_import.setup_logs import setup_logging
 
-import gzip
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 from pathlib import Path
 import os
 import io
@@ -25,6 +24,7 @@ from vcf_import.constants import SETTINGS
 if not SETTINGS.VCF_FILE:
     raise ValueError("VCF_FILE environment variable is not set. Please set it to the path of the input VCF file.")
 
+setup_logging()
 logger = logging.getLogger(__name__)
 
 from vcf_import.filters.GenesCallFilter import GenesCallFilter
