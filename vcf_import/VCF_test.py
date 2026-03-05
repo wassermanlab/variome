@@ -141,10 +141,7 @@ class TestGenesCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("GenesCallFilter.getTableRows() not yet implemented")
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2, "Expected 2 rows from mock_snv.vcf")
         self.assertIn('short_name', result[0])
@@ -165,10 +162,7 @@ class TestTranscriptsCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("TranscriptsCallFilter.getTableRows() not yet implemented")
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         
         self.assertIn('transcript_id', result[0])
@@ -198,10 +192,8 @@ class TestVariantsCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("VariantsCallFilter.getTableRows() not yet implemented")
+        
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2, "Expected 2 rows from mock_snv.vcf")
         
@@ -255,10 +247,8 @@ class TestVariantsAnnotationsCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("VariantsAnnotationsCallFilter.getTableRows() not yet implemented")
+        
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         
         self.assertIn('hgvsp', result[0])
@@ -285,10 +275,8 @@ class TestVariantsConsequencesCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("VariantsConsequencesCallFilter.getTableRows() not yet implemented")
+        
+        result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         
         self.assertIn('severity', result[0])
@@ -316,10 +304,8 @@ class TestSnvsCallFilter(unittest.TestCase):
     
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("SnvsCallFilter.getTableRows() not yet implemented")
+        
+        result = list(self.filter.getTableRows())
         
         self.assertIsInstance(result, list)
         
@@ -329,6 +315,36 @@ class TestSnvsCallFilter(unittest.TestCase):
         self.assertIn('pos', result[0])
 
 
+
+@skipUnlessFocused
+class TestGenomicBvlFrequenciesCallFilter(unittest.TestCase):
+    """Test GenomicBvlFrequenciesCallFilter."""
+    
+    # Class variables initialized to None
+    filter = None
+    vcf_files = None
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.vcf_files = get_fixture_path('mock_snv.vcf')
+        self.filter = GenomicBvlFrequenciesCallFilter(
+            self.vcf_files,
+            SETTINGS
+        )
+    
+    def test_getTableRows_output_structure(self):
+        """Test that getTableRows returns correct structure."""
+        
+        result = list(self.filter.getTableRows())
+        self.assertIsInstance(result, list)
+        self.assertIn('variant', result[0])
+        self.assertIn('af_tot', result[0])
+        self.assertIn('ac_tot', result[0])
+        self.assertEqual(result[0]['af_tot'], 0.188889)
+        self.assertEqual(result[0]['hom_tot'], 34)
+
+
+# Mitochondrial (not yet implemented)
 @skipUnlessFocused
 class TestMtsCallFilter(unittest.TestCase):
     """Test MtsCallFilter."""
@@ -360,36 +376,6 @@ class TestMtsCallFilter(unittest.TestCase):
         self.assertIn('pos', result[0])
         self.assertIn('ref', result[0])
         self.assertIn('alt', result[0])
-
-
-@skipUnlessFocused
-class TestGenomicBvlFrequenciesCallFilter(unittest.TestCase):
-    """Test GenomicBvlFrequenciesCallFilter."""
-    
-    # Class variables initialized to None
-    filter = None
-    vcf_files = None
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.vcf_files = get_fixture_path('mock_snv.vcf')
-        self.filter = GenomicBvlFrequenciesCallFilter(
-            self.vcf_files,
-            SETTINGS
-        )
-    
-    def test_getTableRows_output_structure(self):
-        """Test that getTableRows returns correct structure."""
-        try:
-            result = list(self.filter.getTableRows())
-        except NotImplementedError:
-            self.skipTest("GenomicBvlFrequenciesCallFilter.getTableRows() not yet implemented")
-        self.assertIsInstance(result, list)
-        self.assertIn('variant', result[0])
-        self.assertIn('af_tot', result[0])
-        self.assertIn('ac_tot', result[0])
-        self.assertEqual(result[0]['af_tot'], 0.188889)
-        self.assertEqual(result[0]['hom_tot'], 34)
 
 @skipUnlessFocused
 class TestMtBvlFrequenciesCallFilter(unittest.TestCase):
