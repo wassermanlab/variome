@@ -113,14 +113,14 @@ class TestBaseFilter(unittest.TestCase):
 
     def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)
-        test_settings.OUT_CHR_NOTATION = True
-        test_settings.OUT_USEHYPHENS = True
+        test_settings.OUT_CHR = True
+        test_settings.OUT_HYPENS = True
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertEqual(instance.make_variant_id(first_record),'chr1-100000-A-G')
 
-        test_settings.OUT_CHR_NOTATION = False
-        test_settings.OUT_USEHYPHENS = False
+        test_settings.OUT_CHR = False
+        test_settings.OUT_HYPENS = False
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertEqual(instance.make_variant_id(first_record),'1_100000_A_G')

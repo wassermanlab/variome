@@ -121,7 +121,7 @@ class SnvsCallFilter(CallFilter):
                 'variant': variant,
                 'type': variant_class,
                 'length': var_length,
-                'chr': chrom_noprefix,#"chr"+chrom_noprefix if self.settings.OUT_CHR_NOTATION else chrom_noprefix,
+                'chr': chrom_noprefix,#"chr"+chrom_noprefix if self.settings.OUT_CHR else chrom_noprefix,
                 'pos': pos,
                 'ref': ref,
                 'alt': alt,

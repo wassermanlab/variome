@@ -192,8 +192,8 @@ class CallFilter(ABC):
         return record.INFO.get(field_name, fallback)
 
     def make_variant_id(self, record: vcfpy.Record) -> str:
-        OUT_USEHYPHENS = self.settings.OUT_USEHYPHENS
-        OUT_CHR_NOTATION = self.settings.OUT_CHR_NOTATION
+        OUT_HYPENS = self.settings.OUT_HYPENS
+        OUT_CHR = self.settings.OUT_CHR
 
         """
         Helper method to construct a variant ID from VCF record fields.
@@ -201,14 +201,14 @@ class CallFilter(ABC):
         Args:
             record: VCF record object
         """
-        if OUT_CHR_NOTATION:
+        if OUT_CHR:
             chrom = "chr"+ record.CHROM.replace("chr", "")
         else:
             chrom = record.CHROM.replace("chr", "")
         pos = record.POS
         ref = record.REF
         alt = record.ALT[0].value  # assuming single ALT allele
-        if OUT_USEHYPHENS:
+        if OUT_HYPENS:
             # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"
         else:
