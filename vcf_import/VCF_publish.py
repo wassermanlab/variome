@@ -16,6 +16,7 @@ import io
 import vcfpy
 import hashlib
 import json
+import gzip
 import dotenv
 from datetime import datetime
 
