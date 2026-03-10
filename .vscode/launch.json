@@ -63,12 +63,13 @@
             "type": "debugpy",
             "request": "launch",
             "module": "pytest",
-            "args": ["vcf_import/VCF_test.py"],
+            "args": [
+                "-s",
+                "--log-cli-level=DEBUG",
+                "vcf_import/VCF_test.py"
+            ],
             "console": "integratedTerminal",
             "justMyCode": false,
-            "env": {
-                "FOCUS": "true"
-            }
         },
         {
             "name": "Python Debugger: Django",

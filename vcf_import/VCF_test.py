@@ -176,26 +176,26 @@ class TestBaseFilter(FocusableTestCase):
         def flaky_open(file, mode='r', *args, **kwargs):
             if os.path.abspath(file) == os.path.abspath(vcf_path) and 'b' in mode:
                 call_count['count'] += 1
-                if call_count['count'] == 12:  # Simulate file disappearance on the 9th call
+                #print(f"call count for {file}: {call_count['count']}")
+                if call_count['count'] < 3:  # Simulate file disappearance on the 9th call
+                    #print(f"flaky_open called for {file} count {call_count['count']}")
                     raise FileNotFoundError("Simulated file disappearance")
                 else:
+                    #print(f"real open called for {file} count {call_count['count']}")
                     return real_open(file, mode, *args, **kwargs)
             return real_open(file, mode, *args, **kwargs)
 
         # Patch open only in the CallFilter module context
         with mock.patch('builtins.open', side_effect=flaky_open):
-            # Patch time.sleep to avoid actual delay
             with mock.patch('time.sleep', return_value=None):
-                # Patch logger to suppress error output
-                with mock.patch('vcf_import.filters.CallFilter.logger'):
-                    # Now instantiate the filter, which will trigger file open
-                    try:
-                        instance = self.MockFilter(vcf_path, test_settings)
-                        # If we get here, the retry worked
-                        self.assertIsInstance(instance, CallFilter)
+                # Now instantiate the filter, which will trigger file open
+                try:
+                    instance = self.MockFilter(vcf_path, test_settings)
+                    # If we get here, the retry worked
+                    self.assertIsInstance(instance, CallFilter)
 #                        self.assertGreaterEqual(call_count['count'], 2)
-                    except FileNotFoundError:
-                        self.fail("CallFilter did not retry loading the VCF file after disappearance.")
+                except FileNotFoundError:
+                    self.fail("CallFilter did not retry loading the VCF file after disappearance.")
      
 class TestGenesCallFilter(FocusableTestCase):
     """Test GenesCallFilter."""

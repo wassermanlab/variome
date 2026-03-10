@@ -17,7 +17,14 @@ import gzip
 import io
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type, before_sleep_log
 
+#file open retries
+ATTEMPTS = 12
+INTERVAL = 40
+
+def wait_with_sleep(retry_state):
+    return INTERVAL
 
 logger = logging.getLogger(__name__)
 
@@ -33,45 +40,36 @@ class CallFilter(ABC):
         self._init_vcf_header_and_csq()
 
 
-    from contextlib import contextmanager
-    @contextmanager
-    def stream_with_retries(self, file_path, retries=10, delay=1):
-        last_exc = None
-        for attempt in range(retries):
-            try:
-                if file_path.endswith('.gz'):
-                    gz = gzip.open(file_path, 'rb')
-                    f = io.TextIOWrapper(gz, encoding='utf-8', errors='replace')
-                    try:
-                        yield f
-                    finally:
-                        f.close()
-                        gz.close()
-                else:
-                    raw = open(file_path, 'rb')
-                    f = io.TextIOWrapper(raw, encoding='utf-8', errors='replace')
-                    try:
-                        yield f
-                    finally:
-                        f.close()
-                        raw.close()
-                return
-            except FileNotFoundError as e:
-                last_exc = e
-                logger.warning(f"File not found: {file_path}. Retrying in {delay} seconds... (attempt {attempt + 1}/{retries})")
-                sleep(delay)
-            except Exception as e:
-                last_exc = e
-                logger.error(f"Error opening file: {e}. Retrying in {delay} seconds... (attempt {attempt + 1}/{retries})")
-                sleep(delay)
-        raise FileNotFoundError(f"Failed to open file after {retries} attempts: {file_path}") from last_exc
 
+    @retry(
+        stop=stop_after_attempt(ATTEMPTS),
+        wait=wait_with_sleep,
+        retry=retry_if_exception_type(FileNotFoundError),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
+    def stream_with_retries(self, file_path):
+        logger.info(f"stream w retries VCF file: {file_path}")
+
+        if file_path.endswith('.gz'):
+            gz = gzip.open(file_path, 'rb')
+            return io.TextIOWrapper(gz, encoding='utf-8', errors='replace')
+        else:
+            return io.TextIOWrapper(open(file_path, 'rb'), encoding='utf-8', errors='replace')
+
+    @retry(
+        stop=stop_after_attempt(ATTEMPTS),
+        wait=wait_with_sleep,
+        retry=retry_if_exception_type(FileNotFoundError),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
     def _init_vcf_header_and_csq(self):
+        
         child_class_name = self.__class__.__name__
         logger.info(f"booting up {child_class_name}...")
         #read severity table file
         severity_table_path = self.settings.SEVERITIES_TSV_PATH
         try:
+            logger.info(f"Reading severity table from {severity_table_path}...")
             with open(severity_table_path, "r") as f:
                 for line in f.readlines()[1:]:
                     parts = line.strip().split("\t")
