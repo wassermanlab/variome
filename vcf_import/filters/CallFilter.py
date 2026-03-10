@@ -4,6 +4,9 @@ CallFilter base class and global VCF options.
 
 
 # Remove direct imports of config constants
+
+from time import sleep
+
 from vcf_import.tools import validate_get
 
 import vcfpy
@@ -26,7 +29,42 @@ class CallFilter(ABC):
         self.vcf_header = None
         self._vcf_file_path = vcf_file_path
         self.settings = settings
+
         self._init_vcf_header_and_csq()
+
+
+    from contextlib import contextmanager
+    @contextmanager
+    def stream_with_retries(self, file_path, retries=10, delay=1):
+        last_exc = None
+        for attempt in range(retries):
+            try:
+                if file_path.endswith('.gz'):
+                    gz = gzip.open(file_path, 'rb')
+                    f = io.TextIOWrapper(gz, encoding='utf-8', errors='replace')
+                    try:
+                        yield f
+                    finally:
+                        f.close()
+                        gz.close()
+                else:
+                    raw = open(file_path, 'rb')
+                    f = io.TextIOWrapper(raw, encoding='utf-8', errors='replace')
+                    try:
+                        yield f
+                    finally:
+                        f.close()
+                        raw.close()
+                return
+            except FileNotFoundError as e:
+                last_exc = e
+                logger.warning(f"File not found: {file_path}. Retrying in {delay} seconds... (attempt {attempt + 1}/{retries})")
+                sleep(delay)
+            except Exception as e:
+                last_exc = e
+                logger.error(f"Error opening file: {e}. Retrying in {delay} seconds... (attempt {attempt + 1}/{retries})")
+                sleep(delay)
+        raise FileNotFoundError(f"Failed to open file after {retries} attempts: {file_path}") from last_exc
 
     def _init_vcf_header_and_csq(self):
         child_class_name = self.__class__.__name__
@@ -97,15 +135,12 @@ class CallFilter(ABC):
                 for record in reader:
                     yield record
 
-        if self._vcf_file_path.endswith('.gz'):
-            with gzip.open(self._vcf_file_path, 'rb') as gz:
-                with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
-                    vcf_reader = vcfpy.Reader(stream=f)
-                    yield from yield_records_in_ranges(vcf_reader)
-        else:
-            with io.TextIOWrapper(open(self._vcf_file_path, 'rb'), encoding='utf-8', errors='replace') as f:
-                vcf_reader = vcfpy.Reader(stream=f)
-                yield from yield_records_in_ranges(vcf_reader)
+        with self.stream_with_retries(self._vcf_file_path) as stream:
+            yield from yield_records_in_ranges(vcfpy.Reader(stream=stream))
+        
+
+
+
         
     def describe(self) -> str:
         description = ""
@@ -122,42 +157,6 @@ class CallFilter(ABC):
     
     def load_vcf_file(self, file, type = "SNV"):
         return []
-        def read_vcf(reader: vcfpy.Reader):
-            self.vcf_header = reader.header
-                
-            if type == "SNV":
-            
-                csq = reader.header.get_info_field_info("CSQ")
-                csq_elements = csq.description.split("Format: ")[1]
-                self.csq_fields = csq_elements.split("|")
-                self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
-                
-                for record in reader:
-                    try:
-                        self.vcf_records.append(record)
-                    except Exception as e:
-                        logger.error(f"Error processing record {record} in file {file}: {e}")
-                        
-            elif type == "MT":
-                # ????? TBA
-                exit()
-                
-                self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
-
-                for record in reader:    
-                    self.vcf_records.append(record)
-                
-        if file.endswith('.gz'):
-            with gzip.open(file, 'rb') as gz:
-                with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:  # or errors='ignore'
-                    vcf_reader = vcfpy.Reader(stream=f)
-                    read_vcf(vcf_reader)
-                        
-        else:
-            with io.TextIOWrapper(open(file, 'rb'), encoding='utf-8', errors='replace') as f:
-                vcf_reader = vcfpy.Reader(stream=f)
-                read_vcf(vcf_reader)
-        
     
     def get_csq_values(self, record: vcfpy.Record, field_name: str) -> List[str]:
         """
