@@ -104,8 +104,15 @@ class TestBaseFilter(FocusableTestCase):
         def load_vcf_file(self, vcf_file_path: str):
             super().load_vcf_file(vcf_file_path)
         def getTableRows(self):
-            # stubbed, not needed because just testing internal filter funcs
-            return None
+            # Return a simple dict for each variant: chrom, pos, id
+            rows = []
+            for rec in self.vcf_record_stream():
+                rows.append({
+                    'chrom': rec.CHROM,
+                    'pos': rec.POS,
+                    'id': rec.ID
+                })
+            return rows
     def setUp(self):
         self.testInstance = self.MockFilter(get_fixture_path('mock_snv.vcf'), SETTINGS)
         
@@ -145,6 +152,61 @@ class TestBaseFilter(FocusableTestCase):
         self.assertEqual(records[4].POS, 1703)
 
 
+
+    def test_stream_file_disappearance_mid_stream(self):
+        """Simulate file disappearance during streaming of VCF records and check output sequence."""
+        import tempfile
+        import shutil
+        import threading
+        import time
+        from vcf_import.filters.CallFilter import CallFilter
+        import vcfpy
+
+        # Generate a large VCF file in /tmp
+        tmp_dir = tempfile.gettempdir()
+        vcf_path = os.path.join(tmp_dir, 'mock-temp.vcf')
+        num_records = 5000000
+        with open(get_fixture_path('mock_snv.vcf'), 'r') as f:
+            lines = f.readlines()
+        header_lines = [l for l in lines if l.startswith('#')]
+        record_line = [l for l in lines if not l.startswith('#')][0]
+        with open(vcf_path, 'w') as f:
+            for hl in header_lines:
+                f.write(hl)
+            chrom, pos, vid, ref, alt, qual, filter, info = record_line.strip().split('\t')[:8]
+            for i in range(num_records):
+                f.write(f"{chrom}\t{int(pos)+i}\t{vid}{i}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\n")
+
+        # Settings
+        test_settings = copy.deepcopy(SETTINGS)
+
+        # Function to rename file after delay
+        def rename_file():
+            time.sleep(0.02)
+            shutil.move(vcf_path, vcf_path + '.missing')
+
+        # Start renamer thread
+        renamer = threading.Thread(target=rename_file)
+        renamer.start()
+
+        # Start streaming records and collecting table rows
+        instance = self.MockFilter(vcf_path, test_settings)
+        try:
+            rows = instance.getTableRows()
+            # Check that the rows are in correct sequence as generated
+            for i, row in enumerate(rows):
+                self.assertEqual(row['chrom'], chrom, " chromosome is wrong")
+                self.assertEqual(row['pos'], int(pos) + i, " position is wrong")
+                self.assertEqual(row['id'], [vid + str(i)], " ID is wrong")
+#        except Exception as e:
+#            print(f"Exception during streaming: {e}")
+        finally:
+            # Clean up
+            if os.path.exists(vcf_path):
+                os.remove(vcf_path)
+            if os.path.exists(vcf_path + '.missing'):
+                os.remove(vcf_path + '.missing')
+            renamer.join()
     def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)
         test_settings.OUT_CHR = True
