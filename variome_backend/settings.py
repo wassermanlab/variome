@@ -239,6 +239,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Session timeout configuration (Default, 8 hours)
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 8*60*60))
+
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 

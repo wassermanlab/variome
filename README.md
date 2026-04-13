@@ -21,7 +21,7 @@ uv sync
 - Setup pip based on your OS and preferred Python environment solution (eg, venv or similar)
 - run:
 ```
-pip install -R requirements.lock
+pip install -r requirements.lock
 ```
 
 #### Option 3 - Conda and Pip
