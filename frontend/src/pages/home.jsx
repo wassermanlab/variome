@@ -22,64 +22,58 @@ import SearchProvider from "../components/SearchProvider";
 import Link from "../components/Link";
 import Api from "../Api";
 
-import { HomeContent } from "../ContentParsing";
-import {HomeImageStyle} from "../../public/ContentConfiguration";
+import { useContent } from "../ContentParsing";
 
 const PREFIX = "Home";
 const classes = {
   root: `${PREFIX}-root`,
-  cta: `${PREFIX}-cta`
+  cta: `${PREFIX}-cta`,
 };
 const Root = styled("div")(({ theme }) => ({
   [`&.${classes.root}`]: {
     display: "flex",
     alignItems: "center",
-    backgroundColor: theme.palette.primary.main
+    backgroundColor: theme.palette.primary.main,
   },
   [`& .${classes.cta}`]: {
-    borderRadius: theme.shape.radius
-  }
+    borderRadius: theme.shape.radius,
+  },
 }));
-
-
 
 export default function Home({
   user,
   pageTitle,
   setPageTitle,
   message,
-  examples
+  examples,
 }) {
+  const { homeContent, homeImageStyle } = useContent();
 
   return (
     <Container maxWidth="xl">
       <Box sx={{ display: "flex" }}>
-        <Grid
-          container
-          direction="row"
-          spacing={2}
-        >
-          <Grid item >
-            <Markdown >{HomeContent["full title"]}</Markdown>
+        <Grid container direction="row" spacing={2}>
+          <Grid item>
+            <Markdown>{homeContent["full title"]}</Markdown>
           </Grid>
-          {!_.isEmpty(message) && <>
-            <Grid item xs={5}>
-              <Alert severity="info">{message}</Alert>
-            </Grid>
-          </>
-          }
+          {!_.isEmpty(message) && (
+            <>
+              <Grid item xs={5}>
+                <Alert severity="info">{message}</Alert>
+              </Grid>
+            </>
+          )}
 
-          <Grid item xs={12} >
+          <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Grid container gap="1em" justifyContent={"space-between"}>
                   <Grid item xs={5}>
-                    <Typography
-                      variant="div"
-                      sx={{ fontWeight: "light" }}
-                    > <Markdown>{HomeContent.intro}</Markdown>
+                    <Typography variant="div" sx={{ fontWeight: "light" }}>
+                      {" "}
+                      <Markdown>{homeContent.intro}</Markdown>
                     </Typography>
-                      {/*}
+                    {/*}
                     <Link href="/" target="_blank" rel="noopener noreferrer">
                       <Button
                         size="large"
@@ -93,12 +87,20 @@ export default function Home({
                       </Button>
                     </Link>{*/}
                   </Grid>
-                  <Grid item xs={6} justifyContent={"center"} flexGrow={2} >
-                    <Markdown components={{
-                      p: ({ node, ...props }) => <div style={HomeImageStyle} className="home-image" {...props} />
-                    }}>
-                        {HomeContent.image}
-                      </Markdown>
+                  <Grid item xs={6} justifyContent={"center"} flexGrow={2}>
+                    <Markdown
+                      components={{
+                        p: ({ node, ...props }) => (
+                          <div
+                            style={homeImageStyle}
+                            className="home-image"
+                            {...props}
+                          />
+                        ),
+                      }}
+                    >
+                      {homeContent.image}
+                    </Markdown>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -117,7 +119,11 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
+                        <SearchInput
+                          inputElementId="home-search"
+                          variant="standard"
+                          sx={{ minWidth: "30vw" }}
+                        />
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>
@@ -215,7 +221,7 @@ export default function Home({
           bgcolor: "#0F3057",
           zIndex: 1000,
           marginTop: "30px",
-          padding: "20px"
+          padding: "20px",
         }}
       >
         <Box
@@ -225,15 +231,23 @@ export default function Home({
             alignItems: "center",
             p: 2,
             flexWrap: "wrap",
-            gap: "30px"
+            gap: "30px",
           }}
         >
-            <Markdown components={{
-                      p: ({ node, ...props }) => <div style={{width:"250px"}} className="home-image" {...props} />
-                    }}>
-                        {HomeContent["footer image"]}
-                      </Markdown>
-                      {/*}
+          <Markdown
+            components={{
+              p: ({ node, ...props }) => (
+                <div
+                  style={{ width: "250px" }}
+                  className="home-image"
+                  {...props}
+                />
+              ),
+            }}
+          >
+            {homeContent["footer image"]}
+          </Markdown>
+          {/*}
           <Typography variant="h5" component="div" sx={{ color: "white" }}>
             <Link to="/about" color="inherit">
               About

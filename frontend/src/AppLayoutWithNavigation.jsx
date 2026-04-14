@@ -19,7 +19,7 @@ import {
   Select,
   MenuItem,
   Button,
-  Menu
+  Menu,
   //    InputBase,
   //    Button,
   //   Autocomplete,
@@ -37,14 +37,14 @@ import {
   ChevronRight,
   Star,
   Login,
-  Person
+  Person,
 } from "@mui/icons-material";
 
 import Link from "./components/Link";
-import VariomeToolbar from "./components/VariomeToolbar"
+import VariomeToolbar from "./components/VariomeToolbar";
 
 const drawerWidth = 240;
-import {Content} from "./ContentParsing";
+import { useContent } from "./ContentParsing";
 
 const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
@@ -54,34 +54,34 @@ const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
     padding: theme.spacing(3),
     transition: theme.transitions.create("margin", {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen
+      duration: theme.transitions.duration.leavingScreen,
     }),
     marginLeft: `-${drawerWidth}px`,
     ...(open && {
       transition: theme.transitions.create("margin", {
         easing: theme.transitions.easing.easeOut,
-        duration: theme.transitions.duration.enteringScreen
+        duration: theme.transitions.duration.enteringScreen,
       }),
-      marginLeft: 0
-    })
-  })
+      marginLeft: 0,
+    }),
+  }),
 );
 
 const TopBar = styled(AppBar, {
-  shouldForwardProp: (prop) => prop !== "open"
+  shouldForwardProp: (prop) => prop !== "open",
 })(({ theme, open }) => ({
   transition: theme.transitions.create(["margin", "width"], {
     easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen
+    duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
     width: `calc(100% - ${drawerWidth}px)`,
     marginLeft: `${drawerWidth}px`,
     transition: theme.transitions.create(["margin", "width"], {
       easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen
-    })
-  })
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
 }));
 
 const DrawerHeader = styled("div")(({ theme }) => ({
@@ -91,12 +91,13 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   //paddingTop: "2%",
   // necessary for content to be below app bar
   ...theme.mixins.toolbar,
-  justifyContent: "flex-end"
+  justifyContent: "flex-end",
 }));
 
 export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
   const theme = useTheme();
   const [navDrawerOpen, setNavDrawerOpen] = React.useState(true);
+  const { content } = useContent();
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -106,7 +107,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
         open={navDrawerOpen}
         sx={(theme) => ({
           bgcolor: theme.palette.common.white,
-          color: theme.palette.text.primary
+          color: theme.palette.text.primary,
         })}
       >
         <VariomeToolbar
@@ -122,8 +123,8 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
           flexShrink: 0,
           "& .MuiDrawer-paper": {
             width: drawerWidth,
-            boxSizing: "border-box"
-          }
+            boxSizing: "border-box",
+          },
         }}
         variant="persistent"
         anchor="left"
@@ -144,7 +145,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               <ListItemText primary="Home" />
             </ListItem>
           </Link>
-          {Content.map((section) => (
+          {content.map((section) => (
             <Link
               key={section.name}
               to={`/${section.urlPath}`}
@@ -152,9 +153,7 @@ export default function AppLayoutWithNavigation({ user, children, pageTitle }) {
               underline="none"
             >
               <ListItem button>
-                <ListItemIcon>
-                  {<section.icon/>}
-                </ListItemIcon>
+                <ListItemIcon>{<section.icon />}</ListItemIcon>
                 <ListItemText primary={section.name} />
               </ListItem>
             </Link>

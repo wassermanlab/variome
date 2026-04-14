@@ -1,21 +1,19 @@
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import _ from "lodash";
+import { Container, Box } from "@mui/material";
 
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import _ from 'lodash';
-import {Container, Box} from '@mui/material';
+import theme from "./styles/theme.jsx";
+import Api from "./Api.jsx";
+import Profile from "./pages/profile.jsx";
+import Logout from "./pages/logout.jsx";
+import Home from "./pages/home.jsx";
+import Variant from "./pages/variant.jsx";
 
-import theme from './styles/theme.jsx';
-import Api from './Api.jsx';
-import Profile from './pages/profile.jsx'
-import Logout from './pages/logout.jsx'
-import Home from './pages/home.jsx';
-import Variant from './pages/variant.jsx';
-
-import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
-import {Content} from './ContentParsing.jsx';
-
+import AppLayoutWithNavigation from "./AppLayoutWithNavigation.jsx";
+import { useContent } from "./ContentParsing.jsx";
 
 function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
@@ -28,32 +26,34 @@ function AppRouter() {
   const [exampleMt, setExampleMt] = useState(null);
   const [exampleSv, setExampleSv] = useState(null);
 
-  useEffect(() => {
-      if (!settingsFetched ){
-
-          Api.get('settings').then((data) => {
-              console.log(data);
-              setExampleSnv(_.get(data,'settings.example_snv'));
-//              setPageTitle(_.get(data,'settings.site_title'));
-              setHomePageMessage(_.get(data,'settings.home_page_message'));
-              setSettingsFetched(true);
-          });
-      }
-  
-  },[_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
+  const { content } = useContent();
 
   useEffect(() => {
-    Api.get('user', { json: true }).then((response) => {
-      var user = _.get(response, 'user');
-      if (_.isObject(user) && _.has(user, 'email') && user.email) {
+    if (!settingsFetched) {
+      Api.get("settings").then((data) => {
+        console.log(data);
+        setExampleSnv(_.get(data, "settings.example_snv"));
+        //              setPageTitle(_.get(data,'settings.site_title'));
+        setHomePageMessage(_.get(data, "settings.home_page_message"));
+        setSettingsFetched(true);
+      });
+    }
+  }, [_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
+
+  useEffect(() => {
+    Api.get("user", { json: true }).then((response) => {
+      var user = _.get(response, "user");
+      if (_.isObject(user) && _.has(user, "email") && user.email) {
         setUser(user);
-      } else if (_.isObject(user) && !_.has(user, 'email') ) {
-        console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
+      } else if (_.isObject(user) && !_.has(user, "email")) {
+        console.log(
+          "found a logged in user, except there is no email address. Please set it to enable authenticating",
+        );
       }
     });
   }, []);
 
-  function ScrollToTop(){
+  function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
       window.scrollTo(0, 0);
@@ -62,15 +62,11 @@ function AppRouter() {
     return null;
   }
 
-  function PageWithContent(content){
-
-
+  function PageWithContent(content) {
     return (
-    <Container maxWidth="xl">
-      <Box>
-        {content}
-      </Box>
-    </Container>
+      <Container maxWidth="xl">
+        <Box>{content}</Box>
+      </Container>
     );
   }
 
@@ -78,29 +74,60 @@ function AppRouter() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-      <ScrollToTop />
+        <ScrollToTop />
         <Routes>
-          <Route path="/*" element={
-            <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
-              <Routes>
-                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}} message={homePageMessage}/>} />
-                {
-                  Content.map(({name, urlPath, content}) => {
+          <Route
+            path="/*"
+            element={
+              <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
+                <Routes>
+                  <Route
+                    path="/"
+                    exact
+                    element={
+                      <Home
+                        user={user}
+                        pageTitle={pageTitle}
+                        setPageTitle={setPageTitle}
+                        examples={{ snv: exampleSnv }}
+                        message={homePageMessage}
+                      />
+                    }
+                  />
+                  {content.map(({ name, urlPath, content: pageContent }) => {
                     return (
-                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)}/>
+                      <Route
+                        key={urlPath}
+                        path={`/${urlPath}`}
+                        element={PageWithContent(pageContent)}
+                      />
                     );
-                  })
-                }
-                {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
-                {user && <Route path="/profile" element={<Profile user={user} />} />}
-                {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
-              </Routes>
-            </AppLayoutWithNavigation>
-          } />
+                  })}
+                  {user && (
+                    <Route
+                      path="/variant/:varId"
+                      loader={({ params }) => {}}
+                      action={({ params }) => {}}
+                      element={<Variant pageTitle={pageTitle} />}
+                    />
+                  )}
+                  {user && (
+                    <Route path="/profile" element={<Profile user={user} />} />
+                  )}
+                  {user && (
+                    <Route
+                      path="/logout"
+                      element={<Logout user={user} setUser={setUser} />}
+                    />
+                  )}
+                </Routes>
+              </AppLayoutWithNavigation>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
-  )
+  );
 }
 
 export default AppRouter;
