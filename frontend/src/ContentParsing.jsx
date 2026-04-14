@@ -2,6 +2,81 @@ import Markdown from "react-markdown";
 import _ from "lodash";
 import { useState, useEffect } from "react";
 
+// Pre-import a comprehensive set of MUI icons so they are included in the
+// bundle and can be made available to ContentConfiguration.js at runtime.
+// ContentConfiguration.js lives in public/ and is loaded as a blob URL, so
+// the browser cannot resolve bare specifiers like "@mui/icons-material" on its
+// own.  We expose these icons on window.__variomeIcons and transform the
+// import statement in the fetched source before executing it.
+import {
+  Article,
+  ChevronLeft,
+  ChevronRight,
+  ContactMail,
+  Description,
+  Email,
+  Gavel,
+  HelpCenter,
+  Home as HomeIcon,
+  Info,
+  Login,
+  Menu as MenuIcon,
+  Person,
+  Phone,
+  Rule,
+  Settings,
+  Star,
+} from "@mui/icons-material";
+
+const _muiIcons = {
+  Article,
+  ChevronLeft,
+  ChevronRight,
+  ContactMail,
+  Description,
+  Email,
+  Gavel,
+  HelpCenter,
+  Home: HomeIcon,
+  Info,
+  Login,
+  Menu: MenuIcon,
+  Person,
+  Phone,
+  Rule,
+  Settings,
+  Star,
+};
+
+// Make the icon map available as a global so the transformed
+// ContentConfiguration.js module can reference it at runtime.
+window.__variomeIcons = _muiIcons;
+
+/**
+ * Replace `import { X, Y as Z } from "@mui/icons-material"` (possibly
+ * spanning multiple lines) with a destructuring from window.__variomeIcons.
+ * This lets ContentConfiguration.js continue to use the normal MUI import
+ * syntax even though it is evaluated as a blob URL module where bare
+ * specifiers cannot be resolved by the browser.
+ */
+function _transformMuiImports(source) {
+  return source.replace(
+    /import\s*\{([^}]+)\}\s*from\s*["']@mui\/icons-material["']\s*;?/gs,
+    (_, imports) => {
+      const fields = imports
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => {
+          const [orig, alias] = s.split(/\s+as\s+/).map((p) => p.trim());
+          return alias ? `${orig}: ${alias}` : orig;
+        })
+        .join(", ");
+      return `const { ${fields} } = window.__variomeIcons ?? {};`;
+    },
+  );
+}
+
 // Module-level cache so content is only fetched once
 let _content = null;
 let _homeContent = null;
@@ -13,7 +88,8 @@ async function _fetchAllContent() {
   // Using fetch + blob URL so Vite does not attempt to resolve the module at
   // build time (public/ assets are not bundled).
   const configResponse = await fetch("/ContentConfiguration.js");
-  const configCode = await configResponse.text();
+  const rawConfigCode = await configResponse.text();
+  const configCode = _transformMuiImports(rawConfigCode);
   const blob = new Blob([configCode], { type: "application/javascript" });
   const blobUrl = URL.createObjectURL(blob);
   let IconMap, HomeImageStyle;
