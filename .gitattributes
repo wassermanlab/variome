@@ -1,0 +1,41 @@
+# See https://git-scm.com/docs/gitattributes for more information about gitattributes
+
+# Text file attributes
+* text=auto eol=lf
+
+*.bat text eol=crlf
+
+# *.css text
+# *.html text
+# *.js text
+# *.json text
+# *.less text
+# *.md text
+# *.py text
+# *.scss text
+# *.toml text
+# *.txt text
+# *.xml text
+# *.yaml text
+# *.yml text
+
+# Don't try to diff or merge these files
+*.min.css -diff -merge
+*.min.js -diff -merge
+package-lock.json -diff -merge
+requirements-dev.lock -diff -merge
+requirements.lock -diff -merge
+uv.lock -diff -merge
+npm-shrinkwrap.json -diff -merge
+
+# Binary file attributes
+# *.gif binary
+# *.ico binary
+# *.jpeg binary
+# *.jpg binary
+# *.pdf binary
+# *.png binary
+# *.svg binary
+
+# We're not explicitly setting file types as text/binary at present and letting git handle it.
+# We will review and update file types if the need arises.
