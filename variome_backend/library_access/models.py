@@ -2,7 +2,7 @@ from django.contrib.auth.models import User, Group
 from tracking.models import Visitor, Pageview
 from django.db import models
 from django.utils import timezone
-import pghistory
+from simple_history.models import HistoricalRecords
 
 import os
 
@@ -10,11 +10,11 @@ import os
 ACCESSES_PER_DAY = os.getenv("ACCESSES_PER_DAY", 100)
 
 
-@pghistory.track()
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     accesses_per_day = models.IntegerField(default=ACCESSES_PER_DAY)
     created_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
 
     @property
     def access_count(self):
@@ -42,8 +42,9 @@ class UserProfile(models.Model):
 
 
 # Proxy models so that the models appear under Library Access in the admin dashboard
-@pghistory.track()
 class LibraryUser(User):
+    history = HistoricalRecords()
+
     def save(self, *args, **kwargs):
         if not self.pk:
             super().save(*args, **kwargs)
@@ -57,8 +58,9 @@ class LibraryUser(User):
         verbose_name_plural = "Users"
 
 
-@pghistory.track()
 class LibraryGroup(Group):
+    history = HistoricalRecords()
+
     class Meta:
         proxy = True
         verbose_name = "User Group"
