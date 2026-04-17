@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth.models import User
 from django.test import TestCase, RequestFactory
 
-from variome_backend.middleware import AlwaysLoggedInMiddleware
+from variome_backend.library_access.middleware import AlwaysLoggedInMiddleware
 
 
 class AlwaysLoggedInMiddlewareTests(TestCase):
@@ -35,7 +35,7 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         middleware = self._make_middleware()
         request = self._make_request()
 
-        with patch("variome_backend.middleware.login") as mock_login:
+        with patch("variome_backend.library_access.middleware.login") as mock_login:
             middleware(request)
             mock_login.assert_called_once()
             called_user = mock_login.call_args[0][1]
@@ -47,7 +47,7 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         middleware = self._make_middleware()
         request = self._make_request(path="/admin/")
 
-        with patch("variome_backend.middleware.login") as mock_login:
+        with patch("variome_backend.library_access.middleware.login") as mock_login:
             middleware(request)
             mock_login.assert_not_called()
 
@@ -56,8 +56,8 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         middleware = self._make_middleware()
         request = self._make_request()
 
-        with patch("variome_backend.middleware.login") as mock_login, \
-             patch("variome_backend.middleware.logger") as mock_logger:
+        with patch("variome_backend.library_access.middleware.login") as mock_login, \
+             patch("variome_backend.library_access.middleware.logger") as mock_logger:
             middleware(request)
             mock_login.assert_not_called()
             mock_logger.warning.assert_called_once()
@@ -66,8 +66,8 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         """The missing-user warning is only logged once across multiple requests."""
         middleware = self._make_middleware()
 
-        with patch("variome_backend.middleware.login"), \
-             patch("variome_backend.middleware.logger") as mock_logger:
+        with patch("variome_backend.library_access.middleware.login"), \
+             patch("variome_backend.library_access.middleware.logger") as mock_logger:
             middleware(self._make_request())
             middleware(self._make_request())
             self.assertEqual(mock_logger.warning.call_count, 1)
@@ -79,6 +79,6 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         request = self._make_request()
         request.user.is_authenticated = True
 
-        with patch("variome_backend.middleware.login") as mock_login:
+        with patch("variome_backend.library_access.middleware.login") as mock_login:
             middleware(request)
             mock_login.assert_not_called()

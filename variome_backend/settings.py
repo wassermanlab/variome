@@ -175,7 +175,7 @@ if PUBLIC_BVL:
     _auth_mw = "django.contrib.auth.middleware.AuthenticationMiddleware"
     MIDDLEWARE.insert(
         MIDDLEWARE.index(_auth_mw) + 1,
-        "variome_backend.middleware.AlwaysLoggedInMiddleware",
+        "variome_backend.library_access.middleware.AlwaysLoggedInMiddleware",
     )
 
 TRACK_AJAX_REQUESTS = True
