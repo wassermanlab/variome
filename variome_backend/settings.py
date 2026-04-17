@@ -201,7 +201,7 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 DATABASES = {
     "default": dj_database_url.parse(
         DB,
-        conn_max_age=None,
+        conn_max_age=0,
         conn_health_checks=True
     ),
     "OPTIONS": {
