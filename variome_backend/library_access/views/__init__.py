@@ -9,3 +9,4 @@ from .login_views import (
     LoginRedirectView,
 )
 from .tracking_dashboard import tracking_dashboard
+from .pghistory_export import pghistory_export

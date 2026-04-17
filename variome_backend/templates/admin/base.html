@@ -57,6 +57,9 @@ This file is included so that we can show the link to the tracking dashboard in 
                 {% endif %}
                 <a href="{% url "tracking_dashboard" %}">Tracking Dashboard</a> /
                 {% if user.is_active and user.is_staff %}
+                    <a href="{% url "pghistory_export" %}">Export Legacy History</a> /
+                {% endif %}
+                {% if user.is_active and user.is_staff %}
                     {% url 'django-admindocs-docroot' as docsroot %}
                     {% if docsroot %}
                         <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /

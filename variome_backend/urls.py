@@ -32,6 +32,7 @@ api_urls = [
 ]
 
 urlpatterns = [
+    path("admin/pghistory-export/", access.pghistory_export, name="pghistory_export"),
     path("admin/", admin.site.urls),
     path("tracking/", access.tracking_dashboard, name="tracking_dashboard"),
     path("accounts/profile/", access.profile_view_redirect, name="profile"),
