@@ -41,7 +41,7 @@ def remove_pgtrigger_triggers(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("library_access", "0002_add_simple_history"),
+        ("library_access", "0001_initial"),
     ]
 
     operations = [
