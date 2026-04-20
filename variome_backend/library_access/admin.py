@@ -117,9 +117,6 @@ class LibraryGroupAdmin(GroupAdmin):
             | Q(
                 content_type__app_label="library_access",
                 content_type__model__in=[
-                    "historicallibrarygroup",
-                    "historicallibraryuser",
-                    "historicaluserprofile",
                     "librarysession",
                 ],
             )

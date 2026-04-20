@@ -31,7 +31,7 @@ django==4.2.27
     # via django-auth-adfs
     # via django-cors-headers
     # via django-extensions
-    # via django-simple-history
+    # via django-auditlog
     # via django-tracking2
     # via djangorestframework
     # via variome
@@ -41,7 +41,7 @@ django-cors-headers==4.7.0
     # via variome
 django-extensions==3.2.3
     # via variome
-django-simple-history==3.11.0
+django-auditlog==3.4.1
     # via variome
 django-tracking2==0.5.1
     # via variome

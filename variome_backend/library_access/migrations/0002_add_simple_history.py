@@ -3,7 +3,6 @@
 import django.contrib.auth.validators
 import django.db.models.deletion
 import django.utils.timezone
-import simple_history.models
 from django.conf import settings
 from django.db import migrations, models
 
@@ -33,7 +32,7 @@ class Migration(migrations.Migration):
                 'ordering': ('-history_date', '-history_id'),
                 'get_latest_by': ('history_date', 'history_id'),
             },
-            bases=(simple_history.models.HistoricalChanges, models.Model),
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='HistoricalLibraryUser',
@@ -61,7 +60,7 @@ class Migration(migrations.Migration):
                 'ordering': ('-history_date', '-history_id'),
                 'get_latest_by': ('history_date', 'history_id'),
             },
-            bases=(simple_history.models.HistoricalChanges, models.Model),
+            bases=(models.Model,),
         ),
         migrations.CreateModel(
             name='HistoricalUserProfile',
@@ -82,6 +81,6 @@ class Migration(migrations.Migration):
                 'ordering': ('-history_date', '-history_id'),
                 'get_latest_by': ('history_date', 'history_id'),
             },
-            bases=(simple_history.models.HistoricalChanges, models.Model),
+            bases=(models.Model,),
         ),
     ]

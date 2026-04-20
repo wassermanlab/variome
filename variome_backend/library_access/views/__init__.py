@@ -10,3 +10,4 @@ from .login_views import (
 )
 from .tracking_dashboard import tracking_dashboard
 from .pghistory_export import pghistory_export
+from .audit_view import audit_view

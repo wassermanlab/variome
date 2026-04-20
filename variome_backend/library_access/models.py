@@ -2,7 +2,7 @@ from django.contrib.auth.models import User, Group
 from tracking.models import Visitor, Pageview
 from django.db import models
 from django.utils import timezone
-from simple_history.models import HistoricalRecords
+from auditlog.registry import auditlog
 
 import os
 
@@ -14,7 +14,6 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     accesses_per_day = models.IntegerField(default=ACCESSES_PER_DAY)
     created_at = models.DateTimeField(auto_now_add=True)
-    history = HistoricalRecords()
 
     @property
     def access_count(self):
@@ -43,8 +42,6 @@ class UserProfile(models.Model):
 
 # Proxy models so that the models appear under Library Access in the admin dashboard
 class LibraryUser(User):
-    history = HistoricalRecords()
-
     def save(self, *args, **kwargs):
         if not self.pk:
             super().save(*args, **kwargs)
@@ -59,8 +56,6 @@ class LibraryUser(User):
 
 
 class LibraryGroup(Group):
-    history = HistoricalRecords()
-
     class Meta:
         proxy = True
         verbose_name = "User Group"
@@ -84,3 +79,11 @@ class LibrarySession(Visitor):
         verbose_name = "Session"
         verbose_name_plural = "Sessions"
         default_permissions = ()
+
+
+# Register models with auditlog so that all create/update/delete events are
+# captured in auditlog's LogEntry table.  Proxy models are registered against
+# their concrete parent so that the single underlying table is tracked.
+auditlog.register(UserProfile)
+auditlog.register(User)   # covers LibraryUser (proxy)
+auditlog.register(Group)  # covers LibraryGroup (proxy)

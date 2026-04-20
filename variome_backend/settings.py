@@ -106,7 +106,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "corsheaders",
     "tracking",
-    "simple_history",
+    "auditlog",
 ]
 
 MIDDLEWARE = [
@@ -119,7 +119,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "simple_history.middleware.HistoryRequestMiddleware",
+    "auditlog.middleware.AuditlogMiddleware",
 ]
 AUTHENTICATION_BACKENDS = []
 

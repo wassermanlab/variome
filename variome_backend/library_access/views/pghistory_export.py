@@ -32,11 +32,31 @@ def pghistory_export(request):
                 with connection.cursor() as cursor:
                     # table is sourced from the LEGACY_TABLES constant above;
                     # quote_name provides safe SQL identifier escaping.
+                    # Fetch schema first to determine a stable ordering column.
                     cursor.execute(
-                        "SELECT * FROM %s ORDER BY 1"
+                        "SELECT * FROM %s WHERE 1=0"
                         % connection.ops.quote_name(table)
                     )
                     columns = [desc[0] for desc in cursor.description]
+
+                order_col = next(
+                    (c for c in columns if c in ("pgh_id", "id", "history_id")),
+                    columns[0] if columns else None,
+                )
+                if not order_col:
+                    zf.writestr(
+                        f"{table}_empty.txt",
+                        f"Table '{table}' exists but has no columns.\n",
+                    )
+                    continue
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM %s ORDER BY %s"
+                        % (
+                            connection.ops.quote_name(table),
+                            connection.ops.quote_name(order_col),
+                        )
+                    )
                     rows = cursor.fetchall()
 
                 csv_buf = io.StringIO()
