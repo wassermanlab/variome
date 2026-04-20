@@ -82,8 +82,15 @@ class LibrarySession(Visitor):
 
 
 # Register models with auditlog so that all create/update/delete events are
-# captured in auditlog's LogEntry table.  Proxy models are registered against
-# their concrete parent so that the single underlying table is tracked.
+# captured in auditlog's LogEntry table.
+#
+# Django dispatches post_save signals with sender=<the concrete class that
+# called save()>.  When the admin saves a LibraryUser or LibraryGroup instance
+# the sender is the proxy class, NOT the parent (User / Group), so the parent
+# registration alone is not sufficient.  Both the concrete parent and the proxy
+# are registered so that saves originating from either code path are tracked.
 auditlog.register(UserProfile)
-auditlog.register(User)   # covers LibraryUser (proxy)
-auditlog.register(Group)  # covers LibraryGroup (proxy)
+auditlog.register(User)
+auditlog.register(LibraryUser)
+auditlog.register(Group)
+auditlog.register(LibraryGroup)
