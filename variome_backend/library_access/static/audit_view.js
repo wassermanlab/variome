@@ -4,6 +4,19 @@
 */
 const useState = React.useState;
 
+// ISO-8601 datetime pattern: e.g. "2024-01-15T10:30:00Z" or "2024-01-15T10:30:00.123Z"
+const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+function formatCell(value) {
+  if (typeof value === "string" && ISO_DATETIME_RE.test(value)) {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString();
+    }
+  }
+  return String(value ?? "");
+}
+
 function AuditView({ initialdata }) {
   const [activeTab, setActiveTab] = useState(0);
   const tables = initialdata.tables;
@@ -140,9 +153,9 @@ function TableView({ table }) {
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
-                    title={String(cell ?? "")}
+                    title={formatCell(cell)}
                   >
-                    {String(cell ?? "")}
+                    {formatCell(cell)}
                   </td>
                 ))}
               </tr>
