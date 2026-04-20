@@ -55,80 +55,38 @@ def _update_changes(prev, curr):
     }
 
 
-def _extract_user_id_from_metadata(metadata):
-    """
-    Try to extract an integer user ID from a pgh_context metadata value.
-
-    Different pghistory configurations store the actor under different keys.
-    The most common default is ``{"user": <pk>}`` (set by
-    ``pghistory.middleware.HistoryMiddleware``), but projects sometimes use
-    ``"user_id"`` or ``"user_pk"`` instead.
-
-    Returns the integer user pk, or None if none of the known keys are present
-    or the stored value cannot be coerced to an integer.
-    """
-    if metadata is None:
-        return None
-    if isinstance(metadata, str):
-        try:
-            metadata = json.loads(metadata)
-        except (ValueError, TypeError):
-            return None
-    if not isinstance(metadata, dict):
-        return None
-    for key in ("user", "user_id", "user_pk"):
-        value = metadata.get(key)
-        if value is None:
-            continue
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            continue
-    return None
-
-
 def _load_actor_map(connection):
     """
     Return a mapping  {str(pgh_context_id): user_id}  sourced from the
     pgh_context table, filtered to user IDs that still exist in auth_user.
 
-    Returns an empty dict if the pgh_context table is absent.
-
-    Two pgh_context schema variants are handled:
-
-    * **metadata column** (pghistory default) – the actor is stored as JSON
-      inside a ``metadata`` JSONB column, keyed by ``"user"``, ``"user_id"``,
-      or ``"user_pk"``.
-    * **direct user_id column** – some projects create a custom context model
-      with an explicit ``user_id`` integer FK; this column is read directly.
+    Returns an empty dict if the pgh_context table is absent or inaccessible.
     """
-    with connection.cursor() as cur:
-        # --- Check whether pgh_context exists at all ---
-        cur.execute(
-            "SELECT EXISTS("
-            "  SELECT 1 FROM information_schema.tables"
-            "  WHERE table_schema = 'public' AND table_name = 'pgh_context'"
-            ")"
-        )
-        if not cur.fetchone()[0]:
-            return {}
-
-        # --- Discover pgh_context column names ---
-        cur.execute("SELECT * FROM pgh_context WHERE 1=0")
-        ctx_columns = {desc[0] for desc in cur.description}
-
-        # --- Collect valid user IDs still present in auth_user ---
-        cur.execute("SELECT id FROM auth_user")
-        valid_user_ids = {row[0] for row in cur.fetchall()}
-
-        actor_map = {}
-
-        # Variant A: direct user_id column on pgh_context
-        if "user_id" in ctx_columns:
+    try:
+        with connection.cursor() as cur:
             cur.execute(
-                "SELECT id, user_id FROM pgh_context WHERE user_id IS NOT NULL"
+                "SELECT EXISTS("
+                "  SELECT 1 FROM information_schema.tables"
+                "  WHERE table_schema = 'public' AND table_name = 'pgh_context'"
+                ")"
             )
-            for ctx_id, user_id in cur.fetchall():
+            if not cur.fetchone()[0]:
+                return {}
+
+            cur.execute("SELECT id FROM auth_user")
+            valid_user_ids = {row[0] for row in cur.fetchall()}
+
+            cur.execute("SELECT id, metadata FROM pgh_context")
+            actor_map = {}
+            for ctx_id, metadata in cur.fetchall():
+                if metadata is None:
+                    continue
+                if isinstance(metadata, str):
+                    try:
+                        metadata = json.loads(metadata)
+                    except (ValueError, TypeError):
+                        continue
+                user_id = metadata.get("user")
                 try:
                     user_id = int(user_id)
                 except (TypeError, ValueError):
@@ -136,20 +94,8 @@ def _load_actor_map(connection):
                 if user_id in valid_user_ids and ctx_id is not None:
                     actor_map[str(ctx_id)] = user_id
             return actor_map
-
-        # Variant B: metadata JSONB column
-        if "metadata" in ctx_columns:
-            cur.execute(
-                "SELECT id, metadata FROM pgh_context WHERE metadata IS NOT NULL"
-            )
-            for ctx_id, metadata in cur.fetchall():
-                user_id = _extract_user_id_from_metadata(metadata)
-                if user_id is not None and user_id in valid_user_ids and ctx_id is not None:
-                    actor_map[str(ctx_id)] = user_id
-            return actor_map
-
-        # pgh_context exists but has neither expected column — return empty
-        return actor_map
+    except Exception:
+        return {}
 
 
 def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
