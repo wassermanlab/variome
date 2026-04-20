@@ -5,7 +5,7 @@ django-pghistory event tables into django-auditlog's LogEntry table.
 Legacy source tables (preserved by migration 0003):
   library_access_userprofileevent   → UserProfile history
   library_access_libraryuserevent   → User (LibraryUser) history
-  library_access_librarygroupeent   → Group (LibraryGroup) history
+  library_access_librarygroupevent  → Group (LibraryGroup) history
 
 Each source row maps to one LogEntry:
   pgh_label = 'insert'  → Action.CREATE  (all fields shown as None → value)
