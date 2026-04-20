@@ -1,27 +1,10 @@
-import json
 import logging
-from datetime import date, datetime
-from decimal import Decimal
-from uuid import UUID
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db import connection, OperationalError, ProgrammingError
 from django.shortcuts import render
 
 log = logging.getLogger(__file__)
-
-
-class _AuditEncoder(json.JSONEncoder):
-    """JSON encoder that handles types commonly returned by database cursors."""
-
-    def default(self, obj):
-        if isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        if isinstance(obj, Decimal):
-            return str(obj)
-        if isinstance(obj, UUID):
-            return str(obj)
-        return super().default(obj)
 
 
 # Legacy pghistory event tables preserved for auditability.
@@ -107,6 +90,6 @@ def audit_view(request):
             )
 
     context = {
-        "data": json.dumps({"tables": tables}, cls=_AuditEncoder),
+        "data": {"tables": tables},
     }
     return render(request, "audit_view.html", context)
