@@ -1,7 +1,9 @@
 """
 Combined migration that copies all historical records from the three legacy
 django-pghistory event tables into django-auditlog's LogEntry table.  The
-actor (user) is resolved from pgh_context.metadata["user"].
+actor (user) is resolved by JOINing pgh_context on pgh_context_id and
+reading pgh_context.metadata->>'user', letting PostgreSQL handle the UUID
+comparison natively.
 
 Legacy source tables:
   library_access_userprofileevent   → UserProfile history
@@ -19,8 +21,6 @@ Every migrated entry is tagged with
 so the reverse operation can cleanly delete exactly those rows.
 """
 
-import json
-
 from django.db import migrations
 
 
@@ -33,6 +33,7 @@ _PGH_META = {"pgh_id", "pgh_created_at", "pgh_label", "pgh_context_id", "pgh_obj
 
 # Fields whose values are omitted from the changes dict (sensitive or useless).
 _SKIP_FIELDS = {"password"}
+
 
 def _to_str(v):
     """Return None unchanged; convert everything else to str."""
@@ -53,55 +54,30 @@ def _update_changes(prev, curr):
     }
 
 
-def _load_actor_map(connection):
-    """
-    Return a mapping  {str(pgh_context_id): user_id}  sourced from the
-    pgh_context table, filtered to user IDs that still exist in auth_user.
-
-    Returns an empty dict if the pgh_context table is absent or inaccessible.
-    """
-    try:
-        with connection.cursor() as cur:
-            cur.execute(
-                "SELECT EXISTS("
-                "  SELECT 1 FROM information_schema.tables"
-                "  WHERE table_schema = 'public' AND table_name = 'pgh_context'"
-                ")"
-            )
-            if not cur.fetchone()[0]:
-                return {}
-
-            cur.execute("SELECT id FROM auth_user")
-            valid_user_ids = {row[0] for row in cur.fetchall()}
-
-            cur.execute("SELECT id, metadata FROM pgh_context")
-            actor_map = {}
-            for ctx_id, metadata in cur.fetchall():
-                if metadata is None:
-                    continue
-                if isinstance(metadata, str):
-                    try:
-                        metadata = json.loads(metadata)
-                    except (ValueError, TypeError):
-                        continue
-                user_id = metadata.get("user")
-                try:
-                    user_id = int(user_id)
-                except (TypeError, ValueError):
-                    continue
-                if user_id in valid_user_ids and ctx_id is not None:
-                    actor_map[str(ctx_id)] = user_id
-            return actor_map
-    except Exception:
-        return {}
+def _pgh_context_exists(connection):
+    """Return True if the pgh_context table is present in the public schema."""
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT EXISTS("
+            "  SELECT 1 FROM information_schema.tables"
+            "  WHERE table_schema = 'public' AND table_name = 'pgh_context'"
+            ")"
+        )
+        return cur.fetchone()[0]
 
 
-def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
+def _migrate_table(connection, table_name, content_type, LogEntry, has_pgh_context):
     """
     Read *table_name* and bulk-insert the corresponding LogEntry rows.
 
+    The actor is resolved at the SQL level by JOINing pgh_context (when it
+    exists) and then auth_user, so PostgreSQL performs the UUID comparison
+    natively and avoids any Python-level type-mismatch.
+
     Does nothing if the table does not exist.
     """
+    tbl = connection.ops.quote_name(table_name)
+
     with connection.cursor() as cur:
         cur.execute(
             "SELECT EXISTS("
@@ -114,9 +90,7 @@ def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
             return  # fresh installation — table was never created
 
         # Discover columns present in this particular event table.
-        cur.execute(
-            "SELECT * FROM %s WHERE 1=0" % connection.ops.quote_name(table_name)
-        )
+        cur.execute("SELECT * FROM %s WHERE 1=0" % tbl)
         all_columns = [desc[0] for desc in cur.description]
 
         # Columns that represent a model-field snapshot.
@@ -127,12 +101,28 @@ def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
         if not snapshot_cols:
             return
 
-        col_idx = {col: i for i, col in enumerate(all_columns)}
+        # The actor column is appended at the end of every row.
+        col_idx = {col: i for i, col in enumerate(all_columns + ["_actor_id"])}
 
-        cur.execute(
-            "SELECT * FROM %s ORDER BY pgh_id"
-            % connection.ops.quote_name(table_name)
-        )
+        if has_pgh_context:
+            # Resolve actor via a SQL JOIN so PostgreSQL handles UUID equality.
+            # auth_user.id is cast to text to match the JSONB text extraction.
+            sql = (
+                "SELECT {tbl}.*, __u.id AS _actor_id"
+                " FROM {tbl}"
+                " LEFT JOIN pgh_context __ctx ON {tbl}.pgh_context_id = __ctx.id"
+                " LEFT JOIN auth_user __u"
+                "   ON __u.id::text = __ctx.metadata->>'user'"
+                " ORDER BY {tbl}.pgh_id"
+            ).format(tbl=tbl)
+        else:
+            sql = (
+                "SELECT {tbl}.*, NULL AS _actor_id"
+                " FROM {tbl}"
+                " ORDER BY {tbl}.pgh_id"
+            ).format(tbl=tbl)
+
+        cur.execute(sql)
         raw_rows = cur.fetchall()
 
     if not raw_rows:
@@ -146,8 +136,8 @@ def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
         pgh_id = row[col_idx["pgh_id"]]
         pgh_created_at = row[col_idx["pgh_created_at"]]
         pgh_label = row[col_idx["pgh_label"]]
-        pgh_context_id = row[col_idx["pgh_context_id"]]
         obj_id = row[col_idx["pgh_obj_id"]]
+        actor_id = row[col_idx["_actor_id"]]
 
         snapshot = {c: row[col_idx[c]] for c in snapshot_cols}
 
@@ -162,10 +152,6 @@ def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
             changes = _update_changes(last_snapshot[obj_id], snapshot)
 
         last_snapshot[obj_id] = snapshot
-
-        actor_id = (
-            actor_map.get(str(pgh_context_id)) if pgh_context_id is not None else None
-        )
 
         # Best-effort human-readable representation using snapshot fields.
         obj_repr = (
@@ -207,11 +193,10 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
     if connection.vendor != "postgresql":
         return
 
-    # Copy pghistory data into auditlog.
     from auditlog.models import LogEntry
     from django.contrib.contenttypes.models import ContentType
 
-    actor_map = _load_actor_map(connection)
+    has_pgh_context = _pgh_context_exists(connection)
 
     # (legacy table, app_label, model_name)
     table_map = [
@@ -225,7 +210,7 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
             ct = ContentType.objects.get(app_label=app_label, model=model_name)
         except ContentType.DoesNotExist:
             continue
-        _migrate_table(connection, table_name, ct, LogEntry, actor_map)
+        _migrate_table(connection, table_name, ct, LogEntry, has_pgh_context)
 
 
 # ---------------------------------------------------------------------------
