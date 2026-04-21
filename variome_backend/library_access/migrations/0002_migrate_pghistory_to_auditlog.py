@@ -5,7 +5,6 @@ Combined migration that:
   2. Copies all historical records from the three legacy django-pghistory event
      tables into django-auditlog's LogEntry table.  The actor (user) is resolved
      from pgh_context.metadata["user"].
-  3. Drops the now-empty legacy event tables and the pgh_context table.
 
 Legacy source tables:
   library_access_userprofileevent   → UserProfile history
@@ -37,15 +36,6 @@ _PGH_META = {"pgh_id", "pgh_created_at", "pgh_label", "pgh_context_id", "pgh_obj
 
 # Fields whose values are omitted from the changes dict (sensitive or useless).
 _SKIP_FIELDS = {"password"}
-
-# The legacy pghistory tables to drop after migration.
-_LEGACY_TABLES = [
-    "library_access_userprofileevent",
-    "library_access_libraryuserevent",
-    "library_access_librarygroupevent",
-    "pgh_context",
-]
-
 
 def _to_str(v):
     """Return None unchanged; convert everything else to str."""
@@ -257,14 +247,6 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
         except ContentType.DoesNotExist:
             continue
         _migrate_table(connection, table_name, ct, LogEntry, actor_map)
-
-    # Step 3: Drop the legacy pghistory event tables and the pgh_context table
-    # now that all data has been migrated into auditlog.
-    with connection.cursor() as cursor:
-        for table_name in _LEGACY_TABLES:
-            cursor.execute(
-                "DROP TABLE IF EXISTS %s" % connection.ops.quote_name(table_name)
-            )
 
 
 # ---------------------------------------------------------------------------
