@@ -1,8 +1,12 @@
 """
-Reversible data migration that copies historical records from the three legacy
-django-pghistory event tables into django-auditlog's LogEntry table.
+Combined migration that:
+  1. Removes pgtrigger database triggers written by the old django-pghistory setup
+     so they no longer append rows to the legacy event tables.
+  2. Copies all historical records from the three legacy django-pghistory event
+     tables into django-auditlog's LogEntry table.
+  3. Drops the now-empty legacy event tables.
 
-Legacy source tables (preserved by migration 0003):
+Legacy source tables:
   library_access_userprofileevent   → UserProfile history
   library_access_libraryuserevent   → User (LibraryUser) history
   library_access_librarygroupevent  → Group (LibraryGroup) history
@@ -12,8 +16,6 @@ Each source row maps to one LogEntry:
   pgh_label = 'update'  → Action.UPDATE  (only changed fields, diffed against
                                            the preceding snapshot for that object)
   any other label       → Action.UPDATE
-
-The actor is resolved from the pgh_context table when it is present.
 
 Every migrated entry is tagged with
   additional_data = {"migrated_from_pghistory": True, ...}
@@ -34,6 +36,13 @@ _PGH_META = {"pgh_id", "pgh_created_at", "pgh_label", "pgh_context_id", "pgh_obj
 
 # Fields whose values are omitted from the changes dict (sensitive or useless).
 _SKIP_FIELDS = {"password"}
+
+# The three legacy pghistory event tables.
+_LEGACY_TABLES = [
+    "library_access_userprofileevent",
+    "library_access_libraryuserevent",
+    "library_access_librarygroupevent",
+]
 
 
 def _to_str(v):
@@ -203,17 +212,37 @@ def _migrate_table(connection, table_name, content_type, LogEntry, actor_map):
 # Forward migration
 # ---------------------------------------------------------------------------
 
-def copy_pghistory_to_auditlog(apps, schema_editor):
+def migrate_pghistory_to_auditlog(apps, schema_editor):
+    connection = schema_editor.connection
+
+    if connection.vendor != "postgresql":
+        return
+
+    # Step 1: Remove pgtrigger triggers so they no longer write to the legacy tables.
+    triggers = [
+        ("pgtrigger_insert_insert_0d7fe", "auth_group"),
+        ("pgtrigger_update_update_2f9f1", "auth_group"),
+        ("pgtrigger_insert_insert_c7c6c", "auth_user"),
+        ("pgtrigger_update_update_c68de", "auth_user"),
+        ("pgtrigger_insert_insert_45284", "user_profile"),
+        ("pgtrigger_update_update_f48ee", "user_profile"),
+    ]
+    with connection.cursor() as cursor:
+        for trigger_name, table_name in triggers:
+            cursor.execute(
+                "DROP TRIGGER IF EXISTS %s ON %s" % (
+                    connection.ops.quote_name(trigger_name),
+                    connection.ops.quote_name(table_name),
+                )
+            )
+
+    # Step 2: Copy pghistory data into auditlog.
     from auditlog.models import LogEntry
     from django.contrib.contenttypes.models import ContentType
 
-    if schema_editor.connection.vendor != "postgresql":
-        return
+    actor_map = _load_actor_map(connection)
 
-    actor_map = _load_actor_map(schema_editor.connection)
-
-    # (legacy table, app_label, model) — model_name must match Django's
-    # ContentType.model (lower-case).
+    # (legacy table, app_label, model_name)
     table_map = [
         ("library_access_libraryuserevent", "auth", "user"),
         ("library_access_librarygroupevent", "auth", "group"),
@@ -224,20 +253,30 @@ def copy_pghistory_to_auditlog(apps, schema_editor):
         try:
             ct = ContentType.objects.get(app_label=app_label, model=model_name)
         except ContentType.DoesNotExist:
-            continue  # content type not registered yet; skip
-        _migrate_table(
-            schema_editor.connection, table_name, ct, LogEntry, actor_map
-        )
+            continue
+        _migrate_table(connection, table_name, ct, LogEntry, actor_map)
+
+    # Step 3: Drop the legacy pghistory event tables now that the data has been
+    # migrated into auditlog.
+    with connection.cursor() as cursor:
+        for table_name in _LEGACY_TABLES:
+            cursor.execute(
+                "DROP TABLE IF EXISTS %s" % connection.ops.quote_name(table_name)
+            )
 
 
 # ---------------------------------------------------------------------------
 # Reverse migration
 # ---------------------------------------------------------------------------
 
-def remove_migrated_entries(apps, schema_editor):
+def reverse_migrate_pghistory_to_auditlog(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+
     from auditlog.models import LogEntry
 
-    # Delete only the entries that this migration imported.
+    # Remove only the entries that this migration imported.
+    # The legacy tables and triggers cannot be trivially recreated.
     LogEntry.objects.filter(
         additional_data__has_key="migrated_from_pghistory"
     ).delete()
@@ -250,12 +289,12 @@ def remove_migrated_entries(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("library_access", "0003_remove_pghistory_tables"),
+        ("library_access", "0001_initial"),
     ]
 
     operations = [
         migrations.RunPython(
-            copy_pghistory_to_auditlog,
-            reverse_code=remove_migrated_entries,
+            migrate_pghistory_to_auditlog,
+            reverse_code=reverse_migrate_pghistory_to_auditlog,
         ),
     ]
