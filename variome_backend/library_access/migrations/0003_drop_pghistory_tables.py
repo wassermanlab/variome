@@ -1,6 +1,14 @@
 """
-Drop the legacy django-pghistory tables now that all historical data has been
-copied to django-auditlog by migration 0002.
+Drop the legacy django-pghistory triggers and tables now that all historical
+data has been copied to django-auditlog by migration 0002.
+
+Triggers removed:
+  pgtrigger_insert_insert_0d7fe  on auth_group
+  pgtrigger_update_update_2f9f1  on auth_group
+  pgtrigger_insert_insert_c7c6c  on auth_user
+  pgtrigger_update_update_c68de  on auth_user
+  pgtrigger_insert_insert_45284  on user_profile
+  pgtrigger_update_update_f48ee  on user_profile
 
 Tables removed:
   library_access_userprofileevent
@@ -11,6 +19,15 @@ Tables removed:
 
 from django.db import migrations
 
+
+_TRIGGERS_TO_DROP = [
+    ("pgtrigger_insert_insert_0d7fe", "auth_group"),
+    ("pgtrigger_update_update_2f9f1", "auth_group"),
+    ("pgtrigger_insert_insert_c7c6c", "auth_user"),
+    ("pgtrigger_update_update_c68de", "auth_user"),
+    ("pgtrigger_insert_insert_45284", "user_profile"),
+    ("pgtrigger_update_update_f48ee", "user_profile"),
+]
 
 _TABLES_TO_DROP = [
     "library_access_userprofileevent",
@@ -26,6 +43,13 @@ def drop_pghistory_tables(apps, schema_editor):
         return
 
     with connection.cursor() as cursor:
+        for trigger_name, table_name in _TRIGGERS_TO_DROP:
+            cursor.execute(
+                "DROP TRIGGER IF EXISTS %s ON %s" % (
+                    connection.ops.quote_name(trigger_name),
+                    connection.ops.quote_name(table_name),
+                )
+            )
         for table_name in _TABLES_TO_DROP:
             cursor.execute(
                 "DROP TABLE IF EXISTS %s" % connection.ops.quote_name(table_name)

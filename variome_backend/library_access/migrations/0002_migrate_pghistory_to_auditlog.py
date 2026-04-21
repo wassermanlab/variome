@@ -1,10 +1,7 @@
 """
-Combined migration that:
-  1. Removes pgtrigger database triggers written by the old django-pghistory setup
-     so they no longer append rows to the legacy event tables.
-  2. Copies all historical records from the three legacy django-pghistory event
-     tables into django-auditlog's LogEntry table.  The actor (user) is resolved
-     from pgh_context.metadata["user"].
+Combined migration that copies all historical records from the three legacy
+django-pghistory event tables into django-auditlog's LogEntry table.  The
+actor (user) is resolved from pgh_context.metadata["user"].
 
 Legacy source tables:
   library_access_userprofileevent   → UserProfile history
@@ -210,25 +207,7 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
     if connection.vendor != "postgresql":
         return
 
-    # Step 1: Remove pgtrigger triggers so they no longer write to the legacy tables.
-    triggers = [
-        ("pgtrigger_insert_insert_0d7fe", "auth_group"),
-        ("pgtrigger_update_update_2f9f1", "auth_group"),
-        ("pgtrigger_insert_insert_c7c6c", "auth_user"),
-        ("pgtrigger_update_update_c68de", "auth_user"),
-        ("pgtrigger_insert_insert_45284", "user_profile"),
-        ("pgtrigger_update_update_f48ee", "user_profile"),
-    ]
-    with connection.cursor() as cursor:
-        for trigger_name, table_name in triggers:
-            cursor.execute(
-                "DROP TRIGGER IF EXISTS %s ON %s" % (
-                    connection.ops.quote_name(trigger_name),
-                    connection.ops.quote_name(table_name),
-                )
-            )
-
-    # Step 2: Copy pghistory data into auditlog.
+    # Copy pghistory data into auditlog.
     from auditlog.models import LogEntry
     from django.contrib.contenttypes.models import ContentType
 
