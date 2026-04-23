@@ -14,8 +14,8 @@ const envVariableDefaults = {
   FRONTEND_PORT: 3000,
   BVL_TITLE: 'A Variome BVL',
   API_PATH: '/api/',
-  LOGIN_PATH: '/admin/login',
-  LOGOUT_PATH: '/admin/logout'
+  LOGIN_PATH: '/accounts/login',
+  LOGOUT_PATH: '/accounts/logout'
 };
 
 var envs = loadEnv('', '..', _.keys(envVariableDefaults));

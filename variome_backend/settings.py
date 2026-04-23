@@ -163,6 +163,19 @@ else:
     ]
     LOGIN_URL = "/"
 
+PUBLIC_BVL = os.getenv("PUBLIC_BVL", "False").lower() == "true"
+if PUBLIC_BVL:
+    print(
+        "PUBLIC_BVL is enabled: anonymous users will be automatically logged in "
+        "as the public demo user (public_demo_user). "
+        "The admin area remains protected."
+    )
+    _auth_mw = "django.contrib.auth.middleware.AuthenticationMiddleware"
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index(_auth_mw) + 1,
+        "variome_backend.library_access.middleware.AlwaysLoggedInMiddleware",
+    )
+
 TRACK_AJAX_REQUESTS = True
 TRACK_PAGEVIEWS = True
 TRACK_ANONYMOUS_USERS = False

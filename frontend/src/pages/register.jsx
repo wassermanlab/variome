@@ -30,7 +30,7 @@ const Signup = () => {
 
   const handleSignup = (e) => {
     e.preventDefault();
-    console.log(`First Name: ${firstName} - Last Name: ${lastName} - Username: ${username} - Password: ${password}`);
+    console.log('Signup form submitted.');
     // handle signup logic
   };
 
