@@ -46,9 +46,14 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--admin-user",
-            default="postgres",
+            default=None,
             dest="admin_user",
-            help="PostgreSQL superuser name for initial connection (default: postgres)",
+            help=(
+                "PostgreSQL superuser name for the initial connection. "
+                "Defaults to the current OS user (same as running psql with no -U flag), "
+                "which works automatically when peer/trust auth is configured. "
+                "Use --admin-user postgres on Windows or when password auth is required."
+            ),
         )
         parser.add_argument(
             "--admin-password",
@@ -174,13 +179,20 @@ class Command(BaseCommand):
         self._offer_update_env(db_url, update_env=update_env, no_input=no_input)
 
     def _connect_admin(self, host, port, admin_user, admin_password):
-        """Connect to the PostgreSQL server using the maintenance database."""
+        """Connect to the PostgreSQL server using the maintenance database.
+
+        When *admin_user* is None (the default), no user is passed to psycopg2,
+        so it falls back to the current OS username — the same behaviour as
+        running ``psql`` with no ``-U`` flag (peer/trust authentication on
+        Linux/macOS with Homebrew PostgreSQL).
+        """
         conn_kwargs = {
             "host": host,
             "port": port,
-            "user": admin_user,
             "database": "postgres",
         }
+        if admin_user:
+            conn_kwargs["user"] = admin_user
         if admin_password:
             conn_kwargs["password"] = admin_password
         try:
@@ -190,8 +202,10 @@ class Command(BaseCommand):
             self.stderr.write(
                 "Tips:\n"
                 "  - Ensure PostgreSQL is running.\n"
-                "  - On Linux, try: sudo -u postgres python manage.py bootstrap_db\n"
-                "  - On Windows/Mac, use --admin-user and --admin-password if needed.\n"
+                "  - On Linux with peer auth, run as a PostgreSQL superuser:\n"
+                "      sudo -u postgres python manage.py bootstrap_db\n"
+                "  - On Windows or with password auth, pass credentials explicitly:\n"
+                "      python manage.py bootstrap_db --admin-user postgres --admin-password <pw>\n"
                 "  - Use --host/--port to override connection defaults."
             )
             return None
@@ -272,5 +286,8 @@ class Command(BaseCommand):
             content = re.sub(r"^DB=.*$", new_line, content, flags=re.MULTILINE)
         else:
             content = new_line + "\n" + content
-        env_path.write_text(content)  # noqa: S606 - intentional dev-only .env update
+        # Writing credentials to .env is the explicit purpose of this dev bootstrapping
+        # tool — .env files are designed to hold local development credentials.
+        # codeql[py/clear-text-storage-sensitive-data]
+        env_path.write_text(content)
         self.stdout.write(self.style.SUCCESS(f"Updated {env_path}"))
