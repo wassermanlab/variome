@@ -20,19 +20,19 @@ django==5.2.13
     # via
     #   variome (pyproject.toml)
     #   dj-database-url
+    #   django-auditlog
     #   django-auth-adfs
     #   django-cors-headers
     #   django-extensions
-    #   django-auditlog
     #   django-tracking2
     #   djangorestframework
+django-auditlog==3.4.1
+    # via variome (pyproject.toml)
 django-auth-adfs==1.16.0
     # via variome (pyproject.toml)
 django-cors-headers==4.7.0
     # via variome (pyproject.toml)
 django-extensions==3.2.3
-    # via variome (pyproject.toml)
-django-auditlog==3.4.1
     # via variome (pyproject.toml)
 django-tracking2==0.5.1
     # via variome (pyproject.toml)
@@ -50,10 +50,14 @@ pyjwt==2.12.1
     # via django-auth-adfs
 pymysql==1.1.2
     # via variome (pyproject.toml)
+python-dateutil==2.9.0.post0
+    # via django-auditlog
 python-dotenv==1.1.0
     # via variome (pyproject.toml)
 requests==2.32.3
     # via django-auth-adfs
+six==1.17.0
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 typing-extensions==4.13.0

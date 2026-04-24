@@ -96,7 +96,6 @@ INSTALLED_APPS = [
     "variome_backend",
     "variome_backend.library",
     "variome_backend.library_access",
-    "pghistory.admin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -107,8 +106,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "corsheaders",
     "tracking",
-    "pghistory",
-    "pgtrigger",
     "auditlog",
 ]
 
@@ -122,7 +119,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "pghistory.middleware.HistoryMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
 ]
 AUTHENTICATION_BACKENDS = []
