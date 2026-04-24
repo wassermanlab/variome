@@ -1,14 +1,24 @@
 """
 Combined migration that copies all historical records from the three legacy
-django-pghistory event tables into django-auditlog's LogEntry table.  The
-actor (user) is resolved by JOINing pgh_context on pgh_context_id and
-reading pgh_context.metadata->>'user', letting PostgreSQL handle the UUID
-comparison natively.
+django-pghistory event tables into django-auditlog's LogEntry table.
 
-Legacy source tables:
-  library_access_userprofileevent   → UserProfile history
-  library_access_libraryuserevent   → User (LibraryUser) history
-  library_access_librarygroupevent  → Group (LibraryGroup) history
+All reads use Django ORM queries (apps.get_model + .values()) rather than
+raw SQL, so:
+  * No direct pghistory/pgtrigger imports are needed inside the functions.
+  * When pghistory is later removed from the project and its models disappear
+    from the migration registry, every apps.get_model() call raises LookupError
+    which is caught and treated as "nothing to migrate" — the migration still
+    runs cleanly on a fresh database.
+
+Legacy source models (library_access app):
+  UserProfileEvent  → UserProfile history
+  LibraryUserEvent  → User (LibraryUser) history
+  LibraryGroupEvent → Group (LibraryGroup) history
+
+Actor resolution: the pghistory Context model (app label "pghistory") stores
+a metadata JSONB column whose "user" key holds the acting user's PK as a
+string.  We build a Python dict {context_id: user_pk} once and reuse it for
+all event rows — equivalent to the previous SQL JOIN but without raw SQL.
 
 Each source row maps to one LogEntry:
   pgh_label = 'insert'  → Action.CREATE  (all fields shown as None → value)
@@ -28,11 +38,17 @@ from django.db import migrations
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-# Columns that belong to pghistory's own bookkeeping, not the model snapshot.
-_PGH_META = {"pgh_id", "pgh_created_at", "pgh_label", "pgh_context_id", "pgh_obj_id"}
+# attname values that belong to pghistory bookkeeping, not the model snapshot.
+_PGH_META_ATTNAMES = {
+    "pgh_id",
+    "pgh_created_at",
+    "pgh_label",
+    "pgh_context_id",
+    "pgh_obj_id",
+}
 
 # Fields whose values are omitted from the changes dict (sensitive or useless).
-_SKIP_FIELDS = {"password"}
+_SKIP_ATTNAMES = {"password"}
 
 
 def _to_str(v):
@@ -54,92 +70,84 @@ def _update_changes(prev, curr):
     }
 
 
-def _pgh_context_exists(connection):
-    """Return True if the pgh_context table is present in the public schema."""
-    with connection.cursor() as cur:
-        cur.execute(
-            "SELECT EXISTS("
-            "  SELECT 1 FROM information_schema.tables"
-            "  WHERE table_schema = 'public' AND table_name = 'pgh_context'"
-            ")"
-        )
-        return cur.fetchone()[0]
-
-
-def _migrate_table(connection, table_name, content_type, LogEntry, has_pgh_context):
+def _build_context_user_map(apps):
     """
-    Read *table_name* and bulk-insert the corresponding LogEntry rows.
-
-    The actor is resolved at the SQL level by JOINing pgh_context (when it
-    exists) and then auth_user, so PostgreSQL performs the UUID comparison
-    natively and avoids any Python-level type-mismatch.
-
-    Does nothing if the table does not exist.
+    Return a {context_id: user_pk} mapping built from the pghistory Context
+    model.  Returns an empty dict if the model is not in the migration registry
+    (i.e. pghistory has been removed from the project).
     """
-    tbl = connection.ops.quote_name(table_name)
+    try:
+        Context = apps.get_model("pghistory", "Context")
+    except LookupError:
+        return {}
 
-    with connection.cursor() as cur:
-        cur.execute(
-            "SELECT EXISTS("
-            "  SELECT 1 FROM information_schema.tables"
-            "  WHERE table_schema = 'public' AND table_name = %s"
-            ")",
-            [table_name],
-        )
-        if not cur.fetchone()[0]:
-            return  # fresh installation — table was never created
+    user_map = {}
+    for ctx in Context.objects.values("id", "metadata"):
+        metadata = ctx.get("metadata") or {}
+        user_str = metadata.get("user")
+        if user_str:
+            try:
+                user_map[ctx["id"]] = int(user_str)
+            except (ValueError, TypeError):
+                pass
+    return user_map
 
-        # Discover columns present in this particular event table.
-        cur.execute("SELECT * FROM %s WHERE 1=0" % tbl)
-        all_columns = [desc[0] for desc in cur.description]
 
-        # Columns that represent a model-field snapshot.
-        snapshot_cols = [
-            c for c in all_columns if c not in _PGH_META and c not in _SKIP_FIELDS
-        ]
+def _snapshot_attnames(EventModel):
+    """
+    Return the list of field attnames that represent a model snapshot (i.e.
+    everything except pghistory bookkeeping columns and skipped fields).
 
-        if not snapshot_cols:
-            return
+    Uses concrete_fields so that ForeignKey attnames include the trailing _id
+    (e.g. 'pgh_context_id') which matches what .values() returns.
+    """
+    return [
+        f.attname
+        for f in EventModel._meta.concrete_fields
+        if f.attname not in _PGH_META_ATTNAMES and f.attname not in _SKIP_ATTNAMES
+    ]
 
-        # The actor column is appended at the end of every row.
-        col_idx = {col: i for i, col in enumerate(all_columns + ["_actor_id"])}
 
-        if has_pgh_context:
-            # Resolve actor via a SQL JOIN so PostgreSQL handles UUID equality.
-            # auth_user.id is cast to text to match the JSONB text extraction.
-            sql = (
-                "SELECT {tbl}.*, __u.id AS _actor_id"
-                " FROM {tbl}"
-                " LEFT JOIN pgh_context __ctx ON {tbl}.pgh_context_id = __ctx.id"
-                " LEFT JOIN auth_user __u"
-                "   ON __u.id::text = __ctx.metadata->>'user'"
-                " ORDER BY {tbl}.pgh_id"
-            ).format(tbl=tbl)
-        else:
-            sql = (
-                "SELECT {tbl}.*, NULL AS _actor_id"
-                " FROM {tbl}"
-                " ORDER BY {tbl}.pgh_id"
-            ).format(tbl=tbl)
+def _migrate_event_model(apps, event_app_label, event_model_name,
+                         content_type, LogEntry, context_user_map):
+    """
+    Read *event_model_name* via the ORM and bulk-insert LogEntry rows.
+    Skips gracefully if the model is not in the migration registry.
+    """
+    try:
+        EventModel = apps.get_model(event_app_label, event_model_name)
+    except LookupError:
+        return  # pghistory removed — nothing to migrate
 
-        cur.execute(sql)
-        raw_rows = cur.fetchall()
-
-    if not raw_rows:
+    snapshot_attnames = _snapshot_attnames(EventModel)
+    if not snapshot_attnames:
         return
 
-    # One snapshot dict per tracked-object id so we can diff UPDATE events.
+    rows = EventModel.objects.order_by("pgh_id").values(
+        "pgh_id",
+        "pgh_created_at",
+        "pgh_label",
+        "pgh_obj_id",
+        "pgh_context_id",
+        *snapshot_attnames,
+    )
+
+    if not rows.exists():
+        return
+
     last_snapshot = {}  # {pgh_obj_id: {field: value}}
     entries = []
 
-    for row in raw_rows:
-        pgh_id = row[col_idx["pgh_id"]]
-        pgh_created_at = row[col_idx["pgh_created_at"]]
-        pgh_label = row[col_idx["pgh_label"]]
-        obj_id = row[col_idx["pgh_obj_id"]]
-        actor_id = row[col_idx["_actor_id"]]
+    for row in rows:
+        pgh_id = row["pgh_id"]
+        pgh_created_at = row["pgh_created_at"]
+        pgh_label = row["pgh_label"]
+        obj_id = row["pgh_obj_id"]
+        context_id = row["pgh_context_id"]
 
-        snapshot = {c: row[col_idx[c]] for c in snapshot_cols}
+        actor_id = context_user_map.get(context_id)
+
+        snapshot = {k: row[k] for k in snapshot_attnames}
 
         if pgh_label == "insert":
             action = LogEntry.Action.CREATE
@@ -188,29 +196,29 @@ def _migrate_table(connection, table_name, content_type, LogEntry, has_pgh_conte
 # ---------------------------------------------------------------------------
 
 def migrate_pghistory_to_auditlog(apps, schema_editor):
-    connection = schema_editor.connection
-
-    if connection.vendor != "postgresql":
+    if schema_editor.connection.vendor != "postgresql":
         return
 
     from auditlog.models import LogEntry
     from django.contrib.contenttypes.models import ContentType
 
-    has_pgh_context = _pgh_context_exists(connection)
+    context_user_map = _build_context_user_map(apps)
 
-    # (legacy table, app_label, model_name)
-    table_map = [
-        ("library_access_libraryuserevent", "auth", "user"),
-        ("library_access_librarygroupevent", "auth", "group"),
-        ("library_access_userprofileevent", "library_access", "userprofile"),
+    # (event model name in library_access, content-type app_label, model_name)
+    model_map = [
+        ("LibraryUserEvent", "auth", "user"),
+        ("LibraryGroupEvent", "auth", "group"),
+        ("UserProfileEvent", "library_access", "userprofile"),
     ]
 
-    for table_name, app_label, model_name in table_map:
+    for event_model_name, ct_app_label, ct_model_name in model_map:
         try:
-            ct = ContentType.objects.get(app_label=app_label, model=model_name)
+            ct = ContentType.objects.get(app_label=ct_app_label, model=ct_model_name)
         except ContentType.DoesNotExist:
             continue
-        _migrate_table(connection, table_name, ct, LogEntry, has_pgh_context)
+        _migrate_event_model(
+            apps, "library_access", event_model_name, ct, LogEntry, context_user_map
+        )
 
 
 # ---------------------------------------------------------------------------
