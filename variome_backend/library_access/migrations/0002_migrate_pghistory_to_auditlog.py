@@ -108,16 +108,24 @@ def _snapshot_attnames(EventModel):
     ]
 
 
-def _migrate_event_model(apps, event_app_label, event_model_name,
+def _migrate_event_model(apps, event_model_name,
                          content_type, LogEntry, context_user_map):
     """
     Read *event_model_name* via the ORM and bulk-insert LogEntry rows.
     Skips gracefully if the model is not in the migration registry.
     """
     try:
-        EventModel = apps.get_model(event_app_label, event_model_name)
+
+        from variome_backend.library_access import models
+        modelMap = {
+            "LibraryUserEvent": models.LibraryUserEvent,
+            "LibraryGroupEvent": models.LibraryGroupEvent,
+            "UserProfileEvent": models.UserProfileEvent,
+        }
+        EventModel = modelMap.get(event_model_name)
     except LookupError:
         return  # pghistory removed — nothing to migrate
+
 
     snapshot_attnames = _snapshot_attnames(EventModel)
     if not snapshot_attnames:
@@ -217,7 +225,7 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
         except ContentType.DoesNotExist:
             continue
         _migrate_event_model(
-            apps, "library_access", event_model_name, ct, LogEntry, context_user_map
+            apps, event_model_name, ct, LogEntry, context_user_map
         )
 
 

@@ -62,5 +62,39 @@
             "autoStartBrowser": false,
             "program": "${workspaceFolder}/manage.py"
         }
-    ]
-}
+        ,{
+                    "name": "debug migrate",
+                    "type": "debugpy",
+                    "request": "launch",
+                    "python": "${workspaceFolder}/.venv/bin/python",
+                    "program": "${workspaceFolder}/manage.py",
+                    "args": [
+                        "migrate"
+                    ],
+                    "console": "integratedTerminal",
+                    "justMyCode": true,
+                    "env": {
+                        "PYTHONPATH": "${workspaceFolder}"
+                    },
+                    "cwd": "${workspaceFolder}"
+                },
+            {
+                    "name": "debug a migration",
+                    "type": "debugpy",
+                    "request": "launch",
+                    "python": "${workspaceFolder}/.venv/bin/python",
+                    "program": "${workspaceFolder}/manage.py",
+                    "args": [
+                        "migrate",
+                        "library_access",
+                        "0002_migrate_pghistory_to_auditlog"
+                    ],
+                    "console": "integratedTerminal",
+                    "justMyCode": true,
+                    "env": {
+                        "PYTHONPATH": "${workspaceFolder}"
+                    },
+                    "cwd": "${workspaceFolder}"
+                }
+        ]
+    }
