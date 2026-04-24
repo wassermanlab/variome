@@ -3,6 +3,7 @@ from tracking.models import Visitor, Pageview
 from django.db import models
 from django.utils import timezone
 from auditlog.registry import auditlog
+import pghistory
 
 import os
 
@@ -10,6 +11,7 @@ import os
 ACCESSES_PER_DAY = os.getenv("ACCESSES_PER_DAY", 100)
 
 
+@pghistory.track()
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     accesses_per_day = models.IntegerField(default=ACCESSES_PER_DAY)
@@ -41,6 +43,7 @@ class UserProfile(models.Model):
 
 
 # Proxy models so that the models appear under Library Access in the admin dashboard
+@pghistory.track()
 class LibraryUser(User):
     def save(self, *args, **kwargs):
         if not self.pk:
@@ -55,6 +58,7 @@ class LibraryUser(User):
         verbose_name_plural = "Users"
 
 
+@pghistory.track()
 class LibraryGroup(Group):
     class Meta:
         proxy = True

@@ -18,6 +18,7 @@ dependencies = [
     "django-tracking2>=0.5.1",
     "django-auth-adfs==1.16",
     "django-auditlog>=3.4.0",
+    "django-pghistory>=3.2.0",
     "python-dotenv>=1.0.1",
     "pymysql>=1.1.2",
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
