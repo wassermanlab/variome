@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Group
 from tracking.models import Visitor, Pageview
 from django.db import models
 from django.utils import timezone
+from auditlog.registry import auditlog
 import pghistory
 
 import os
@@ -82,3 +83,18 @@ class LibrarySession(Visitor):
         verbose_name = "Session"
         verbose_name_plural = "Sessions"
         default_permissions = ()
+
+
+# Register models with auditlog so that all create/update/delete events are
+# captured in auditlog's LogEntry table.
+#
+# Django dispatches post_save signals with sender=<the concrete class that
+# called save()>.  When the admin saves a LibraryUser or LibraryGroup instance
+# the sender is the proxy class, NOT the parent (User / Group), so the parent
+# registration alone is not sufficient.  Both the concrete parent and the proxy
+# are registered so that saves originating from either code path are tracked.
+auditlog.register(UserProfile)
+auditlog.register(User)
+auditlog.register(LibraryUser)
+auditlog.register(Group)
+auditlog.register(LibraryGroup)

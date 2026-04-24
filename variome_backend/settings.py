@@ -109,6 +109,7 @@ INSTALLED_APPS = [
     "tracking",
     "pghistory",
     "pgtrigger",
+    "auditlog",
 ]
 
 MIDDLEWARE = [
@@ -122,6 +123,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "pghistory.middleware.HistoryMiddleware",
+    "auditlog.middleware.AuditlogMiddleware",
 ]
 AUTHENTICATION_BACKENDS = []
 

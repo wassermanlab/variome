@@ -117,15 +117,8 @@ class LibraryGroupAdmin(GroupAdmin):
             | Q(
                 content_type__app_label="library_access",
                 content_type__model__in=[
-                    "librarygroupevent",
-                    "libraryuserevent",
-                    "userprofileevent",
                     "librarysession",
                 ],
-            )
-            | Q(
-                content_type__app_label="pghistory",
-                content_type__model__in=["context", "middlewareevents"],
             )
         )
         return form
