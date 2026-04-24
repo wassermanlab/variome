@@ -2,11 +2,11 @@
 Combined migration that copies all historical records from the three legacy
 django-pghistory event tables into django-auditlog's LogEntry table.
 
-All reads use Django ORM queries (apps.get_model + .values()) rather than
+All reads use Django ORM queries (django.apps.apps.get_model + .values()) rather than
 raw SQL, so:
   * No direct pghistory/pgtrigger imports are needed inside the functions.
   * When pghistory is later removed from the project and its models disappear
-    from the migration registry, every apps.get_model() call raises LookupError
+    from the live app registry, every get_model() call raises LookupError
     which is caught and treated as "nothing to migrate" — the migration still
     runs cleanly on a fresh database.
 
@@ -31,6 +31,7 @@ Every migrated entry is tagged with
 so the reverse operation can cleanly delete exactly those rows.
 """
 
+from django.apps import apps as django_apps
 from django.db import migrations
 
 
@@ -73,11 +74,11 @@ def _update_changes(prev, curr):
 def _build_context_user_map(apps):
     """
     Return a {context_id: user_pk} mapping built from the pghistory Context
-    model.  Returns an empty dict if the model is not in the migration registry
+    model.  Returns an empty dict if the model is not in the live app registry
     (i.e. pghistory has been removed from the project).
     """
     try:
-        Context = apps.get_model("pghistory", "Context")
+        Context = django_apps.get_model("pghistory", "Context")
     except LookupError:
         return {}
 
@@ -108,24 +109,16 @@ def _snapshot_attnames(EventModel):
     ]
 
 
-def _migrate_event_model(apps, event_model_name,
+def _migrate_event_model(apps, event_app_label, event_model_name,
                          content_type, LogEntry, context_user_map):
     """
     Read *event_model_name* via the ORM and bulk-insert LogEntry rows.
-    Skips gracefully if the model is not in the migration registry.
+    Skips gracefully if the model is not in the live app registry.
     """
     try:
-
-        from variome_backend.library_access import models
-        modelMap = {
-            "LibraryUserEvent": models.LibraryUserEvent,
-            "LibraryGroupEvent": models.LibraryGroupEvent,
-            "UserProfileEvent": models.UserProfileEvent,
-        }
-        EventModel = modelMap.get(event_model_name)
+        EventModel = django_apps.get_model(event_app_label, event_model_name)
     except LookupError:
         return  # pghistory removed — nothing to migrate
-
 
     snapshot_attnames = _snapshot_attnames(EventModel)
     if not snapshot_attnames:
@@ -225,7 +218,7 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
         except ContentType.DoesNotExist:
             continue
         _migrate_event_model(
-            apps, event_model_name, ct, LogEntry, context_user_map
+            apps, "library_access", event_model_name, ct, LogEntry, context_user_map
         )
 
 
