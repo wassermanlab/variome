@@ -18,9 +18,6 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
         Generator that yields genomic BVL frequency rows one at a time.
         """
         for record in self.vcf_record_stream():
-            if (record.POS == 27019487):
-                logger.info(f"Processing record {record.ID} at {record.CHROM}:{record.POS}")
-
             variant = self.make_variant_id(record)
             qual = record.QUAL
             info = record.INFO

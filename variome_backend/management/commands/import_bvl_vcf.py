@@ -64,12 +64,12 @@ def check_vcf(vcf_path):
                 sys.exit(1)
 
 
-def export_to_tsv(table_name, row_iter, output_dir, batch_size=10000):
-    """Write rows from an iterator to a TSV file. Returns the output path."""
+def _tee_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
+    """Generator that passes rows through while simultaneously writing them to a TSV file."""
     output_path = Path(output_dir) / f"{table_name}.tsv"
     header = None
+    batch = []
     with open(output_path, "w", encoding="utf-8") as f:
-        batch = []
         for row in row_iter:
             if header is None:
                 header = list(row.keys())
@@ -78,10 +78,10 @@ def export_to_tsv(table_name, row_iter, output_dir, batch_size=10000):
             if len(batch) >= batch_size:
                 f.writelines(batch)
                 batch = []
+            yield row
         if batch:
             f.writelines(batch)
     log.info("TSV written: %s", output_path)
-    return output_path
 
 
 def compute_dir_hash(dir_path):
@@ -308,20 +308,18 @@ class Command(BaseCommand):
             tsv_output_dir.mkdir(parents=True, exist_ok=True)
 
         def make_row_iter(filter_cls, **filter_kwargs):
-            """Return a (possibly tee'd) row iterator for the given filter.
+            """Return a (possibly TSV-tee'd) row iterator for the given filter.
 
-            When --convert-to-tsv is active the rows are also written to a TSV
-            file named after the filter's path_component.
+            When --convert-to-tsv is active the rows are streamed to a TSV
+            file at the same time they are passed to the importer, without
+            loading the full result set into memory.
             """
             f = filter_cls(vcf_file, settings, **filter_kwargs)
+            row_gen = f.getTableRows()
             if convert_to_tsv:
-                # Materialise into a list so we can iterate twice
-                rows = list(f.getTableRows())
                 table_name = filter_cls.__name__.replace("CallFilter", "").lower()
-                # Use importer path_component as the TSV file name when available
-                export_to_tsv(table_name, iter(rows), tsv_output_dir)
-                return iter(rows)
-            return f.getTableRows()
+                return _tee_to_tsv(row_gen, table_name, tsv_output_dir)
+            return row_gen
 
         errors_map = {}
         warnings_map = {}

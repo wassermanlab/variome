@@ -164,8 +164,8 @@ class CallFilter(ABC):
         csq_list = record.INFO.get("CSQ", [])
         if not csq_list:
             return []
-        for list in csq_list:
-            csq_parts = list.split("|")
+        for csq_entry in csq_list:
+            csq_parts = csq_entry.split("|")
             if index >= len(csq_parts):
                 return []
             else:

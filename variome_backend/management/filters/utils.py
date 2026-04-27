@@ -1,5 +1,5 @@
 def validate_get(v, index, na="."):
-    if v is [] or v is None:
+    if not v or v is None:
         return na
     if not isinstance(v, list):
         if v == 0:

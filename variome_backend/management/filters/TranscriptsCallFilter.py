@@ -42,7 +42,7 @@ class TranscriptsCallFilter(CallFilter):
                 elif transcript_type == "RefSeq" or transcript_type == "Refseq":
                     transcript_type = "R"
                 else:
-                    if transcript_id is not na:
+                    if transcript_id != na:
                         transcript_type = self.settings.DEFAULT_TRANSCRIPT_SOURCE
                     else:
                         transcript_type = na
