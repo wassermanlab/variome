@@ -1,15 +1,19 @@
-from venv import logger
+from variome_backend.management.filters.CallFilter import CallFilter
+from variome_backend.management.filters.utils import validate_get
+from typing import List, Dict, Any
+import logging
 
-from .CallFilter import CallFilter
-from typing import List, Dict, Any, Optional
+logger = logging.getLogger(__name__)
+
 
 class SnvsCallFilter(CallFilter):
     """
     Generates the 'snvs' table (SNV-specific annotations).
     """
-    def __init__(self, vcf_file_path: str, settings, assembly: Optional[str] = None):
+    def __init__(self, vcf_file_path: str, settings, assembly=None):
         super().__init__(vcf_file_path, settings)
         self.assembly = assembly
+
     def getTableRows(self):
         """
         Generator that yields SNV rows one at a time.
@@ -51,22 +55,16 @@ class SnvsCallFilter(CallFilter):
                     cadd_score = None
             else:
                 cadd_score = None
-            
+
             # Determine variant length
             if variant_class in ["SNV", "SNP"]:
                 var_length = 1
             else:
                 var_length = abs(len(alt) - len(ref)) + 1
-                
-            # other options:
-#            elif variant_class in ["INS", "DEL"]:
-#                var_length = abs(len(alt) - len(ref))
-#            elif variant_class in ["INDEL"]:
-#                var_length = max(len(ref), len(alt))
 
-            # CADD interpretation (threshold 20)
+            # CADD interpretation (threshold from settings)
             if cadd_score is not None:
-                cadd_intr = "Damaging" if float(cadd_score) >= 20 else "Tolerable"
+                cadd_intr = "Damaging" if float(cadd_score) >= self.settings.CADD_DAMAGING_THRESHOLD else "Tolerable"
             else:
                 cadd_score = NA
                 cadd_intr = NA
@@ -83,7 +81,7 @@ class SnvsCallFilter(CallFilter):
                     spliceai_str = spliceai_info
                 spliceai_parts = spliceai_str.split("|")
                 # AG, AL, DG, DL are 3rd, 4th, 5th, 6th fields (0-based: 2,3,4,5)
-                splice_ai_raw = [spliceai_parts[i] if len(spliceai_parts) > i else '.' for i in range(2,6)]
+                splice_ai_raw = [spliceai_parts[i] if len(spliceai_parts) > i else '.' for i in range(2, 6)]
             else:
                 # Fallback: use DS_* from CSQ
                 splice_ai_raw = ds_ag_list + ds_al_list + ds_dg_list + ds_dl_list
@@ -121,14 +119,14 @@ class SnvsCallFilter(CallFilter):
                 'variant': variant,
                 'type': variant_class,
                 'length': var_length,
-                'chr': chrom_noprefix,#"chr"+chrom_noprefix if self.settings.OUT_CHR else chrom_noprefix,
+                'chr': chrom_noprefix,
                 'pos': pos,
                 'ref': ref,
                 'alt': alt,
                 'cadd_score': cadd_score,
                 'cadd_intr': cadd_intr,
-                'dbsnp_id': NA, # variome currently is . but it could be: dbsnp_ids[0] if dbsnp_ids else NA,
-                'dbsnp_url': NA, # variome currently is . but could be: dbsnp_url,
+                'dbsnp_id': NA,
+                'dbsnp_url': NA,
                 'ucsc_url': ucsc_url,
                 'ensembl_url': ensembl_url,
                 'clinvar_url': clinvar_url,

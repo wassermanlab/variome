@@ -1,13 +1,10 @@
 """
-CallFilter base class and global VCF options.
+CallFilter base class for VCF import filters.
 """
-
-
-# Remove direct imports of config constants
 
 from time import sleep
 
-from vcf_import.tools import validate_get
+from variome_backend.management.filters.utils import validate_get
 
 import vcfpy
 import os
@@ -63,7 +60,7 @@ class CallFilter(ABC):
         before_sleep=before_sleep_log(logger, logging.WARNING)
     )
     def _init_vcf_header_and_csq(self):
-        
+
         child_class_name = self.__class__.__name__
         logger.info(f"booting up {child_class_name}...")
         #read severity table file
@@ -126,20 +123,16 @@ class CallFilter(ABC):
                                 yield record
                                 found = True
                             break
-                    # Debug output for missed records
-                    if not found:
-                        pass  # Could print debug info here if needed
             else:
                 for record in reader:
                     yield record
 
         with self.stream_with_retries(self._vcf_file_path) as stream:
             yield from yield_records_in_ranges(vcfpy.Reader(stream=stream))
-        
 
 
 
-        
+
     def describe(self) -> str:
         description = ""
         csq_fields = '\n'.join(self.csq_fields)
@@ -152,14 +145,14 @@ class CallFilter(ABC):
         description += f"\n{info_fields}\n"
         description += f"CSQ fields:\n{csq_fields}\n"
         return description
-    
+
     def load_vcf_file(self, file, type = "SNV"):
         return []
-    
+
     def get_csq_values(self, record: vcfpy.Record, field_name: str) -> List[str]:
         """
         Helper method to extract a specific CSQ field value from a VCF record.
-        
+
         Args:
             record: VCF record object
             field_name: Name of the CSQ field to extract
@@ -178,11 +171,11 @@ class CallFilter(ABC):
             else:
                 values.append(csq_parts[index])
         return values
-    
+
     def get_info_value(self, record: vcfpy.Record, field_name: str, fallback = None) -> str:
         """
         Helper method to extract a specific INFO field value from a VCF record.
-        
+
         Args:
             record: VCF record object
             field_name: Name of the INFO field to extract
@@ -195,7 +188,7 @@ class CallFilter(ABC):
 
         """
         Helper method to construct a variant ID from VCF record fields.
-        
+
         Args:
             record: VCF record object
         """
@@ -210,14 +203,15 @@ class CallFilter(ABC):
             # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"
         else:
-            # VCF standard seems to store using _ as separators 
+            # VCF standard seems to store using _ as separators
             variant_id = f"{chrom}_{pos}_{ref}_{alt}"
         return variant_id
+
     @abstractmethod
     def getTableRows(self) -> List[Dict[str, Any]]:
         """
         Extract table rows from the loaded VCF data.
-        
+
         Returns:
             List of dictionaries where each dict represents a row in the table.
         """

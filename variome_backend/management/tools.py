@@ -88,92 +88,35 @@ class Importer:
         return True, row
 
     @transaction.atomic
-    def import_data(self):
-        """Locate the appropriate data file and load objects from it"""
+    def import_data(self, row_iter=None):
+        """Load objects from a row iterator or from the TSV file for this importer.
+
+        Args:
+            row_iter: Optional iterator/generator yielding dict rows. When provided,
+                      the TSV file is not read; rows come directly from the caller
+                      (e.g. a VCF CallFilter's getTableRows() generator). When
+                      omitted, the importer reads from its configured TSV file path.
+        """
         if self.delete:
             self.model.objects.all().delete()
         errors = []
         warnings = []
-        input_file = self.get_input_path()
         self.populate_caches()
         n_count = 0
+        self._row_num = 0
 
-        with open(input_file, newline="") as f:
-            self.reader = csv.DictReader(f, dialect=self.csv_dialect)
-            bulk_create = []
-            try:
-                for row in self.reader:
-                    n_count += 1
-                    if self.progress and self.reader.line_num % 1000 == 0:
-                        sys.stderr.write(
-                            f"{self.object_name} {self.reader.line_num}...\n"
-                        )
-                    if self.limit is not None and self.limit < self.reader.line_num:
-                        warnings.append(
-                            f"stopped processing after limit ({self.limit}) hit"
-                        )
-                        break
-                    success, obj = self.clean_data(row)
-                    if success:
-                        row = obj
-                    else:
-                        for msg in obj:
-                            warnings.append(
-                                f"ignored row {self.reader.line_num} due to "
-                                f"uncleanable data: {msg}"
-                            )
-                        continue
-                    if self.batch:
-                        if not self.check_existing(row):
-                            success, obj = self.created_row_object(row)
-                            if success:
-                                bulk_create.append(obj)
-                            else:
-                                errors.append(obj)
-                                if self.failfast:
-                                    return errors, warnings, (0, 0)
-                        elif self.update_existing:
-                            success, obj = self.update(row)
-                            if not success:
-                                errors.append(obj)
-                                if self.failfast:
-                                    return errors, warnings, (0, 0)
-                    else:
-                        success, obj = self.update_or_create(row)
-                        if not success:
-                            errors.append(obj)
-                            if self.failfast:
-                                return errors, warnings, (0, 0)
+        if row_iter is None:
+            input_file = self.get_input_path()
+            with open(input_file, newline="") as f:
+                self.reader = csv.DictReader(f, dialect=self.csv_dialect)
+                errors, warnings, n_count = self._process_rows(
+                    self.reader, errors, warnings, use_csv_reader=True
+                )
+        else:
+            errors, warnings, n_count = self._process_rows(
+                row_iter, errors, warnings, use_csv_reader=False
+            )
 
-                    if len(bulk_create) >= self.batch_size:
-                        try:
-                            self.model.objects.bulk_create(bulk_create)
-                            bulk_create = []
-                        except Exception as e:
-                            msg = (
-                                f"error in bulk create of {self.object_name_plural} "
-                                f"after input line {self.reader.line_num}: \n row:{row}\n{e}"
-                            )
-                            errors.append(msg)
-                            if self.failfast:
-                                return errors, warnings, (0, 0)
-                # Run out of input rows, tidy up outstanding create/updates
-                if len(bulk_create):
-                    try:
-                        self.model.objects.bulk_create(bulk_create)
-                        bulk_create = []
-                    except Exception as e:
-                        msg = (
-                            f"error in bulk create of {self.object_name_plural} "
-                            f"after end of input {self.reader.line_num}\n row:{row}\n{e}"
-                        )
-                        errors.append(msg)
-                        if self.failfast:
-                            return errors, warnings, (0, 0)
-            except csv.Error as e:
-                errors.append(f"error reading line {self.reader.line_num}: {e}")
-                if self.failfast:
-                    return errors, warnings, (0, 0)
         if not self.failfast:
             # errors in middle of transaction get swallowed without try / except here
             try:
@@ -184,6 +127,91 @@ class Importer:
         else:
             n_success = self.model.objects.count()
         return errors, warnings, (n_count, n_success)
+
+    def _process_rows(self, row_iter, errors, warnings, use_csv_reader=False):
+        """Process rows from the given iterator, writing to the database.
+
+        Returns (errors, warnings, n_count).
+        """
+        n_count = 0
+        bulk_create = []
+        try:
+            for row in row_iter:
+                n_count += 1
+                if use_csv_reader:
+                    self._row_num = self.reader.line_num
+                else:
+                    self._row_num = n_count
+                if self.progress and self._row_num % 1000 == 0:
+                    sys.stderr.write(
+                        f"{self.object_name} {self._row_num}...\n"
+                    )
+                if self.limit is not None and self.limit < self._row_num:
+                    warnings.append(
+                        f"stopped processing after limit ({self.limit}) hit"
+                    )
+                    break
+                success, obj = self.clean_data(row)
+                if success:
+                    row = obj
+                else:
+                    for msg in obj:
+                        warnings.append(
+                            f"ignored row {self._row_num} due to "
+                            f"uncleanable data: {msg}"
+                        )
+                    continue
+                if self.batch:
+                    if not self.check_existing(row):
+                        success, obj = self.created_row_object(row)
+                        if success:
+                            bulk_create.append(obj)
+                        else:
+                            errors.append(obj)
+                            if self.failfast:
+                                return errors, warnings, n_count
+                    elif self.update_existing:
+                        success, obj = self.update(row)
+                        if not success:
+                            errors.append(obj)
+                            if self.failfast:
+                                return errors, warnings, n_count
+                else:
+                    success, obj = self.update_or_create(row)
+                    if not success:
+                        errors.append(obj)
+                        if self.failfast:
+                            return errors, warnings, n_count
+
+                if len(bulk_create) >= self.batch_size:
+                    try:
+                        self.model.objects.bulk_create(bulk_create)
+                        bulk_create = []
+                    except Exception as e:
+                        msg = (
+                            f"error in bulk create of {self.object_name_plural} "
+                            f"after input row {self._row_num}: \n row:{row}\n{e}"
+                        )
+                        errors.append(msg)
+                        if self.failfast:
+                            return errors, warnings, n_count
+            # Run out of input rows, tidy up outstanding create/updates
+            if len(bulk_create):
+                try:
+                    self.model.objects.bulk_create(bulk_create)
+                except Exception as e:
+                    msg = (
+                        f"error in bulk create of {self.object_name_plural} "
+                        f"after end of input row {self._row_num}\n row:{row}\n{e}"
+                    )
+                    errors.append(msg)
+                    if self.failfast:
+                        return errors, warnings, n_count
+        except csv.Error as e:
+            errors.append(f"error reading row {self._row_num}: {e}")
+            if self.failfast:
+                return errors, warnings, n_count
+        return errors, warnings, n_count
 
 
 class SeverityImporter(Importer):
@@ -221,7 +249,7 @@ class SeverityImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -237,14 +265,14 @@ class SeverityImporter(Importer):
             )
             if updated != 1:
                 msg = (
-                    f"error, updated {updated} DB rows from line {self.reader.line_num}"
+                    f"error, updated {updated} DB rows from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -264,7 +292,7 @@ class SeverityImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -298,7 +326,7 @@ class GeneImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -321,7 +349,7 @@ class GeneImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -369,7 +397,7 @@ class VariantImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -384,14 +412,14 @@ class VariantImporter(Importer):
             )
             if updated != 1:
                 msg = (
-                    f"error, updated {updated} DB rows from line {self.reader.line_num}"
+                    f"error, updated {updated} DB rows from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -412,7 +440,7 @@ class VariantImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -461,7 +489,7 @@ class TranscriptImporter(Importer):
             if gene is None:
                 msg = (
                     f"error creating {self.object_name} object {row['transcript_id']} "
-                    f"for bulk create from line {self.reader.line_num}: "
+                    f"for bulk create from line {self._row_num}: "
                     f"gene {row['gene']} not found"
                 )
                 return False, msg
@@ -476,7 +504,7 @@ class TranscriptImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object {row['transcript_id']} "
-                f"for bulk create from line {self.reader.line_num}: {e}"
+                f"for bulk create from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -492,7 +520,7 @@ class TranscriptImporter(Importer):
                 if gene is None:
                     msg = (
                         f"error updating {self.object_name} object {row['transcript_id']} "
-                        f"from line {self.reader.line_num}: gene {row['gene']} not found"
+                        f"from line {self._row_num}: gene {row['gene']} not found"
                     )
                     return False, msg
             updated = self.model.objects.filter(
@@ -506,14 +534,14 @@ class TranscriptImporter(Importer):
             if updated != 1:
                 msg = (
                     f"error, updated {updated} DB rows for {self.object_name} "
-                    f"{row['transcript_id']} from line {self.reader.line_num}"
+                    f"{row['transcript_id']} from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object {row['transcript_id']} "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -536,7 +564,7 @@ class TranscriptImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} {row['transcript_id']} "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -614,7 +642,7 @@ class SNVImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create for "
-                f"variant {row['variant']} from line {self.reader.line_num}: {e}"
+                f"variant {row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -646,14 +674,14 @@ class SNVImporter(Importer):
             if updated != 1:
                 msg = (
                     f"error, updated {updated} DB rows for variant {row['variant']} "
-                    f"from line {self.reader.line_num}"
+                    f"from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -688,7 +716,7 @@ class SNVImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -769,7 +797,7 @@ class GVFImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create for "
-                f"variant {row['variant']} from line {self.reader.line_num}: {e}"
+                f"variant {row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -795,14 +823,14 @@ class GVFImporter(Importer):
             if updated != 1:
                 msg = (
                     f"error, updated {updated} DB rows for variant "
-                    f"{row['variant']} from line {self.reader.line_num}"
+                    f"{row['variant']} from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -831,7 +859,7 @@ class GVFImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -886,7 +914,7 @@ class GGFImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating {self.object_name} object for bulk create for "
-                f"variant {row['variant']} from line {self.reader.line_num}: {e}"
+                f"variant {row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -907,14 +935,14 @@ class GGFImporter(Importer):
             if updated != 1:
                 msg = (
                     f"error, updated {updated} DB rows for variant {row['variant']} "
-                    f"from line {self.reader.line_num}"
+                    f"from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
         except Exception as e:
             msg = (
                 f"error updating {self.object_name} object for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -938,7 +966,7 @@ class GGFImporter(Importer):
         except Exception as e:
             msg = (
                 f"error creating/updating {self.object_name} for variant "
-                f"{row['variant']} from line {self.reader.line_num}: {e}"
+                f"{row['variant']} from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1025,7 +1053,7 @@ class VariantTranscriptImporter(Importer):
             msg = (
                 f"error creating {self.object_name} object {row['variant']} / "
                 f"{row['transcript']} for bulk create from line "
-                f"{self.reader.line_num}: variant {row['variant']} not found"
+                f"{self._row_num}: variant {row['variant']} not found"
             )
             return False, msg
         transcript = self.transcripts.get(row["transcript"], None)
@@ -1040,7 +1068,7 @@ class VariantTranscriptImporter(Importer):
             msg = (
                 f"error creating {self.object_name} object for bulk create for "
                 f"variant {row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1059,7 +1087,7 @@ class VariantTranscriptImporter(Importer):
                 msg = (
                     f"error, updated {updated} DB rows for variant "
                     f"{row['variant']} / transcript {row['transcript']} from "
-                    f"line {self.reader.line_num}"
+                    f"line {self._row_num}"
                 )
                 return False, msg
             return True, updated
@@ -1067,7 +1095,7 @@ class VariantTranscriptImporter(Importer):
             msg = (
                 f"error updating {self.object_name} object for variant "
                 f"{row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1089,7 +1117,7 @@ class VariantTranscriptImporter(Importer):
             msg = (
                 f"error creating/updating {self.object_name} for variant "
                 f"{row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1237,7 +1265,7 @@ class AnnotationImporter(Importer):
             msg = (
                 f"error creating object for bulk create of {self.object_name} for "
                 f"variant {row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1257,7 +1285,7 @@ class AnnotationImporter(Importer):
             if updated != 1:
                 msg = (
                     f"error, updated {updated} DB rows for variant {row['variant']} "
-                    f"/ transcript {row['transcript']} from line {self.reader.line_num}"
+                    f"/ transcript {row['transcript']} from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
@@ -1265,7 +1293,7 @@ class AnnotationImporter(Importer):
             msg = (
                 f"error updating {self.object_name} object for variant "
                 f"{row['variant']} / transcript {row['transcript']} "
-                f"from line {self.reader.line_num}: {e}"
+                f"from line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1289,7 +1317,7 @@ class AnnotationImporter(Importer):
             msg = (
                 f"error creating/updating {self.object_name} for variant "
                 f"{row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1417,7 +1445,7 @@ class ConsequenceImporter(Importer):
             msg = (
                 f"error creating object for bulk create of {self.object_name} for "
                 f"variant {row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1435,7 +1463,7 @@ class ConsequenceImporter(Importer):
               # variant-transcript pairs can have multiple consequences
                 msg = (
                     f"error, updated {updated} DB rows for variant {row['variant']} "
-                    f"/ transcript {row['transcript']} from line {self.reader.line_num}"
+                    f"/ transcript {row['transcript']} from line {self._row_num}"
                 )
                 return False, msg
             return True, updated
@@ -1443,7 +1471,7 @@ class ConsequenceImporter(Importer):
             msg = (
                 f"error updating {self.object_name} object for variant "
                 f"{row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
 
@@ -1464,6 +1492,6 @@ class ConsequenceImporter(Importer):
             msg = (
                 f"error creating/updating {self.object_name} for variant "
                 f"{row['variant']} / transcript {row['transcript']} from "
-                f"line {self.reader.line_num}: {e}"
+                f"line {self._row_num}: {e}"
             )
             return False, msg
