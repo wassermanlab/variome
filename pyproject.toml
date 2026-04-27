@@ -20,7 +20,7 @@ dependencies = [
     "django-auditlog>=3.4.0",
     "python-dotenv>=1.0.1",
     "vcfpy>=0.14.2",
-    "tenacity>=9.1.4",,
+    "tenacity>=9.1.4",
     "pymysql>=1.1.2",
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
