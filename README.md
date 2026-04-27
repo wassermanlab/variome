@@ -146,6 +146,9 @@ Markdown format files in the /content folder are treated as full pages, availabl
 
 Markdown format files in /content/Home are individual, "hard-coded" page elements on the Home page, so you shouldn't add more or rename these.
 
+### config reference
+PUBLIC_BVL - opens the database for public access, as a demonstration app. For this to work, a shared user account must also be created ( username: `public_demo_user`, email: `public_demo_user@ibvl.ca` )
+
 ### attributions
 
 example DNA image: https://commons.wikimedia.org/wiki/File:202104_Laboratory_instrument_dna.svg
