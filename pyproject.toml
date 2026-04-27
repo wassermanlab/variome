@@ -19,6 +19,8 @@ dependencies = [
     "django-auth-adfs==1.16",
     "django-auditlog>=3.4.0",
     "python-dotenv>=1.0.1",
+    "vcfpy>=0.14.2",
+    "tenacity>=9.1.4",,
     "pymysql>=1.1.2",
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
@@ -42,3 +44,9 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["variome"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "watchdog>=6.0.0",
+]

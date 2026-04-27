@@ -149,6 +149,44 @@ Markdown format files in /content/Home are individual, "hard-coded" page element
 ### config reference
 PUBLIC_BVL - opens the database for public access, as a demonstration app. For this to work, a shared user account must also be created ( username: `public_demo_user`, email: `public_demo_user@ibvl.ca` )
 
+
+# VCF Publisher (WIP)
+
+Import directly into the database directly from a VCF, no intermediate TSV file step necessary.
+
+Current status: Right now this script writes TSV files as a sanity check to ensure consistency with existing pipeline tsv output
+
+Mitochondrial tables are omitted because these are left out of the currently used vcf reference files
+
+Gnomad information is left out currently because it is easily fetched dynamically from the frontend. However, the value of the bulk gnomad data availability is recognized when it comes to analysis activity, but this is not what the reference library is for as a central feature, so it is not a priority.
+
+## Importing a VCF
+
+See the environment variable examples in the bottom of .env-sample and set accordingly:
+VCF_FILE, NA, OUT_CHR, OUT_HYPHENS, SEVERITIES_TSV_PATH, CADD_DAMAGING_THRESHOLD, DEFAULT_TRANSCRIPT_SOURCE accordingly
+```
+uv sync
+uv run -m vcf_import.VCF_publish
+```
+To watch for changes and rerun automatically:
+
+```
+uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m vcf_import.VCF_publish'
+```
+
+## Testing VCF Importing 
+
+```
+uv sync --dev
+uv run -m pytest vcf_import/VCF_test.py
+```
+
+To watch for changes and rerun tests automatically:
+
+```
+uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest vcf_import/VCF_test.py'
+```
+
 ### attributions
 
 example DNA image: https://commons.wikimedia.org/wiki/File:202104_Laboratory_instrument_dna.svg

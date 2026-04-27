@@ -60,9 +60,13 @@ six==1.17.0
     # via python-dateutil
 sqlparse==0.5.3
     # via django
+tenacity==9.1.4
+    # via variome (pyproject.toml)
 typing-extensions==4.13.0
     # via dj-database-url
 urllib3==2.3.0
     # via
     #   django-auth-adfs
     #   requests
+vcfpy==0.14.2
+    # via variome (pyproject.toml)
