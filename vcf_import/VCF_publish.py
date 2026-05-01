@@ -104,10 +104,11 @@ class VariantImporter:
         start_time = datetime.now()
         last_now = datetime.now()
         
-        def log_timing(name):
+        def log_timing(name, do_print=True):
             nonlocal last_now
             duration = datetime.now() - last_now
-            logger.info(f"{name} took {str(duration)} h:m:s")
+            if do_print:
+                logger.info(f"{name} took {str(duration)} h:m:s")
             last_now = datetime.now()
             
         results = {}
@@ -138,43 +139,42 @@ class VariantImporter:
 
         # Process and export each table one by one to avoid accumulating all in RAM
         genesCallFilter = GenesCallFilter(snv_vcf, SETTINGS)
-        log_timing("genes (start)")
+        log_timing("genes (start)", False)
         export_to_tsv("genes", genesCallFilter.getTableRows())
         log_timing("genes (end)")
-        
         transcripts = TranscriptsCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("transcripts")
         export_to_tsv("transcripts", transcripts)
+        log_timing("transcripts")
         del transcripts
 
         variants = VariantsCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("variants")
         export_to_tsv("variants", variants)
+        log_timing("variants")
         del variants
 
         variants_transcripts = VariantsTranscriptsCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("variants_transcripts")
         export_to_tsv("variants_transcripts", variants_transcripts)
+        log_timing("variants_transcripts")
         del variants_transcripts
 
         variants_annotations = VariantsAnnotationsCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("variants_annotations")   
         export_to_tsv("variants_annotations", variants_annotations)
+        log_timing("variants_annotations")   
         del variants_annotations
 
         variants_consequences = VariantsConsequencesCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("variants_consequences")
         export_to_tsv("variants_consequences", variants_consequences)
+        log_timing("variants_consequences")
         del variants_consequences
 
         snvs = SnvsCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("snvs")
         export_to_tsv("snvs", snvs)
+        log_timing("snvs")
         del snvs
 
         genomic_bvl_frequencies = GenomicBvlFrequenciesCallFilter(snv_vcf, SETTINGS).getTableRows()
-        log_timing("genomic_bvl_frequencies")
         export_to_tsv("genomic_variome_frequencies", genomic_bvl_frequencies)
+        log_timing("genomic_bvl_frequencies")
         del genomic_bvl_frequencies
         
 #        mts_begin = datetime.now()

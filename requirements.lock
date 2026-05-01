@@ -42,6 +42,8 @@ idna==3.13
     # via requests
 natsort==8.4.0
     # via variome (pyproject.toml)
+numpy==2.4.4
+    # via variome (pyproject.toml)
 psycopg2-binary==2.9.12
     # via variome (pyproject.toml)
 pycparser==3.0
