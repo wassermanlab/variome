@@ -20,8 +20,8 @@ class Command(BaseCommand):
     def log_errors(self, entity_type, errors):
         if errors:
             sys.stderr.write(f"\nERRORS ({len(errors)}) in {entity_type} load:\n")
-            for err in errors:
-                sys.stderr.write(f"* {err}\n")
+            for line in bvltools.format_errors(errors, log_all=self.log_all_errors):
+                sys.stderr.write(line + "\n")
 
     def log_warnings(self, entity_type, warnings):
         if warnings:
@@ -148,11 +148,19 @@ class Command(BaseCommand):
             default=False,
             help="Dry run - make no changes to database",
         )
+        parser.add_argument(
+            "--log-all-errors",
+            dest="log_all_errors",
+            action="store_true",
+            default=False,
+            help="Print every error in full; by default only the first 40 per error group are shown",
+        )
 
     def handle(self, **options):
         transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
         start_time = time()
+        self.log_all_errors = options["log_all_errors"]
 
         sev_errors = None
         gen_errors = None

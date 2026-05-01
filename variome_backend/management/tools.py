@@ -1,6 +1,8 @@
 import logging
 import csv
+import re
 import sys
+from collections import defaultdict
 
 from pathlib import Path
 
@@ -11,6 +13,60 @@ from django.db import transaction
 import variome_backend.library.models as bvlmodels
 
 log = logging.getLogger("management")
+
+# Number of example errors shown per error group before truncating
+_ERRORS_SHOWN_PER_GROUP = 40
+
+
+def _error_key(msg):
+    """Return a normalised grouping key for an error message.
+
+    Specific row-level identifiers (variant IDs, transcript IDs, row numbers,
+    file-system paths) are replaced with placeholders so that many messages that
+    differ only in *which* row triggered the problem are treated as belonging to
+    the same group.  Semantic details that distinguish *types* of error (e.g.
+    the severity number) are kept, so that "severity 28 not found" and
+    "severity 30 not found" are reported as separate groups.
+    """
+    key = msg
+    # Genomic variant IDs: chr1-12345-A-G  or  chr1_12345_A_G
+    key = re.sub(r'\bchr[0-9XYMTa-z]+[-_][0-9]+[-_][A-Za-z*]+[-_][A-Za-z*]+\b', '{variant}', key)
+    # Ensembl gene / transcript / protein IDs
+    key = re.sub(r'\b(ENSG|ENST|ENSP)[0-9]+(\.[0-9]+)?\b', '{transcript}', key)
+    # RefSeq accessions: NM_000014.6, XR_001755472.2, NR_..., NP_..., XM_...
+    key = re.sub(r'\b(NM|NR|NP|XM|XR)_[0-9]+(\.[0-9]+)?\b', '{transcript}', key)
+    # Standalone integers that are row / position numbers (not severity codes,
+    # which appear as "number N" and are left untouched by the above rules)
+    key = re.sub(r'\b[0-9]{4,}\b', '{N}', key)
+    return key
+
+
+def format_errors(errors, log_all=False):
+    """Return a list of lines to write to stderr for *errors*.
+
+    When *log_all* is False (the default) at most ``_ERRORS_SHOWN_PER_GROUP``
+    examples are shown for each group of similar errors; a summary line
+    "X more similar errors -- run with --log-all-errors to see all" is appended
+    for each truncated group.
+    """
+    if log_all:
+        return [f"* {e}" for e in errors]
+
+    groups = defaultdict(list)
+    for msg in errors:
+        groups[_error_key(msg)].append(msg)
+
+    lines = []
+    for msgs in groups.values():
+        shown = msgs[:_ERRORS_SHOWN_PER_GROUP]
+        lines.extend(f"* {m}" for m in shown)
+        remaining = len(msgs) - len(shown)
+        if remaining:
+            lines.append(
+                f"  ... {remaining} more similar error(s) -- "
+                "run with --log-all-errors to see all"
+            )
+    return lines
 
 
 class bvlDialect(csv.excel_tab):
