@@ -8,7 +8,8 @@ from pathlib import Path
 
 from django.db.models import IntegerField, Q, F, Value as V
 from django.db.models.functions import Substr, StrIndex, Cast
-from django.db import transaction
+from django.db import connection, transaction
+from django.core.management.color import no_style
 
 import variome_backend.library.models as bvlmodels
 
@@ -155,6 +156,10 @@ class Importer:
         """
         if self.delete:
             self.model.objects.all().delete()
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [self.model])
+            with connection.cursor() as cursor:
+                for sql in sequence_sql:
+                    cursor.execute(sql)
         errors = []
         warnings = []
         self.populate_caches()
