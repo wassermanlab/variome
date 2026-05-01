@@ -176,7 +176,7 @@ Run `python manage.py import_bvl_vcf --help` for a full list of options.
 | `--cadd-threshold` | `20` | CADD phred score threshold for "Damaging" classification |
 | `--default-transcript-source` | `E` | Fallback transcript source when unknown (`E`=Ensembl, `R`=RefSeq) |
 | `--ranges` | *(all)* | Restrict processing to specific regions, e.g. `22:27010000-27020000,X:2702000-2802000` |
-| `--convert-to-tsv` | disabled | Also write intermediate TSV files for each table |
+| `--convert-to-tsv` | disabled | Write TSV files instead of importing into the database |
 | `--tsv-output-dir` | `data/vcf_output` | Directory for TSV output (requires `--convert-to-tsv`) |
 | `--hash-compare` | *(none)* | Directory of an existing TSV set to compare output hashes against (requires `--convert-to-tsv`) |
 | `--dry-run` / `-n` | disabled | Parse and validate without writing to the database |

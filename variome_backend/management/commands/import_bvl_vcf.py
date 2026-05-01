@@ -64,8 +64,8 @@ def check_vcf(vcf_path):
                 sys.exit(1)
 
 
-def _tee_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
-    """Generator that passes rows through while simultaneously writing them to a TSV file."""
+def _write_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
+    """Consume row_iter and write all rows to a TSV file. Does not import into the database."""
     output_path = Path(output_dir) / f"{table_name}.tsv"
     header = None
     batch = []
@@ -78,7 +78,6 @@ def _tee_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
             if len(batch) >= batch_size:
                 f.writelines(batch)
                 batch = []
-            yield row
         if batch:
             f.writelines(batch)
     log.info("TSV written: %s", output_path)
@@ -184,7 +183,7 @@ class Command(BaseCommand):
             default=False,
             action=argparse.BooleanOptionalAction,
             dest="convert_to_tsv",
-            help="Write intermediate TSV files in addition to importing into the database",
+            help="Write TSV files instead of importing into the database",
         )
         parser.add_argument(
             "--tsv-output-dir",
@@ -204,21 +203,21 @@ class Command(BaseCommand):
 
         # --- Table selection (mirrors import_bvl) ---
         parser.add_argument("--genes", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import genes?")
+                            help="Process genes?")
         parser.add_argument("--variants", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import variants?")
+                            help="Process variants?")
         parser.add_argument("--transcripts", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import transcripts?")
+                            help="Process transcripts?")
         parser.add_argument("--snvs", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import SNVs?")
+                            help="Process SNVs?")
         parser.add_argument("--gvfs", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import genomic variome frequencies?")
+                            help="Process genomic variome frequencies?")
         parser.add_argument("--annotations", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import variant annotations?")
+                            help="Process variant annotations?")
         parser.add_argument("--consequences", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import variant consequences?")
+                            help="Process variant consequences?")
         parser.add_argument("--vts", default=True, action=argparse.BooleanOptionalAction,
-                            help="Import variant transcripts?")
+                            help="Process variant transcripts?")
 
         # --- Shared DB/run flags (mirrors import_bvl) ---
         parser.add_argument(
@@ -285,7 +284,67 @@ class Command(BaseCommand):
             RANGES=options["ranges"],
         )
 
-        # Shared importer options forwarded to tool classes
+        convert_to_tsv = options["convert_to_tsv"]
+
+        check_vcf(vcf_file)
+
+        # Helper that returns a row generator for the given filter class
+        def make_row_iter(filter_cls, **filter_kwargs):
+            return filter_cls(vcf_file, settings, **filter_kwargs).getTableRows()
+
+        # Table selection flags and corresponding filter / importer pairs
+        table_specs = []
+        if options["genes"]:
+            table_specs.append(("Gene", "genes", GenesCallFilter, bvltools.GeneImporter))
+        if options["transcripts"]:
+            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter))
+        if options["variants"]:
+            table_specs.append(("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter))
+        if options["vts"]:
+            table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter))
+        if options["annotations"]:
+            table_specs.append(("Annotation", "variants_annotations", VariantsAnnotationsCallFilter, bvltools.AnnotationImporter))
+        if options["consequences"]:
+            table_specs.append(("Consequence", "variants_consequences", VariantsConsequencesCallFilter, bvltools.ConsequenceImporter))
+        if options["snvs"]:
+            table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
+        if options["gvfs"]:
+            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
+
+        if convert_to_tsv:
+            # TSV-only mode: write one TSV file per table, do not touch the database.
+            tsv_output_dir = Path(options["tsv_output_dir"])
+            tsv_output_dir.mkdir(parents=True, exist_ok=True)
+
+            for _label, table_name, filter_cls, _importer_cls in table_specs:
+                _write_to_tsv(make_row_iter(filter_cls), table_name, tsv_output_dir)
+
+            hash_list, hash_map, final_hash = compute_dir_hash(tsv_output_dir)
+            log.info("Hash list:\n%s", hash_list)
+            log.info("Final hash of output files:\n%s", final_hash)
+
+            compare_dir = options["hash_compare"]
+            if compare_dir:
+                hash_list2, hash_map2, final_hash2 = compute_dir_hash(compare_dir)
+                log.info("Comparison hash list:\n%s", hash_list2)
+                log.info("Comparison final hash:\n%s", final_hash2)
+                for fname, h in hash_map.items():
+                    h2 = hash_map2.get(fname)
+                    if h == h2:
+                        log.info("File %s hashes match. ✅", fname)
+                    else:
+                        log.warning("File %s hashes don't match ❌", fname)
+
+            end_time = time()
+            elapsed = end_time - start_time
+            sys.stdout.write(
+                f"\n\nElapsed time: {elapsed // 3600:.0f} hours "
+                f"{(elapsed % 3600) // 60:.0f} minutes "
+                f"{elapsed % 60:.1f} seconds\n"
+            )
+            return
+
+        # DB import mode
         importer_options = {
             # import_bvl uses a --path for TSV files; VCF command doesn't need it
             # but Importer.__init__ requires "path". Supply a dummy here since
@@ -298,79 +357,13 @@ class Command(BaseCommand):
             "delete": options["delete"],
         }
 
-        check_vcf(vcf_file)
-
-        # Optionally set up TSV output directory
-        convert_to_tsv = options["convert_to_tsv"]
-        tsv_output_dir = None
-        if convert_to_tsv:
-            tsv_output_dir = Path(options["tsv_output_dir"])
-            tsv_output_dir.mkdir(parents=True, exist_ok=True)
-
-        def make_row_iter(filter_cls, **filter_kwargs):
-            """Return a (possibly TSV-tee'd) row iterator for the given filter.
-
-            When --convert-to-tsv is active the rows are streamed to a TSV
-            file at the same time they are passed to the importer, without
-            loading the full result set into memory.
-            """
-            f = filter_cls(vcf_file, settings, **filter_kwargs)
-            row_gen = f.getTableRows()
-            if convert_to_tsv:
-                table_name = filter_cls.__name__.replace("CallFilter", "").lower()
-                return _tee_to_tsv(row_gen, table_name, tsv_output_dir)
-            return row_gen
-
         errors_map = {}
         warnings_map = {}
         counts_map = {}
 
-        if options["genes"]:
-            row_iter = make_row_iter(GenesCallFilter)
-            errors_map["Gene"], warnings_map["Gene"], counts_map["Gene"] = (
-                bvltools.GeneImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["transcripts"]:
-            row_iter = make_row_iter(TranscriptsCallFilter)
-            errors_map["Transcript"], warnings_map["Transcript"], counts_map["Transcript"] = (
-                bvltools.TranscriptImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["variants"]:
-            row_iter = make_row_iter(VariantsCallFilter)
-            errors_map["Variant"], warnings_map["Variant"], counts_map["Variant"] = (
-                bvltools.VariantImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["vts"]:
-            row_iter = make_row_iter(VariantsTranscriptsCallFilter)
-            errors_map["Variant Transcript"], warnings_map["Variant Transcript"], counts_map["Variant Transcript"] = (
-                bvltools.VariantTranscriptImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["annotations"]:
-            row_iter = make_row_iter(VariantsAnnotationsCallFilter)
-            errors_map["Annotation"], warnings_map["Annotation"], counts_map["Annotation"] = (
-                bvltools.AnnotationImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["consequences"]:
-            row_iter = make_row_iter(VariantsConsequencesCallFilter)
-            errors_map["Consequence"], warnings_map["Consequence"], counts_map["Consequence"] = (
-                bvltools.ConsequenceImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["snvs"]:
-            row_iter = make_row_iter(SnvsCallFilter)
-            errors_map["SNV"], warnings_map["SNV"], counts_map["SNV"] = (
-                bvltools.SNVImporter(importer_options).import_data(row_iter)
-            )
-
-        if options["gvfs"]:
-            row_iter = make_row_iter(GenomicBvlFrequenciesCallFilter)
-            errors_map["GVF"], warnings_map["GVF"], counts_map["GVF"] = (
-                bvltools.GVFImporter(importer_options).import_data(row_iter)
+        for label, _table_name, filter_cls, importer_cls in table_specs:
+            errors_map[label], warnings_map[label], counts_map[label] = (
+                importer_cls(importer_options).import_data(make_row_iter(filter_cls))
             )
 
         for entity_type, errs in errors_map.items():
@@ -398,24 +391,6 @@ class Command(BaseCommand):
 
         for entity_type, counts in counts_map.items():
             report_counts(entity_type, counts)
-
-        # Hash comparison (only meaningful when TSV files were written)
-        if convert_to_tsv and tsv_output_dir:
-            hash_list, hash_map, final_hash = compute_dir_hash(tsv_output_dir)
-            log.info("Hash list:\n%s", hash_list)
-            log.info("Final hash of output files:\n%s", final_hash)
-
-            compare_dir = options["hash_compare"]
-            if compare_dir:
-                hash_list2, hash_map2, final_hash2 = compute_dir_hash(compare_dir)
-                log.info("Comparison hash list:\n%s", hash_list2)
-                log.info("Comparison final hash:\n%s", final_hash2)
-                for fname, h in hash_map.items():
-                    h2 = hash_map2.get(fname)
-                    if h == h2:
-                        log.info("File %s hashes match. ✅", fname)
-                    else:
-                        log.warning("File %s hashes don't match ❌", fname)
 
         end_time = time()
         elapsed = end_time - start_time
