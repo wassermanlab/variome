@@ -117,8 +117,8 @@ class Command(BaseCommand):
     def log_warnings(self, entity_type, warnings):
         if warnings:
             sys.stderr.write(f"\nWARNINGS ({len(warnings)}) in {entity_type} load:\n")
-            for err in warnings:
-                sys.stderr.write(f"* {err}\n")
+            for line in bvltools.format_messages(warnings, log_all=self.log_all_errors):
+                sys.stderr.write(line + "\n")
 
     def add_arguments(self, parser):
         parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
