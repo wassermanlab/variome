@@ -66,7 +66,6 @@ class CallFilter(ABC):
         #read severity table file
         severity_table_path = self.settings.SEVERITIES_TSV_PATH
         try:
-            logger.info(f"Reading severity table from {severity_table_path}...")
             with open(severity_table_path, "r") as f:
                 for line in f.readlines()[1:]:
                     parts = line.strip().split("\t")
