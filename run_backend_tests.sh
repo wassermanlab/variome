@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Run all backend tests (middleware + VCF import tests) and re-run on file changes.
 # Requires dev dependencies: uv sync --dev
 # Unsets DB so Django falls back to the in-memory SQLite database for tests.

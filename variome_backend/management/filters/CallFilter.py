@@ -41,6 +41,9 @@ class CallFilter(ABC):
         """Load the consequence-to-severity mapping from the severities TSV file."""
         input_tsv_path = getattr(self.settings, "INPUT_TSV_PATH", None)
         if not input_tsv_path:
+            logger.warning(
+                "INPUT_TSV_PATH is not set; severity lookups will return no results"
+            )
             return
         severity_table_path = os.path.join(input_tsv_path, "severities.tsv")
         try:
