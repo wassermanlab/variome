@@ -368,16 +368,28 @@ class Command(BaseCommand):
         warnings_map = {}
         counts_map = {}
 
+        last_step_time = time()
+
+        def log_timing(name):
+            nonlocal last_step_time
+            duration = time() - last_step_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = duration % 60
+            log.info("%s took %dh %dm %.1fs", name, hours, minutes, seconds)
+            last_step_time = time()
 
         if options["severities"]:
             errors, warnings, counts = bvltools.SeverityImporter(importer_options).import_data()
             print(f"Severity import: {counts[1]} out of {counts[0]} successful")
+            log_timing("severities")
             errors_map["Severity"] = errors
             warnings_map["Severity"] = warnings
         for label, _table_name, filter_cls, importer_cls in table_specs:
             errors_map[label], warnings_map[label], counts_map[label] = (
                 importer_cls(importer_options).import_data(make_row_iter(filter_cls))
             )
+            log_timing(label)
 
         for entity_type, errs in errors_map.items():
             self.log_errors(entity_type, errs)
