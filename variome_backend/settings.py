@@ -212,27 +212,13 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = (
-    {
-        "default": {
-            **dj_database_url.parse(
-                DB,
-                conn_max_age=None,
-                conn_health_checks=True,
-            ),
-            "OPTIONS": {
-                "connect_timeout": 10,
-            },
-        }
-    }
-    if DB
-    else {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:",
-        }
-    }
-)
+if DB:
+    _db_config = dj_database_url.parse(DB, conn_max_age=None, conn_health_checks=True)
+    if "postgresql" in _db_config.get("ENGINE", ""):
+        _db_config["OPTIONS"] = {"connect_timeout": 10}
+    DATABASES = {"default": _db_config}
+else:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 
 
 # Password validation
