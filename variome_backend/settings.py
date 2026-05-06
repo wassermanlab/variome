@@ -214,14 +214,16 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 
 DATABASES = (
     {
-        "default": dj_database_url.parse(
-            DB,
-            conn_max_age=None,
-            conn_health_checks=True,
-        ),
-        "OPTIONS": {
-            "connect_timeout": 0,
-        },
+        "default": {
+            **dj_database_url.parse(
+                DB,
+                conn_max_age=None,
+                conn_health_checks=True,
+            ),
+            "OPTIONS": {
+                "connect_timeout": 10,
+            },
+        }
     }
     if DB
     else {
