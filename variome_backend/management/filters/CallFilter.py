@@ -45,7 +45,6 @@ class CallFilter(ABC):
         before_sleep=before_sleep_log(logger, logging.WARNING)
     )
     def stream_with_retries(self, file_path):
-        logger.info(f"stream w retries VCF file: {file_path}")
 
         if file_path.endswith('.gz'):
             gz = gzip.open(file_path, 'rb')
@@ -62,21 +61,7 @@ class CallFilter(ABC):
     def _init_vcf_header_and_csq(self):
 
         child_class_name = self.__class__.__name__
-        logger.info(f"booting up {child_class_name}...")
-        #read severity table file
-        severity_table_path = self.settings.SEVERITIES_TSV_PATH
-        try:
-            with open(severity_table_path, "r") as f:
-                for line in f.readlines()[1:]:
-                    parts = line.strip().split("\t")
-                    if len(parts) == 2:
-                        severity, consequence = parts
-                    elif len(parts) == 3:
-                        severity, _, consequence = parts
-                    self.severity_map[consequence] = int(severity)
-        except FileNotFoundError:
-            logger.warning("Severity table file not found: %s", severity_table_path)
-            exit()
+        logger.info(f"scanning {self._vcf_file_path} using {child_class_name}...")
         # Only read header and csq fields, not all records
         if self._vcf_file_path.endswith('.gz'):
             with gzip.open(self._vcf_file_path, 'rb') as gz:

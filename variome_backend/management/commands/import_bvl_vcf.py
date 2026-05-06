@@ -163,10 +163,10 @@ class Command(BaseCommand):
             help="CADD phred score threshold for 'Damaging' classification",
         )
         parser.add_argument(
-            "--severities-tsv",
-            default="data/fixtures/severities.tsv",
-            dest="severities_tsv",
-            help="Path to the severities TSV file used by VCF filters",
+            "--tsv-dir", # still needed for severities, which are not read from the VCF
+            default="data/fixtures",
+            dest="tsv_dir",
+            help="Path to the dir of the severities TSV file used by VCF filters",
         )
         parser.add_argument(
             "--ranges",
@@ -202,6 +202,8 @@ class Command(BaseCommand):
         )
 
         # --- Table selection (mirrors import_bvl) ---
+        parser.add_argument("--severities", default=True, action=argparse.BooleanOptionalAction,
+                            help="Process severity table?")
         parser.add_argument("--genes", default=True, action=argparse.BooleanOptionalAction,
                             help="Process genes?")
         parser.add_argument("--variants", default=True, action=argparse.BooleanOptionalAction,
@@ -287,7 +289,7 @@ class Command(BaseCommand):
             OUT_HYPHENS=options["out_hyphens"],
             DEFAULT_TRANSCRIPT_SOURCE=options["default_transcript_source"],
             CADD_DAMAGING_THRESHOLD=options["cadd_threshold"],
-            SEVERITIES_TSV_PATH=options["severities_tsv"],
+            INPUT_TSV_PATH=options["tsv_dir"],
             HASH_COMPARE=options["hash_compare"],
             RANGES=options["ranges"],
         )
@@ -354,10 +356,7 @@ class Command(BaseCommand):
 
         # DB import mode
         importer_options = {
-            # import_bvl uses a --path for TSV files; VCF command doesn't need it
-            # but Importer.__init__ requires "path". Supply a dummy here since
-            # VCF importers won't call get_input_path().
-            "path": ".",
+            "path": options["tsv_dir"],
             "progress": options["progress"],
             "failfast": options["failfast"],
             "ignore-existing": options["ignore-existing"],
@@ -369,6 +368,12 @@ class Command(BaseCommand):
         warnings_map = {}
         counts_map = {}
 
+
+        if options["severities"]:
+            errors, warnings, counts = bvltools.SeverityImporter(importer_options).import_data()
+            print(f"Severity import: {counts[1]} out of {counts[0]} successful")
+            errors_map["Severity"] = errors
+            warnings_map["Severity"] = warnings
         for label, _table_name, filter_cls, importer_cls in table_specs:
             errors_map[label], warnings_map[label], counts_map[label] = (
                 importer_cls(importer_options).import_data(make_row_iter(filter_cls))

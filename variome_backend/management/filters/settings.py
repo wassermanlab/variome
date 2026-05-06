@@ -13,6 +13,6 @@ class VcfImportSettings:
     OUT_HYPHENS: bool
     DEFAULT_TRANSCRIPT_SOURCE: str
     CADD_DAMAGING_THRESHOLD: int
-    SEVERITIES_TSV_PATH: str
+    INPUT_TSV_PATH: str
     HASH_COMPARE: Optional[str]
     RANGES: Optional[str]
