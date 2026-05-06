@@ -10,11 +10,11 @@ To focus on a single test (similar to fit() in Mocha):
    @unittest.skip("Temporarily skipping")
 
 2. Run specific test from command line:
-    python -m unittest variome_backend.management.test_vcf_filters.TestTranscriptsCallFilter
-    python -m unittest variome_backend.management.test_vcf_filters.TestTranscriptsCallFilter.test_transform_output_structure
+    python -m unittest variome_backend.tests.test_vcf_filters.TestTranscriptsCallFilter
+    python -m unittest variome_backend.tests.test_vcf_filters.TestTranscriptsCallFilter.test_transform_output_structure
 
 3. Use pytest with -k flag (if pytest is installed):
-    pytest variome_backend/management/test_vcf_filters.py -k "Transcripts"
+    pytest variome_backend/tests/test_vcf_filters.py -k "Transcripts"
 
 4. Use environment variable or attribute (demonstrated below with FOCUS_TEST)
 """
