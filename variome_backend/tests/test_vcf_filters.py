@@ -101,7 +101,7 @@ from variome_backend.management.filters.MtBvlFrequenciesCallFilter import MtBvlF
 # Helper function to get fixture paths
 def get_fixture_path(filename: str) -> str:
     """Get the absolute path to a fixture file."""
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'vcf', filename)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'management', 'fixtures', 'vcf', filename)
 
 class TestBaseFilter(FocusableTestCase):
 

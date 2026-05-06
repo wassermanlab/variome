@@ -198,17 +198,37 @@ python manage.py import_bvl_vcf \
 
 Per-file hash differences are reported in the log output.
 
-## Testing VCF filters
+## Running backend tests
+
+All backend tests (middleware and VCF import filters) live in `variome_backend/tests/`.
+
+First, install dev dependencies:
 
 ```
 uv sync --dev
-uv run -m pytest variome_backend/management/test_vcf_filters.py
 ```
 
-To watch for changes and rerun tests automatically:
+Run all backend tests once:
 
 ```
-uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest variome_backend/management/test_vcf_filters.py'
+uv run python manage.py test variome_backend.tests --verbosity=2
+```
+
+Run all backend tests and automatically re-run whenever a `.py` file changes (recommended during development):
+
+```
+bash run_backend_tests.sh
+```
+
+Or inline, without the script:
+
+```
+uv run watchmedo shell-command \
+    --patterns="*.py" \
+    --recursive \
+    --drop \
+    --command='uv run python manage.py test variome_backend.tests --verbosity=2' \
+    .
 ```
 
 ### attributions
