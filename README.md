@@ -211,8 +211,10 @@ uv sync --dev
 Run all backend tests once:
 
 ```
-uv run python manage.py test variome_backend.tests --verbosity=2
+DB= uv run python manage.py test variome_backend.tests --verbosity=2
 ```
+
+Tests run against an in-memory SQLite database (no Postgres connection needed). If the `DB` environment variable is set in your shell, prefix the command with `DB=` to clear it for the test run, or simply use the watch script below which handles this automatically.
 
 Run all backend tests and automatically re-run whenever a `.py` file changes (recommended during development):
 

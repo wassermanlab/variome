@@ -33,7 +33,7 @@ SETTINGS = VcfImportSettings(
     OUT_HYPHENS=True,
     DEFAULT_TRANSCRIPT_SOURCE="E",
     CADD_DAMAGING_THRESHOLD=20,
-    SEVERITIES_TSV_PATH="data/fixtures/severities.tsv",
+    INPUT_TSV_PATH="data/fixtures",
     HASH_COMPARE=None,
     RANGES=None,
 )
