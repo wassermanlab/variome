@@ -270,7 +270,7 @@ class Command(BaseCommand):
             dest="log_all_errors",
             action="store_true",
             default=False,
-            help="Print every error in full; by default only the first 40 per error group are shown",
+            help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
     def handle(self, **options):
