@@ -15,19 +15,17 @@ import variome_backend.library.models as bvlmodels
 
 log = logging.getLogger("management")
 
-# Number of example errors shown per error group before truncating
-_ERRORS_SHOWN_PER_GROUP = 40
+# Number of example messages shown per group before truncating
+_ERRORS_SHOWN_PER_GROUP = 10
 
 
 def _error_key(msg):
-    """Return a normalised grouping key for an error message.
+    """Return a normalised grouping key for an error/warning message.
 
     Specific row-level identifiers (variant IDs, transcript IDs, row numbers,
-    file-system paths) are replaced with placeholders so that many messages that
-    differ only in *which* row triggered the problem are treated as belonging to
-    the same group.  Semantic details that distinguish *types* of error (e.g.
-    the severity number) are kept, so that "severity 28 not found" and
-    "severity 30 not found" are reported as separate groups.
+    severity codes, file-system paths) are replaced with placeholders so that
+    many messages that differ only in *which* row or *which* value triggered
+    the problem are treated as belonging to the same group.
     """
     key = msg
     # Genomic variant IDs: chr1-12345-A-G  or  chr1_12345_A_G
@@ -36,25 +34,24 @@ def _error_key(msg):
     key = re.sub(r'\b(ENSG|ENST|ENSP)[0-9]+(\.[0-9]+)?\b', '{transcript}', key)
     # RefSeq accessions: NM_000014.6, XR_001755472.2, NR_..., NP_..., XM_...
     key = re.sub(r'\b(NM|NR|NP|XM|XR)_[0-9]+(\.[0-9]+)?\b', '{transcript}', key)
-    # Standalone integers that are row / position numbers (not severity codes,
-    # which appear as "number N" and are left untouched by the above rules)
-    key = re.sub(r'\b[0-9]{4,}\b', '{N}', key)
+    # All remaining integers (row numbers, severity codes, positions, etc.)
+    key = re.sub(r'\b[0-9]+\b', '{N}', key)
     return key
 
 
-def format_errors(errors, log_all=False):
-    """Return a list of lines to write to stderr for *errors*.
+def format_messages(messages, log_all=False):
+    """Return a list of lines to write to stderr for *messages* (errors or warnings).
 
     When *log_all* is False (the default) at most ``_ERRORS_SHOWN_PER_GROUP``
-    examples are shown for each group of similar errors; a summary line
-    "X more similar errors -- run with --log-all-errors to see all" is appended
+    examples are shown for each group of similar messages; a summary line
+    "X more similar -- run with --log-all-errors to see all" is appended
     for each truncated group.
     """
     if log_all:
-        return [f"* {e}" for e in errors]
+        return [f"* {e}" for e in messages]
 
     groups = defaultdict(list)
-    for msg in errors:
+    for msg in messages:
         groups[_error_key(msg)].append(msg)
 
     lines = []
@@ -64,10 +61,14 @@ def format_errors(errors, log_all=False):
         remaining = len(msgs) - len(shown)
         if remaining:
             lines.append(
-                f"  ... {remaining} more similar error(s) -- "
+                f"  ... {remaining} more similar -- "
                 "run with --log-all-errors to see all"
             )
     return lines
+
+
+# Keep the old name as an alias for backwards compatibility
+format_errors = format_messages
 
 
 class bvlDialect(csv.excel_tab):
