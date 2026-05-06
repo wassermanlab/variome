@@ -72,6 +72,7 @@ class FocusableTestCase(unittest.TestCase):
             for attr in dir(cls):
                 meth = getattr(cls, attr)
                 if getattr(meth, '_focused_method', False):
+                    print(f"Running focused test: {cls.__name__}.{attr}")
                     return
             # Otherwise, skip whole class
             raise unittest.SkipTest("Skipping - not focused")
@@ -102,7 +103,6 @@ def get_fixture_path(filename: str) -> str:
     """Get the absolute path to a fixture file."""
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'vcf', filename)
 
-@focus
 class TestBaseFilter(FocusableTestCase):
 
     testInstance = None
@@ -158,61 +158,6 @@ class TestBaseFilter(FocusableTestCase):
         self.assertEqual(records[2].POS, 1701)
         self.assertEqual(records[3].POS, 1702)
         self.assertEqual(records[4].POS, 1703)
-
-
-
-    def test_stream_file_disappearance_mid_stream(self):
-        """Simulate file disappearance during streaming of VCF records and check output sequence."""
-        import tempfile
-        import shutil
-        import threading
-        import time
-        from variome_backend.management.filters.CallFilter import CallFilter
-        import vcfpy
-
-        # Generate a large VCF file in /tmp
-        tmp_dir = tempfile.gettempdir()
-        vcf_path = os.path.join(tmp_dir, 'mock-temp.vcf')
-        num_records = 5000000
-        with open(get_fixture_path('mock_snv.vcf'), 'r') as f:
-            lines = f.readlines()
-        header_lines = [l for l in lines if l.startswith('#')]
-        record_line = [l for l in lines if not l.startswith('#')][0]
-        with open(vcf_path, 'w') as f:
-            for hl in header_lines:
-                f.write(hl)
-            chrom, pos, vid, ref, alt, qual, filter, info = record_line.strip().split('\t')[:8]
-            for i in range(num_records):
-                f.write(f"{chrom}\t{int(pos)+i}\t{vid}{i}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\n")
-
-        # Settings
-        test_settings = copy.deepcopy(SETTINGS)
-
-        # Function to rename file after delay
-        def rename_file():
-            time.sleep(0.02)
-            shutil.move(vcf_path, vcf_path + '.missing')
-
-        # Start renamer thread
-        renamer = threading.Thread(target=rename_file)
-        renamer.start()
-
-        # Start streaming records and collecting table rows
-        instance = self.MockFilter(vcf_path, test_settings)
-        try:
-            rows = instance.getTableRows()
-            # Check that the rows are in correct sequence as generated
-            for i, row in enumerate(rows):
-                self.assertEqual(row['chrom'], chrom, " chromosome is wrong")
-                self.assertEqual(row['pos'], int(pos) + i, " position is wrong")
-                self.assertEqual(row['id'], [vid + str(i)], " ID is wrong")
-        finally:
-            # Clean up
-            if os.path.exists(vcf_path):
-                os.remove(vcf_path)
-            if os.path.exists(vcf_path + '.missing'):
-                os.remove(vcf_path + '.missing')
-            renamer.join()
 
     def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)

@@ -51,12 +51,35 @@
             "django": true
         },
         {
-            "name": "Debug vcf import script",
-            "type": "debugpy",
+            "name": "Import VCF (delete first)",
+            "type": "python",
             "request": "launch",
-            "module": "vcf_import.VCF_publish",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "import_bvl_vcf",
+                "--vcf",
+                "data/fixtures/vcf/variome.vcf",
+                "--delete",
+                "--no-progress"
+            ],
             "console": "integratedTerminal",
-            "justMyCode": false
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Import VCF",
+            "type": "python",
+            "request": "launch",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "import_bvl_vcf",
+                "--vcf",
+                "data/fixtures/vcf/variome.vcf",
+                "--no-progress"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
         },
         {
             "name": "Debug vcf import tests",
