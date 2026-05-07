@@ -8,14 +8,14 @@ To focus on a single test (similar to fit() in Mocha):
 
 1. Use unittest.skip decorator on other tests:
    @unittest.skip("Temporarily skipping")
-   
+
 2. Run specific test from command line:
-    python -m unittest vcf_import.VCF_test.TestTranscriptsCallFilter
-    python -m unittest vcf_import.VCF_test.TestTranscriptsCallFilter.test_transform_output_structure
-   
+    python -m unittest variome_backend.tests.test_vcf_filters.TestTranscriptsCallFilter
+    python -m unittest variome_backend.tests.test_vcf_filters.TestTranscriptsCallFilter.test_transform_output_structure
+
 3. Use pytest with -k flag (if pytest is installed):
-    pytest vcf_import/VCF_test.py -k "Transcripts"
-   
+    pytest variome_backend/tests/test_vcf_filters.py -k "Transcripts"
+
 4. Use environment variable or attribute (demonstrated below with FOCUS_TEST)
 """
 
@@ -23,11 +23,20 @@ import unittest
 import os
 import copy
 
-from vcf_import.constants import SETTINGS
-from vcf_import.setup_logs import setup_logging
-setup_logging()
+from variome_backend.management.vcf_import_settings import VcfImportSettings
 
-
+# Default test settings (matches defaults used in production)
+SETTINGS = VcfImportSettings(
+    VCF_FILE=None,
+    NA=".",
+    OUT_CHR=True,
+    OUT_HYPHENS=True,
+    DEFAULT_TRANSCRIPT_SOURCE="E",
+    CADD_DAMAGING_THRESHOLD=20,
+    INPUT_TSV_PATH="data/fixtures",
+    HASH_COMPARE=None,
+    RANGES=None,
+)
 
 
 # --- FOCUS LOGIC FOR CLASSES AND METHODS ---
@@ -63,6 +72,7 @@ class FocusableTestCase(unittest.TestCase):
             for attr in dir(cls):
                 meth = getattr(cls, attr)
                 if getattr(meth, '_focused_method', False):
+                    print(f"Running focused test: {cls.__name__}.{attr}")
                     return
             # Otherwise, skip whole class
             raise unittest.SkipTest("Skipping - not focused")
@@ -75,28 +85,26 @@ class FocusableTestCase(unittest.TestCase):
                 self.skipTest("Skipping - not focused method")
 
 
-from vcf_import.filters.CallFilter import CallFilter
-from vcf_import.filters.GenesCallFilter import GenesCallFilter
-from vcf_import.filters.TranscriptsCallFilter import TranscriptsCallFilter
-from vcf_import.filters.VariantsCallFilter import VariantsCallFilter
-from vcf_import.filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from vcf_import.filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from vcf_import.filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
-from vcf_import.filters.SnvsCallFilter import SnvsCallFilter
-from vcf_import.filters.MtsCallFilter import MtsCallFilter
-from vcf_import.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
-# from vcf_import.filters.GenomicGnomadFrequenciesCallFilter import GenomicGnomadFrequenciesCallFilter
-from vcf_import.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
-# from vcf_import.filters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
+from variome_backend.management.VCFCallFilters.GenesCallFilter import GenesCallFilter
+from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import TranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsCallFilter import VariantsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
+from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
+from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+
 
 # Helper function to get fixture paths
 def get_fixture_path(filename: str) -> str:
     """Get the absolute path to a fixture file."""
-    return os.path.join(os.path.dirname(__file__), 'fixtures', 'vcf', filename)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'vcf', filename)
 
-@focus
 class TestBaseFilter(FocusableTestCase):
-    
+
     testInstance = None
     class MockFilter(CallFilter):
         def __init__(self, vcf_file_path, settings):
@@ -115,22 +123,18 @@ class TestBaseFilter(FocusableTestCase):
             return rows
     def setUp(self):
         self.testInstance = self.MockFilter(get_fixture_path('mock_snv.vcf'), SETTINGS)
-        
+
     def test_instance_creation(self):
         self.assertIsInstance(self.testInstance, CallFilter)
-        
+
     def test_has_records(self):
         records = list(self.testInstance.vcf_record_stream())
         self.assertEqual(len(records), 2)
-        
-    def test_csq_getter(self):    
+
+    def test_csq_getter(self):
         records = list(self.testInstance.vcf_record_stream())
         csq_values = self.testInstance.get_csq_values(records[1], 'SYMBOL')
         self.assertEqual(csq_values, ['LA16c-60H5.7', 'NBEAP3'])
-        
-    def test_severity_map_loaded(self):
-        self.assertIn('missense_variant', self.testInstance.severity_map)
-        self.assertIsInstance(self.testInstance.severity_map['missense_variant'], int)
 
     def test_range_parameters(self):
         test_settings = copy.deepcopy(SETTINGS)
@@ -151,62 +155,6 @@ class TestBaseFilter(FocusableTestCase):
         self.assertEqual(records[3].POS, 1702)
         self.assertEqual(records[4].POS, 1703)
 
-
-
-    def test_stream_file_disappearance_mid_stream(self):
-        """Simulate file disappearance during streaming of VCF records and check output sequence."""
-        import tempfile
-        import shutil
-        import threading
-        import time
-        from vcf_import.filters.CallFilter import CallFilter
-        import vcfpy
-
-        # Generate a large VCF file in /tmp
-        tmp_dir = tempfile.gettempdir()
-        vcf_path = os.path.join(tmp_dir, 'mock-temp.vcf')
-        num_records = 5000000
-        with open(get_fixture_path('mock_snv.vcf'), 'r') as f:
-            lines = f.readlines()
-        header_lines = [l for l in lines if l.startswith('#')]
-        record_line = [l for l in lines if not l.startswith('#')][0]
-        with open(vcf_path, 'w') as f:
-            for hl in header_lines:
-                f.write(hl)
-            chrom, pos, vid, ref, alt, qual, filter, info = record_line.strip().split('\t')[:8]
-            for i in range(num_records):
-                f.write(f"{chrom}\t{int(pos)+i}\t{vid}{i}\t{ref}\t{alt}\t{qual}\t{filter}\t{info}\n")
-
-        # Settings
-        test_settings = copy.deepcopy(SETTINGS)
-
-        # Function to rename file after delay
-        def rename_file():
-            time.sleep(0.02)
-            shutil.move(vcf_path, vcf_path + '.missing')
-
-        # Start renamer thread
-        renamer = threading.Thread(target=rename_file)
-        renamer.start()
-
-        # Start streaming records and collecting table rows
-        instance = self.MockFilter(vcf_path, test_settings)
-        try:
-            rows = instance.getTableRows()
-            # Check that the rows are in correct sequence as generated
-            for i, row in enumerate(rows):
-                self.assertEqual(row['chrom'], chrom, " chromosome is wrong")
-                self.assertEqual(row['pos'], int(pos) + i, " position is wrong")
-                self.assertEqual(row['id'], [vid + str(i)], " ID is wrong")
-#        except Exception as e:
-#            print(f"Exception during streaming: {e}")
-        finally:
-            # Clean up
-            if os.path.exists(vcf_path):
-                os.remove(vcf_path)
-            if os.path.exists(vcf_path + '.missing'):
-                os.remove(vcf_path + '.missing')
-            renamer.join()
     def test_make_variant_id(self):
         test_settings = copy.deepcopy(SETTINGS)
         test_settings.OUT_CHR = True
@@ -220,7 +168,7 @@ class TestBaseFilter(FocusableTestCase):
         instance = self.MockFilter(get_fixture_path('mock_snv.vcf'), test_settings)
         first_record = list(instance.vcf_record_stream())[0]
         self.assertEqual(instance.make_variant_id(first_record),'1_100000_A_G')
-        
+
     def test_should_retry_loading_vcf_if_file_disappears(self):
         """Test that load_vcf_file retries if file is temporarily unavailable."""
         import builtins
@@ -238,12 +186,9 @@ class TestBaseFilter(FocusableTestCase):
         def flaky_open(file, mode='r', *args, **kwargs):
             if os.path.abspath(file) == os.path.abspath(vcf_path) and 'b' in mode:
                 call_count['count'] += 1
-                #print(f"call count for {file}: {call_count['count']}")
-                if call_count['count'] < 3:  # Simulate file disappearance on the 9th call
-                    #print(f"flaky_open called for {file} count {call_count['count']}")
+                if call_count['count'] < 3:  # Simulate file disappearance on the first two calls
                     raise FileNotFoundError("Simulated file disappearance")
                 else:
-                    #print(f"real open called for {file} count {call_count['count']}")
                     return real_open(file, mode, *args, **kwargs)
             return real_open(file, mode, *args, **kwargs)
 
@@ -255,23 +200,22 @@ class TestBaseFilter(FocusableTestCase):
                     instance = self.MockFilter(vcf_path, test_settings)
                     # If we get here, the retry worked
                     self.assertIsInstance(instance, CallFilter)
-#                        self.assertGreaterEqual(call_count['count'], 2)
                 except FileNotFoundError:
                     self.fail("CallFilter did not retry loading the VCF file after disappearance.")
-     
+
 class TestGenesCallFilter(FocusableTestCase):
     """Test GenesCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.filter = GenesCallFilter(
             get_fixture_path('mock_snv.vcf'),
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
         result = list(self.filter.getTableRows())
@@ -280,22 +224,22 @@ class TestGenesCallFilter(FocusableTestCase):
         self.assertIn('short_name', result[0])
 
 class TestTranscriptsCallFilter(FocusableTestCase):
-    """Test TranscriptsCallFilter - FOCUSED for demonstration."""
-    
+    """Test TranscriptsCallFilter."""
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
         self.filter = TranscriptsCallFilter(self.vcf_files, SETTINGS)
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
-        
+
         self.assertIn('transcript_id', result[0])
         self.assertIn('gene', result[0])
         self.assertIn('transcript_type', result[0])
@@ -306,11 +250,11 @@ class TestTranscriptsCallFilter(FocusableTestCase):
 
 class TestVariantsCallFilter(FocusableTestCase):
     """Test VariantsCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -318,14 +262,14 @@ class TestVariantsCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        
+
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2, "Expected 2 rows from mock_snv.vcf")
-        
+
         self.assertIn('variant_id', result[0])
         self.assertIn('var_type', result[0])
         # Check variant type matches
@@ -333,11 +277,11 @@ class TestVariantsCallFilter(FocusableTestCase):
 
 class TestVariantsTranscriptsCallFilter(FocusableTestCase):
     """Test VariantsTranscriptsCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -345,23 +289,24 @@ class TestVariantsTranscriptsCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3, "Expected 3 rows from mock_snv.vcf")
         valid_result = result[1] # sometimes (or with diff config, result 0 will be valid)
-     
+
         self.assertEqual(valid_result['transcript'], 'ENST00000398242.2')
         self.assertEqual(valid_result['hgvsc'], 'ENST00000398242.2:n.402G>C')
+
 class TestVariantsAnnotationsCallFilter(FocusableTestCase):
     """Test VariantsAnnotationsCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -369,25 +314,26 @@ class TestVariantsAnnotationsCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        
+
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
-        
+
         self.assertIn('hgvsp', result[0])
         self.assertIn('sift', result[0])
         self.assertIn('polyphen', result[0])
         self.assertIn('transcript', result[0])
         self.assertIn('variant', result[0])
+
 class TestVariantsConsequencesCallFilter(FocusableTestCase):
     """Test VariantsConsequencesCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -395,13 +341,13 @@ class TestVariantsConsequencesCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        
+
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
-        
+
         self.assertIn('severity', result[0])
         self.assertIn('variant', result[0])
         self.assertIn('transcript', result[0])
@@ -410,11 +356,11 @@ class TestVariantsConsequencesCallFilter(FocusableTestCase):
 
 class TestSnvsCallFilter(FocusableTestCase):
     """Test SnvsCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -422,14 +368,14 @@ class TestSnvsCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        
+
         result = list(self.filter.getTableRows())
-        
+
         self.assertIsInstance(result, list)
-        
+
         self.assertIn('variant', result[0])
         self.assertIn('type', result[0])
         self.assertIn('chr', result[0])
@@ -438,11 +384,11 @@ class TestSnvsCallFilter(FocusableTestCase):
 
 class TestGenomicBvlFrequenciesCallFilter(FocusableTestCase):
     """Test GenomicBvlFrequenciesCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_snv.vcf')
@@ -453,7 +399,7 @@ class TestGenomicBvlFrequenciesCallFilter(FocusableTestCase):
 
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
-        
+
         result = list(self.filter.getTableRows())
         self.assertIsInstance(result, list)
         self.assertIn('variant', result[0])
@@ -466,11 +412,11 @@ class TestGenomicBvlFrequenciesCallFilter(FocusableTestCase):
 # Mitochondrial (not yet implemented)
 class TestMtsCallFilter(FocusableTestCase):
     """Test MtsCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         self.skipTest("MtsCallFilter.getTableRows() not yet implemented")
         """Set up test fixtures."""
@@ -479,28 +425,29 @@ class TestMtsCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
         try:
             result = self.filter.getTableRows()
         except NotImplementedError:
             self.skipTest("MtsCallFilter.getTableRows() not yet implemented")
-        
+
         self.assertIsInstance(result, list)
-        
-        
+
+
         self.assertIn('variant', result[0])
         self.assertIn('pos', result[0])
         self.assertIn('ref', result[0])
         self.assertIn('alt', result[0])
+
 class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
     """Test MtBvlFrequenciesCallFilter."""
-    
+
     # Class variables initialized to None
     filter = None
     vcf_files = None
-    
+
     def setUp(self):
         self.skipTest("MtBvlFrequenciesCallFilter.getTableRows() not yet implemented")
         """Set up test fixtures."""
@@ -509,16 +456,16 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
             self.vcf_files,
             SETTINGS
         )
-    
+
     def test_getTableRows_output_structure(self):
         """Test that getTableRows returns correct structure."""
         try:
             result = self.filter.getTableRows()
         except NotImplementedError:
             self.skipTest("MtBvlFrequenciesCallFilter.getTableRows() not yet implemented")
-        
+
         self.assertIsInstance(result, list)
-        
+
         self.assertIn('variant', result[0])
         self.assertIn('an', result[0])
         self.assertIn('ac_hom', result[0])

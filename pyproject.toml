@@ -25,7 +25,6 @@ dependencies = [
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
     "cryptography>=46.0.7",
-    "numpy>=2.4.4",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
@@ -45,6 +44,9 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["variome"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
 
 [dependency-groups]
 dev = [

@@ -1,5 +1,7 @@
-from .CallFilter import CallFilter
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
 from typing import List, Dict, Any
+
+
 class GenesCallFilter(CallFilter):
     """
     Generates the 'genes' table.

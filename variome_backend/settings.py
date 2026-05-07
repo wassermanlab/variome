@@ -22,11 +22,14 @@ dotenv.load_dotenv()
 
 IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
-DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
+DB = os.environ.get("DB")
 os.environ.setdefault("FRONTEND_PORT", "3000")
 FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "3000")
 
-print(f"...connecting to {DB}...")
+if DB:
+    print(f"...connecting to {DB}...")
+else:
+    print("...DB not set, using SQLite (in-memory)...")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = (
@@ -209,16 +212,13 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        DB,
-        conn_max_age=None,
-        conn_health_checks=True
-    ),
-    "OPTIONS": {
-        "connect_timeout":0,
-    }
-}
+if DB:
+    _db_config = dj_database_url.parse(DB, conn_max_age=None, conn_health_checks=True)
+    if "postgresql" in _db_config.get("ENGINE", ""):
+        _db_config["OPTIONS"] = {"connect_timeout": 10}
+    DATABASES = {"default": _db_config}
+else:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 
 
 # Password validation

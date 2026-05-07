@@ -1,10 +1,10 @@
-from asyncio.log import logger
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
+from variome_backend.management.vcf_import_utils import validate_get
+from typing import List, Dict, Any
 import logging
 
-from numpy import record
-from .CallFilter import CallFilter
-from typing import List, Dict, Any
-from vcf_import.tools import validate_get
+logger = logging.getLogger(__name__)
+
 
 class GenomicBvlFrequenciesCallFilter(CallFilter):
     """
@@ -18,9 +18,6 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
         Generator that yields genomic BVL frequency rows one at a time.
         """
         for record in self.vcf_record_stream():
-            if (record.POS == 27019487):
-                logger.info(f"Processing record {record.ID} at {record.CHROM}:{record.POS}")
-
             variant = self.make_variant_id(record)
             qual = record.QUAL
             info = record.INFO
@@ -31,6 +28,7 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                     return [None, None, None]
                 return values[0:3]
 
+            na = self.settings.NA
             if "AF_tot_XX_XY" in info:
                 #ibvl style
                 af_tot, af_xx, af_xy = parse_info_field("AF_tot_XX_XY")
@@ -75,22 +73,22 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
                     try:
                         yield {
                             'variant': variant,
-                            'af_tot': validate_get(af_tot, i),
-                            'ac_tot': validate_get(ac_tot, i),
-                            'an_tot': validate_get(an_tot, i),
-                            'hom_tot': validate_get(hom_tot, i),
-                            'hemi_tot': validate_get(hemi_tot, i),
-                            'af_xx': validate_get(af_xx, i),
-                            'af_xy': validate_get(af_xy, i),
-                            'ac_xx': validate_get(ac_xx, i),
-                            'ac_xy': validate_get(ac_xy, i),
-                            'an_xx': validate_get(an_xx, i),
-                            'an_xy': validate_get(an_xy, i),
-                            'hom_xx': validate_get(hom_xx, i),
-                            'hom_xy': validate_get(hom_xy, i),
-                            'hemi_xx': validate_get(hemi_xx, i),
-                            'hemi_xy': validate_get(hemi_xy, i),
+                            'af_tot': validate_get(af_tot, i, na),
+                            'ac_tot': validate_get(ac_tot, i, na),
+                            'an_tot': validate_get(an_tot, i, na),
+                            'hom_tot': validate_get(hom_tot, i, na),
+                            'hemi_tot': validate_get(hemi_tot, i, na),
+                            'af_xx': validate_get(af_xx, i, na),
+                            'af_xy': validate_get(af_xy, i, na),
+                            'ac_xx': validate_get(ac_xx, i, na),
+                            'ac_xy': validate_get(ac_xy, i, na),
+                            'an_xx': validate_get(an_xx, i, na),
+                            'an_xy': validate_get(an_xy, i, na),
+                            'hom_xx': validate_get(hom_xx, i, na),
+                            'hom_xy': validate_get(hom_xy, i, na),
+                            'hemi_xx': validate_get(hemi_xx, i, na),
+                            'hemi_xy': validate_get(hemi_xy, i, na),
                             'quality': qual
                         }
                     except Exception as e:
-                        logging.warning(f"Error parsing frequency fields for variant {variant}: {e}")
+                        logger.warning(f"Error parsing frequency fields for variant {variant}: {e}")

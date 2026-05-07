@@ -150,41 +150,87 @@ Markdown format files in /content/Home are individual, "hard-coded" page element
 PUBLIC_BVL - opens the database for public access, as a demonstration app. For this to work, a shared user account must also be created ( username: `public_demo_user`, email: `public_demo_user@ibvl.ca` )
 
 
-# VCF Publisher (WIP)
+# Importing from a VCF file
 
-Import directly into the database directly from a VCF, no intermediate TSV file step necessary.
+Use the `import_bvl_vcf` management command to import data directly from a VCF file into the database.
 
-Current status: Right now this script writes TSV files as a sanity check to ensure consistency with existing pipeline tsv output
+Mitochondrial tables are omitted because these are not part of the currently used VCF reference files.
 
-Mitochondrial tables are omitted because these are left out of the currently used vcf reference files
-
-Gnomad information is left out currently because it is easily fetched dynamically from the frontend. However, the value of the bulk gnomad data availability is recognized when it comes to analysis activity, but this is not what the reference library is for as a central feature, so it is not a priority.
-
-## Importing a VCF
-
-See the environment variable examples in the bottom of .env-sample and set accordingly:
-VCF_FILE, NA, OUT_CHR, OUT_HYPHENS, SEVERITIES_TSV_PATH, CADD_DAMAGING_THRESHOLD, DEFAULT_TRANSCRIPT_SOURCE accordingly
-```
-uv sync
-uv run -m vcf_import.VCF_publish
-```
-To watch for changes and rerun automatically:
+## Quickstart
 
 ```
-uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m vcf_import.VCF_publish'
+python manage.py import_bvl_vcf --vcf /path/to/joint.vcf
 ```
 
-## Testing VCF Importing 
+Run `python manage.py import_bvl_vcf --help` for a full list of options.
+
+## Key options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--vcf` | *(required)* | Path to the input VCF file (plain text or `.gz`) |
+| `--severities-tsv` | `data/fixtures/severities.tsv` | Path to the severities lookup table |
+| `--na` | `.` | Value used to represent missing/null data |
+| `--out-chr` | enabled | Prefix chromosome names with `chr` |
+| `--out-hyphens` | enabled | Use hyphens in variant IDs (e.g. `1-100-A-G`) |
+| `--cadd-threshold` | `20` | CADD phred score threshold for "Damaging" classification |
+| `--default-transcript-source` | `E` | Fallback transcript source when unknown (`E`=Ensembl, `R`=RefSeq) |
+| `--ranges` | *(all)* | Restrict processing to specific regions, e.g. `22:27010000-27020000,X:2702000-2802000` |
+| `--convert-to-tsv` | disabled | Write TSV files instead of importing into the database |
+| `--tsv-output-dir` | `data/vcf_output` | Directory for TSV output (requires `--convert-to-tsv`) |
+| `--hash-compare` | *(none)* | Directory of an existing TSV set to compare output hashes against (requires `--convert-to-tsv`) |
+| `--dry-run` / `-n` | disabled | Parse and validate without writing to the database |
+| `--delete` | disabled | Delete all existing data before importing |
+| `--no-genes`, `--no-variants`, etc. | *(all enabled)* | Skip specific tables |
+
+## Comparing output against a reference TSV set
+
+When `--convert-to-tsv` is active, pass `--hash-compare` to verify that the generated TSV files
+match a previously known-good set:
+
+```
+python manage.py import_bvl_vcf \
+  --vcf /path/to/joint.vcf \
+  --convert-to-tsv \
+  --tsv-output-dir data/vcf_output \
+  --hash-compare data/reference_tsvs
+```
+
+Per-file hash differences are reported in the log output.
+
+## Running backend tests
+
+All backend tests (middleware and VCF import filters) live in `variome_backend/tests/`.
+
+First, install dev dependencies:
 
 ```
 uv sync --dev
-uv run -m pytest vcf_import/VCF_test.py
 ```
 
-To watch for changes and rerun tests automatically:
+Run all backend tests once:
 
 ```
-uv run watchmedo shell-command --patterns="*.py" --recursive --command='uv run -m pytest vcf_import/VCF_test.py'
+DB= uv run python manage.py test variome_backend.tests --verbosity=2
+```
+
+Tests run against an in-memory SQLite database (no Postgres connection needed). If the `DB` environment variable is set in your shell, prefix the command with `DB=` to clear it for the test run, or simply use the watch script below which handles this automatically.
+
+Run all backend tests and automatically re-run whenever a `.py` file changes (recommended during development):
+
+```
+bash run_backend_tests.sh
+```
+
+Or inline, without the script:
+
+```
+uv run watchmedo shell-command \
+    --patterns="*.py" \
+    --recursive \
+    --drop \
+    --command='uv run python manage.py test variome_backend.tests --verbosity=2' \
+    .
 ```
 
 ### attributions

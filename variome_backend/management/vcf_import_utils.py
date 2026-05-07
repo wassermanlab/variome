@@ -1,30 +1,23 @@
-from vcf_import.constants import SETTINGS
-from vcf_import.setup_logs import setup_logging
-
-
-setup_logging()
-
-def validate_get(v, index):
-    NA = SETTINGS.NA
-    if v is [] or v is None:
-        return NA
+def validate_get(v, index, na="."):
+    if not v or v is None:
+        return na
     if not isinstance(v, list):
         if v == 0:
             return "0"
         return v
     if len(v) <= index:
-        return NA
+        return na
     val = v[index]
-    
+
     if isinstance(val, float) and float(val).is_integer():
         return str(val).replace('.0', '')
-    
+
     elif isinstance(val, str):
         if val == "" or val is None:
-            return NA
+            return na
         else:
             return val
     if val in [None, ""]:
-        return NA
-    
+        return na
+
     return val
