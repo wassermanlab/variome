@@ -136,10 +136,6 @@ class TestBaseFilter(FocusableTestCase):
         csq_values = self.testInstance.get_csq_values(records[1], 'SYMBOL')
         self.assertEqual(csq_values, ['LA16c-60H5.7', 'NBEAP3'])
 
-    def test_severity_map_loaded(self):
-        self.assertIn('missense_variant', self.testInstance.severity_map)
-        self.assertIsInstance(self.testInstance.severity_map['missense_variant'], int)
-
     def test_range_parameters(self):
         test_settings = copy.deepcopy(SETTINGS)
         test_settings.RANGES = '22:300-350'

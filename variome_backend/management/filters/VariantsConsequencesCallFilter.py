@@ -1,9 +1,9 @@
 from variome_backend.management.filters.CallFilter import CallFilter
 from typing import List, Dict, Any
 import logging
+import os
 
 logger = logging.getLogger(__name__)
-
 
 class VariantsConsequencesCallFilter(CallFilter):
     """
