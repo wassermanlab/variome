@@ -163,9 +163,9 @@ class Command(BaseCommand):
             help="CADD phred score threshold for 'Damaging' classification",
         )
         parser.add_argument(
-            "--tsv-dir", # still needed for severities, which are not read from the VCF
+            "--input-tsv-dir", # still needed for severities, which are not read from the VCF
             default="data/fixtures",
-            dest="tsv_dir",
+            dest="input_tsv_dir",
             help="Path to the dir of the severities TSV file used by VCF filters",
         )
         parser.add_argument(
@@ -289,7 +289,7 @@ class Command(BaseCommand):
             OUT_HYPHENS=options["out_hyphens"],
             DEFAULT_TRANSCRIPT_SOURCE=options["default_transcript_source"],
             CADD_DAMAGING_THRESHOLD=options["cadd_threshold"],
-            INPUT_TSV_PATH=options["tsv_dir"],
+            INPUT_TSV_PATH=options["input_tsv_dir"],
             HASH_COMPARE=options["hash_compare"],
             RANGES=options["ranges"],
         )
@@ -306,20 +306,20 @@ class Command(BaseCommand):
         table_specs = []
         if options["genes"]:
             table_specs.append(("Gene", "genes", GenesCallFilter, bvltools.GeneImporter))
-        if options["transcripts"]:
-            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter))
         if options["variants"]:
             table_specs.append(("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter))
+        if options["transcripts"]:
+            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter))
+        if options["snvs"]:
+            table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
+        if options["gvfs"]:
+            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
         if options["vts"]:
             table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter))
         if options["annotations"]:
             table_specs.append(("Annotation", "variants_annotations", VariantsAnnotationsCallFilter, bvltools.AnnotationImporter))
         if options["consequences"]:
             table_specs.append(("Consequence", "variants_consequences", VariantsConsequencesCallFilter, bvltools.ConsequenceImporter))
-        if options["snvs"]:
-            table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
-        if options["gvfs"]:
-            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
 
         if convert_to_tsv:
             # TSV-only mode: write one TSV file per table, do not touch the database.
@@ -327,7 +327,16 @@ class Command(BaseCommand):
             tsv_output_dir.mkdir(parents=True, exist_ok=True)
 
             for _label, table_name, filter_cls, _importer_cls in table_specs:
-                _write_to_tsv(make_row_iter(filter_cls), table_name, tsv_output_dir)
+                table_dir = Path(tsv_output_dir, table_name)
+                table_dir.mkdir(parents=True, exist_ok=True)
+                _write_to_tsv(make_row_iter(filter_cls), table_name, table_dir)
+
+            # Copy the severities file to the output dir if it exists
+            import shutil
+            severities_src = Path(options["input_tsv_dir"], "severities.tsv")
+            severities_dst = Path(tsv_output_dir, "severities.tsv")
+            (shutil.copy(severities_src, severities_dst) and log.info(f"Copied severities file to {severities_dst}")) if severities_src else None
+            
 
             hash_list, hash_map, final_hash = compute_dir_hash(tsv_output_dir)
             log.info("Hash list:\n%s", hash_list)
@@ -356,7 +365,7 @@ class Command(BaseCommand):
 
         # DB import mode
         importer_options = {
-            "path": options["tsv_dir"],
+            "path": options["input_tsv_dir"],
             "progress": options["progress"],
             "failfast": options["failfast"],
             "ignore-existing": options["ignore-existing"],
@@ -381,10 +390,10 @@ class Command(BaseCommand):
 
         if options["severities"]:
             errors, warnings, counts = bvltools.SeverityImporter(importer_options).import_data()
-            print(f"Severity import: {counts[1]} out of {counts[0]} successful")
             log_timing("severities")
             errors_map["Severity"] = errors
             warnings_map["Severity"] = warnings
+            counts_map["Severity"] = counts
         for label, _table_name, filter_cls, importer_cls in table_specs:
             errors_map[label], warnings_map[label], counts_map[label] = (
                 importer_cls(importer_options).import_data(make_row_iter(filter_cls))
@@ -413,7 +422,7 @@ class Command(BaseCommand):
                 total, success = counts
                 percent = round(100 * success / total, 5) if total else 100
                 sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
-
+                
         for entity_type, counts in counts_map.items():
             report_counts(entity_type, counts)
 

@@ -1521,7 +1521,7 @@ class ConsequenceImporter(Importer):
                 "variant transcript object not found for consequence of "
                 f"variant {row['variant']} transcript {row['transcript']}",
             )
-        severity = self.severities.get(row["severity"], None)
+        severity = self.severities.get(row["severity"], self.severities.get(str(row["severity"]), None))
         if severity is None:
             return False, ImportMessage(
                 ImportCode.SEVERITY_NOT_FOUND,
