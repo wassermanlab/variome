@@ -1,5 +1,5 @@
-from variome_backend.management.filters.CallFilter import CallFilter
-from variome_backend.management.filters.utils import validate_get
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
+from variome_backend.management.vcf_import_utils import validate_get
 from typing import List, Dict, Any
 import logging
 

@@ -7,7 +7,7 @@ from time import time
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-import variome_backend.management.tools as bvltools
+import variome_backend.management.import_tools as bvltools
 
 log = logging.getLogger("management")
 

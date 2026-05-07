@@ -4,7 +4,7 @@ CallFilter base class for VCF import filters.
 
 from time import sleep
 
-from variome_backend.management.filters.utils import validate_get
+from variome_backend.management.vcf_import_utils import validate_get
 
 import vcfpy
 import os

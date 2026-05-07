@@ -1,4 +1,4 @@
-from variome_backend.management.filters.CallFilter import CallFilter
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
 from typing import List, Dict, Any
 import logging
 

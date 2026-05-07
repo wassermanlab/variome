@@ -23,7 +23,7 @@ import unittest
 import os
 import copy
 
-from variome_backend.management.filters.settings import VcfImportSettings
+from variome_backend.management.vcf_import_settings import VcfImportSettings
 
 # Default test settings (matches defaults used in production)
 SETTINGS = VcfImportSettings(
@@ -85,23 +85,23 @@ class FocusableTestCase(unittest.TestCase):
                 self.skipTest("Skipping - not focused method")
 
 
-from variome_backend.management.filters.CallFilter import CallFilter
-from variome_backend.management.filters.GenesCallFilter import GenesCallFilter
-from variome_backend.management.filters.TranscriptsCallFilter import TranscriptsCallFilter
-from variome_backend.management.filters.VariantsCallFilter import VariantsCallFilter
-from variome_backend.management.filters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from variome_backend.management.filters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from variome_backend.management.filters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
-from variome_backend.management.filters.SnvsCallFilter import SnvsCallFilter
-from variome_backend.management.filters.MtsCallFilter import MtsCallFilter
-from variome_backend.management.filters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
-from variome_backend.management.filters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
+from variome_backend.management.VCFCallFilters.GenesCallFilter import GenesCallFilter
+from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import TranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsCallFilter import VariantsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
+from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
+from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
 
 
 # Helper function to get fixture paths
 def get_fixture_path(filename: str) -> str:
     """Get the absolute path to a fixture file."""
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'management', 'fixtures', 'vcf', filename)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'vcf', filename)
 
 class TestBaseFilter(FocusableTestCase):
 
