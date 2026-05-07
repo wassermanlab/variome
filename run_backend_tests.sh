@@ -4,11 +4,14 @@ set -euo pipefail
 # Requires dev dependencies: uv sync --dev
 # Unsets DB so Django falls back to the in-memory SQLite database for tests.
 
-unset DB
+export DB=""
+COMMAND="uv run python manage.py test variome_backend.tests"
+echo "Running backend tests with command: $COMMAND"
+$COMMAND;
 
 uv run watchmedo shell-command \
     --patterns="*.py" \
     --recursive \
     --drop \
-    --command='uv run python manage.py test variome_backend.tests --verbosity=2' \
+    --command="$COMMAND" \
     .
