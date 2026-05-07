@@ -29,34 +29,11 @@ class CallFilter(ABC):
     def __init__(self, vcf_file_path: str, settings):
         self.csq_fields = []
         self.csq_index_map = {}
-        self.severity_map = {}
         self.vcf_header = None
         self._vcf_file_path = vcf_file_path
         self.settings = settings
 
-        self._load_severity_map()
         self._init_vcf_header_and_csq()
-
-    def _load_severity_map(self):
-        """Load the consequence-to-severity mapping from the severities TSV file."""
-        input_tsv_path = getattr(self.settings, "INPUT_TSV_PATH", None)
-        if not input_tsv_path:
-            logger.warning(
-                "INPUT_TSV_PATH is not set; severity lookups will return no results"
-            )
-            return
-        severity_table_path = os.path.join(input_tsv_path, "severities.tsv")
-        try:
-            with open(severity_table_path, "r") as f:
-                for line in f.readlines()[1:]:
-                    parts = line.strip().split("\t")
-                    if len(parts) >= 2:
-                        severity, consequence = parts[0], parts[-1]
-                        self.severity_map[consequence] = int(severity)
-        except FileNotFoundError:
-            logger.warning("Severity table file not found: %s", severity_table_path)
-
-
 
     @retry(
         stop=stop_after_attempt(ATTEMPTS),
