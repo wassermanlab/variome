@@ -29,7 +29,7 @@ FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "3000")
 if DB:
     print(f"...connecting to {DB}...")
 else:
-    print("...DB not set, using SQLite (in-memory)...")
+    print("...using SQLite ...")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = (
@@ -218,7 +218,12 @@ if DB:
         _db_config["OPTIONS"] = {"connect_timeout": 10}
     DATABASES = {"default": _db_config}
 else:
-    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "data", "bvl.sqlite"),
+        }
+    }
 
 
 # Password validation

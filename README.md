@@ -147,7 +147,7 @@ Markdown format files in the /content folder are treated as full pages, availabl
 Markdown format files in /content/Home are individual, "hard-coded" page elements on the Home page, so you shouldn't add more or rename these.
 
 ### config reference
-PUBLIC_BVL - opens the database for public access, as a demonstration app. For this to work, a shared user account must also be created ( username: `public_demo_user`, email: `public_demo_user@ibvl.ca` )
+PUBLIC_BVL - opens the database for public access, as a demonstration app. For this to work, a shared user account must also be created ( username: `public_demo_user`, email: `public_demo_user@example.com` )
 
 
 # Importing from a VCF file
@@ -160,6 +160,7 @@ Mitochondrial tables are omitted because these are not part of the currently use
 
 ```
 python manage.py import_bvl_vcf --vcf /path/to/joint.vcf
+python manage.py create_indices
 ```
 
 Run `python manage.py import_bvl_vcf --help` for a full list of options.
@@ -169,11 +170,11 @@ Run `python manage.py import_bvl_vcf --help` for a full list of options.
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--vcf` | *(required)* | Path to the input VCF file (plain text or `.gz`) |
-| `--severities-tsv` | `data/fixtures/severities.tsv` | Path to the severities lookup table |
+| `--input-tsv-dir` | `data/fixtures` | Path to the dir containing severities.tsv |
 | `--na` | `.` | Value used to represent missing/null data |
 | `--out-chr` | enabled | Prefix chromosome names with `chr` |
-| `--out-hyphens` | enabled | Use hyphens in variant IDs (e.g. `1-100-A-G`) |
-| `--cadd-threshold` | `20` | CADD phred score threshold for "Damaging" classification |
+| `--out-hyphens` | enabled | Use hyphens in variant IDs (e.g. `1-100-A-G`) if false, uses underscores instead |
+| `--cadd-threshold` | `20` | cadd_intr will be classified as "Damaging" if cadd_score is greater than or equal to this number |
 | `--default-transcript-source` | `E` | Fallback transcript source when unknown (`E`=Ensembl, `R`=RefSeq) |
 | `--ranges` | *(all)* | Restrict processing to specific regions, e.g. `22:27010000-27020000,X:2702000-2802000` |
 | `--convert-to-tsv` | disabled | Write TSV files instead of importing into the database |
@@ -186,7 +187,7 @@ Run `python manage.py import_bvl_vcf --help` for a full list of options.
 ## Comparing output against a reference TSV set
 
 When `--convert-to-tsv` is active, pass `--hash-compare` to verify that the generated TSV files
-match a previously known-good set:
+match a previously known-good set ( this is useful for development of this project, ensuring consistency with legacy tsv-producting tools):
 
 ```
 python manage.py import_bvl_vcf \
