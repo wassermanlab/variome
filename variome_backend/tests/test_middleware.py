@@ -24,7 +24,7 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         return request
 
     def _create_public_user(self):
-        user = User(username="public_demo_user", email="public_demo_user@ibvl.ca")
+        user = User(username="public_demo_user", email="public_demo_user@example.com")
         user.set_unusable_password()
         user.save()
         return user
