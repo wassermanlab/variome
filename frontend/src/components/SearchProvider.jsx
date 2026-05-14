@@ -106,7 +106,7 @@ function SearchProvider({ children }) {
         clearTimeout(searchTimeoutRef.current);
         cancelledQueriesRef.current = [...cancelledQueriesRef.current, query]; // query is the previous query
       }
-
+//      console.log("newQuery", newQuery);
       setQuery(newQuery);
       setResults([]);
       setLoading(true);
@@ -138,11 +138,11 @@ function SearchProvider({ children }) {
 
 
     } else {
-      setWarnings([]);
-      setResults([]);
-      setNearby([]);
-      setResultsMessage(null);
-      setQuery("");
+      setWarnings(() => []);
+      setResults(() => []);
+      setNearby(() => []);
+      setResultsMessage(() => null);
+      setQuery(() => "");
       cancelledQueriesRef.current = [];
       setLoading(() => false);
     }
@@ -174,13 +174,13 @@ function SearchProvider({ children }) {
           }
         });
 
-        setMatchPairs(pairs);
-        setWarnings([]);
+        setMatchPairs(() => pairs);
+        setWarnings(()=> []);
         const variantPromise = Api.get("search", parameters.searchParameters);
 
         if (parameters.searchParameters.ref) {
           const referenceCheck = Promise.race([
-            Api.ensemblRefCheck(parameters.searchParameters.pos, "2"),
+            Api.ensemblRefCheck(parameters.searchParameters.chr, parameters.searchParameters.pos, "2"),
             new Promise(resolve => setTimeout(() => resolve(null), 5000))
           ]);
 
@@ -192,9 +192,12 @@ function SearchProvider({ children }) {
             } else {
               console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
               console.log(referenceResult);
-              setWarnings([...warnings, {
-                label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`
-              }]);
+              setWarnings(warnings => [
+                ...warnings,
+                {
+                  label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`
+                }
+              ]);
               console.log("warnings", warnings);
             }
 

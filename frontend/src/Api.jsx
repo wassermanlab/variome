@@ -121,13 +121,13 @@ const Api = {
       }
       return json;
     },
-    ensemblRefCheck: async (position, assemblyVersion) => {
+    ensemblRefCheck: async (chr, position, assemblyVersion) => {
       var json;
       var coordSystemVersion = Constants.assemblyVersions[assemblyVersion];
 
       if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
         try {
-          json = await getFetch(`https://rest.ensembl.org/sequence/region/human/X:${position}..${position}:1?content-type=application/json;coord_system_version=${coordSystemVersion}`);
+          json = await getFetch(`https://rest.ensembl.org/sequence/region/human/${chr}:${position}..${position}:1?content-type=application/json;coord_system_version=${coordSystemVersion}`);
         } catch (response) {
           return Promise.reject(response);
         }
