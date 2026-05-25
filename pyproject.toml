@@ -24,6 +24,8 @@ dependencies = [
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
     "cryptography>=46.0.7",
+    # Security pin: fixes urllib3 vulnerabilities present in versions <2.7.0.
+    "urllib3==2.7.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.13"
