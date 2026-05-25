@@ -48,8 +48,10 @@ idna==3.10
     # via requests
 natsort==8.4.0
     # via variome (pyproject.toml)
-psycopg2-binary==2.9.10
+psycopg==3.3.4
     # via variome (pyproject.toml)
+psycopg-binary==3.3.4
+    # via psycopg
 pycparser==2.22
     # via cffi
 pyjwt==2.12.1
@@ -68,7 +70,8 @@ sqlparse==0.5.3
     # via django
 typing-extensions==4.13.0
     # via dj-database-url
-urllib3==2.3.0
+urllib3==2.7.0
     # via
+    #   variome (pyproject.toml)
     #   django-auth-adfs
     #   requests
