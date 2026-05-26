@@ -34,16 +34,30 @@ export default function SearchResults({ sx, overlay }) {
 
   function renderSearchResult(variant, index) {
     
-    return <ListItem style={{
+    return <ListItem sx={{
       background:"transparent",
+      cursor: "pointer",
+      "&:hover":{
+        backgroundColor: isExactMatch() ? alpha(palette.highlight.main, 0.25) : alpha(palette.grey[200], 0.6)
+      },
       border: isExactMatch() ? `1px solid ${palette.highlight.main}` : "none",
-      }} key={index} button onClick={() => openVariant(variant)}>
+      }} key={index} onClick={() => openVariant(variant)}>
       <ListItemText primary={variant.variant_id} secondary={variant.var_type} />
     </ListItem>
   }
   function renderNearbySearchResult(variant, index) {
 
-    return <ListItem style={{background: "transparent"}} key={index} button onClick={() => openVariant(variant)}>
+    return <ListItem
+      key={index}
+      onClick={() => openVariant(variant)}
+      sx={{
+        background: "transparent",
+        cursor: "pointer",
+        "&:hover": {
+          backgroundColor: alpha(palette.grey[200], 0.6)
+        },
+      }}
+    >
       <ListItemText primary={variant.variant_id} secondary={variant.var_type} />
     </ListItem>
     }
@@ -72,7 +86,7 @@ export default function SearchResults({ sx, overlay }) {
                     {key}
                     {": "}
                   </span>
-                  <span style={{}}>{val}</span>
+                  <span style={{wordBreak: "break-all"}}>{val}</span>
                 </span>
               );
             })}
@@ -81,13 +95,18 @@ export default function SearchResults({ sx, overlay }) {
 
           <List>
             {searchContext.warnings.map((warning, index) => (
-              <ListItem key={index} style={{background: alpha(palette.warning.main, 0.15) }} button={!!warning.link} onClick={() => {
-                if (warning.link) {
-                  // TODO
-//                  searchContext.setHideResultsOverride(true);
-//                  navigate(warning.link);
-                }
-              }}>
+              <ListItem 
+                key={index} 
+                style={{
+                  background: alpha(palette.warning.main, 0.15),
+                  wordBreak: "break-word" }} 
+                onClick={() => {
+                  if (warning.link) {
+                    // TODO
+  //                  searchContext.setHideResultsOverride(true);
+  //                  navigate(warning.link);
+                  }
+                }}>
                 <ListItemText primary={warning.label} />
               </ListItem>
             ))}

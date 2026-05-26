@@ -180,7 +180,7 @@ function SearchProvider({ children }) {
 
         if (parameters.searchParameters.ref) {
           const referenceCheck = Promise.race([
-            Api.ensemblRefCheck(parameters.searchParameters.chr, parameters.searchParameters.pos, "2"),
+            Api.ensemblRefCheck(parameters.searchParameters, "2"),
             new Promise(resolve => setTimeout(() => resolve(null), 5000))
           ]);
 
@@ -195,7 +195,7 @@ function SearchProvider({ children }) {
               setWarnings(warnings => [
                 ...warnings,
                 {
-                  label: `⚠️ ${ASSEMBLY_LABEL} Reference allele is ${referenceResult.seq} at this position`
+                  label: `⚠️ The ${ASSEMBLY_LABEL} Reference is ${referenceResult.seq} at this position`
                 }
               ]);
               console.log("warnings", warnings);
