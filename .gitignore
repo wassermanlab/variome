@@ -172,6 +172,7 @@ config.json
 node_modules
 data/import_script/jobs/*
 data/backups/*
+*.sqlite*
 
 # because it depends on OS and is generated dynamically
 package-lock.json
