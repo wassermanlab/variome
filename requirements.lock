@@ -64,8 +64,8 @@ six==1.17.0
     # via python-dateutil
 sqlparse==0.5.3
     # via django
-typing-extensions==4.13.0
-    # via dj-database-url
+tenacity==9.1.4
+    # via variome (pyproject.toml)
 urllib3==2.7.0
     # via
     #   variome (pyproject.toml)
