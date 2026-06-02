@@ -10,7 +10,7 @@ authors = [
 dependencies = [
     "django==5.2.13",
     "natsort>=8.4.0",
-    "psycopg2-binary>=2.9.9",
+    "psycopg[binary]>=3.0",
     "dj-database-url>=2.1.0",
     "djangorestframework>=3.15.1",
     "django-extensions>=3.2.3",
@@ -25,9 +25,13 @@ dependencies = [
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
     "cryptography>=46.0.7",
+    # Security pin: fixes urllib3 vulnerabilities present in versions <2.7.0.
+    "urllib3==2.7.0",
+    # Security pin: django-auth-adfs -> requests -> idna.
+    "idna>=3.15",
 ]
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = ">= 3.13"
 
 [build-system]
 requires = ["hatchling"]

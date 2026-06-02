@@ -38,13 +38,17 @@ django-tracking2==0.5.1
     # via variome (pyproject.toml)
 djangorestframework==3.17.1
     # via variome (pyproject.toml)
-idna==3.13
-    # via requests
+idna==3.15
+    # via
+    #   variome (pyproject.toml)
+    #   requests
 natsort==8.4.0
     # via variome (pyproject.toml)
-psycopg2-binary==2.9.12
+psycopg==3.3.4
     # via variome (pyproject.toml)
-pycparser==3.0
+psycopg-binary==3.3.4
+    # via psycopg
+pycparser==2.22
     # via cffi
 pyjwt==2.12.1
     # via django-auth-adfs
@@ -60,10 +64,11 @@ six==1.17.0
     # via python-dateutil
 sqlparse==0.5.3
     # via django
-tenacity==9.1.4
-    # via variome (pyproject.toml)
-urllib3==2.6.3
+typing-extensions==4.13.0
+    # via dj-database-url
+urllib3==2.7.0
     # via
+    #   variome (pyproject.toml)
     #   django-auth-adfs
     #   requests
 vcfpy==0.14.2
