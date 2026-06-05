@@ -35,16 +35,24 @@ function TrackingDashboard({ initialdata }) {
 function VariantViews({ views }) {
 
   return <div className="views-table">
+        Variant Views - Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
       <ul style={{ display: "flex", flexDirection: "column", margin: "0px"}}>
         {views.map((pageview, i) => (
           <li className="row" key={i}>
             <div className="variant-column">
-              {truncateText(pageview.variant, 20)} 
+              {truncateText(pageview.variant, 50)} 
             </div>
               <div className="time-column">{(() => {
-                const timeString = pageview.time.includes("Z") ? pageview.time : pageview.time + "Z"; // converting UTC to browser timezone
-                const dateObject = new Date(timeString);
-                return dateObject.toLocaleString();
+                try {
+                  const dateObject = new Date(pageview.time);
+                  if (dateObject.toString() === "Invalid Date") {
+                    throw new Error("Invalid date format");
+                  }
+                  return dateObject.toLocaleString();
+                } catch (error) {
+                  console.error("Error parsing date:", error);
+                  return pageview.time; // Fallback to original string if parsing fails
+                }
               })()}</div>
             <div className="user-column" style={{textAlign: "right"}}>{pageview.user}</div>
           </li>
