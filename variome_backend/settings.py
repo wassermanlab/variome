@@ -22,11 +22,14 @@ dotenv.load_dotenv()
 
 IS_DEVELOPMENT = os.environ.get("ENVIRONMENT") != "production"
 DOMAIN = os.environ.get("HOST") or "127.0.0.1"
-DB = os.environ.get("DB") or "postgresql://variome:variome@localhost:5432/variome"
+DB = os.environ.get("DB")
 os.environ.setdefault("FRONTEND_PORT", "3000")
 FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "3000")
 
-print(f"...connecting to {DB}...")
+if DB:
+    print(f"...connecting to {DB}...")
+else:
+    print("...using SQLite ...")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = (
@@ -96,7 +99,6 @@ INSTALLED_APPS = [
     "variome_backend",
     "variome_backend.library",
     "variome_backend.library_access",
-    "pghistory.admin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -107,8 +109,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "corsheaders",
     "tracking",
-    "pghistory",
-    "pgtrigger",
     "auditlog",
 ]
 
@@ -122,7 +122,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "pghistory.middleware.HistoryMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
 ]
 AUTHENTICATION_BACKENDS = []
@@ -213,16 +212,23 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        DB,
-        conn_max_age=0,
+if DB:
+    DATABASES = {
+      "default": dj_database_url.parse(
+        DB, 
+        conn_max_age=0, 
         conn_health_checks=True
-    ),
-    "OPTIONS": {
-        "connect_timeout":0,
+      ),
+      "OPTIONS": {
+        "connect_timeout": 0}
+      }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "data", "bvl.sqlite"),
+        }
     }
-}
 
 
 # Password validation
