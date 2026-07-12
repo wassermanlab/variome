@@ -11,3 +11,13 @@ h1 {
   max-width: 100%;
   height: auto;
 }
+
+
+footer {
+  border-top: 1px solid #ccc;
+}
+footer div {
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin: 1em 0;
+}

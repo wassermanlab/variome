@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import _ from "lodash";
-import Markdown from "react-markdown";
+import Markdown from 'markdown-to-jsx/react';
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
