@@ -13,7 +13,7 @@ class AlwaysLoggedInMiddleware:
     site while keeping the admin area protected.
 
     Requires the public demo user (username='public_demo_user',
-    email='public_demo_user@ibvl.ca') to exist in the database.
+    email='public_demo_user@example.com') to exist in the database.
     If the user does not exist, a warning is logged and public access is
     effectively disabled.
     """
@@ -31,7 +31,7 @@ class AlwaysLoggedInMiddleware:
             try:
                 user = User.objects.get(
                     username="public_demo_user",
-                    email="public_demo_user@ibvl.ca",
+                    email="public_demo_user@example.com",
                 )
                 user.backend = "django.contrib.auth.backends.ModelBackend"
                 login(request, user)
@@ -40,7 +40,7 @@ class AlwaysLoggedInMiddleware:
                     logger.warning(
                         "PUBLIC_BVL is set to True but the public demo user "
                         "(username='public_demo_user', "
-                        "email='public_demo_user@ibvl.ca') "
+                        "email='public_demo_user@example.com') "
                         "does not exist. Public access is disabled. "
                         "Create this user to enable public access."
                     )

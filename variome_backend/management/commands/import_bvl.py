@@ -7,7 +7,7 @@ from time import time
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-import variome_backend.management.tools as bvltools
+import variome_backend.management.import_tools as bvltools
 
 log = logging.getLogger("management")
 
@@ -20,14 +20,14 @@ class Command(BaseCommand):
     def log_errors(self, entity_type, errors):
         if errors:
             sys.stderr.write(f"\nERRORS ({len(errors)}) in {entity_type} load:\n")
-            for err in errors:
-                sys.stderr.write(f"* {err}\n")
+            for line in bvltools.format_errors(errors, log_all=self.log_all_errors):
+                sys.stderr.write(line + "\n")
 
     def log_warnings(self, entity_type, warnings):
         if warnings:
             sys.stderr.write(f"\nWARNINGS ({len(warnings)}) in {entity_type} load:\n")
-            for err in warnings:
-                sys.stderr.write(f"* {err}\n")
+            for line in bvltools.format_messages(warnings, log_all=self.log_all_errors):
+                sys.stderr.write(line + "\n")
 
     def add_arguments(self, parser):
         parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
@@ -148,11 +148,30 @@ class Command(BaseCommand):
             default=False,
             help="Dry run - make no changes to database",
         )
+        parser.add_argument(
+            "--log-all-errors",
+            dest="log_all_errors",
+            action="store_true",
+            default=False,
+            help="Print every error in full; by default only the first 10 per error group are shown",
+        )
 
     def handle(self, **options):
         transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
         start_time = time()
+        self.log_all_errors = options["log_all_errors"]
+
+        last_step_time = time()
+
+        def log_timing(name):
+            nonlocal last_step_time
+            duration = time() - last_step_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = duration % 60
+            log.info("%s took %dh %dm %.1fs", name, hours, minutes, seconds)
+            last_step_time = time()
 
         sev_errors = None
         gen_errors = None
@@ -189,51 +208,61 @@ class Command(BaseCommand):
             sev_errors, sev_warnings, sev_counts = bvltools.SeverityImporter(
                 options
             ).import_data()
+            log_timing("severities")
 
         if options["genes"]:
             gen_errors, gen_warnings, gen_counts = bvltools.GeneImporter(
                 options
             ).import_data()
+            log_timing("genes")
 
         if options["variants"]:
             var_errors, var_warnings, var_counts = bvltools.VariantImporter(
                 options
             ).import_data()
+            log_timing("variants")
 
         if options["transcripts"]:
             tra_errors, tra_warnings, tra_counts = bvltools.TranscriptImporter(
                 options
             ).import_data()
+            log_timing("transcripts")
 
         if options["snvs"]:
             snv_errors, snv_warnings, snv_counts = bvltools.SNVImporter(
                 options
             ).import_data()
+            log_timing("snvs")
 
         if options["gvfs"]:
             gvf_errors, gvf_warnings, gvf_counts = bvltools.GVFImporter(
                 options
             ).import_data()
+            log_timing("gvfs")
 
         if options["ggfs"]:
             ggf_errors, ggf_warnings, ggf_counts = bvltools.GGFImporter(
                 options
             ).import_data()
+            log_timing("ggfs")
 
         if options["vts"]:
             vts_errors, vts_warnings, vts_counts = bvltools.VariantTranscriptImporter(
                 options
             ).import_data()
+            log_timing("variant transcripts")
 
         if options["annotations"]:
             ann_errors, ann_warnings, ann_counts = bvltools.AnnotationImporter(
                 options
             ).import_data()
+            log_timing("annotations")
 
         if options["consequences"]:
             con_errors, con_warnings, con_counts = bvltools.ConsequenceImporter(
                 options
             ).import_data()
+            log_timing("consequences")
 
         self.log_errors("Severity", sev_errors)
         self.log_errors("Gene", gen_errors)
