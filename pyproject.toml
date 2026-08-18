@@ -28,8 +28,10 @@ dependencies = [
     "urllib3==2.7.0",
     # Security pin: django-auth-adfs -> requests -> idna.
     "idna>=3.15",
-    # Security pin: https://github.com/wassermanlab/variome/security/dependabot/142
-    "sqlparse>=0.6.0"
+    # Security pin: django depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/142
+    "sqlparse>=0.6.0",
+    # Security pin: django-auth-adfs depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/128 plus others
+    "pyjwt>=2.13.0"
 ]
 readme = "README.md"
 requires-python = ">= 3.13"
