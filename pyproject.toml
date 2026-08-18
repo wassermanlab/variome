@@ -10,7 +10,8 @@ authors = [
 dependencies = [
     "django==6.0.7",
     "natsort>=8.4.0",
-    "psycopg[binary]>=3.0",
+    "psycopg[binary]>=3.3.4",
+    "dj-database-url>=2.1.0",
     "djangorestframework>=3.17.1",
     "django-extensions>=3.2.3",
     "django-cors-headers>=4.3.1",
