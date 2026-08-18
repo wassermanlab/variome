@@ -8,7 +8,7 @@ authors = [
     { name = "Stephanie Q"}
 ]
 dependencies = [
-    "django==6.0.6",
+    "django==6.0.7",
     "natsort>=8.4.0",
     "psycopg[binary]>=3.0",
     "dj-database-url>=3.1.2",
@@ -23,7 +23,7 @@ dependencies = [
     "pymysql>=1.1.2",
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
-    "cryptography>=46.0.7",
+    "cryptography>=50.0.0",
     # Security pin: fixes urllib3 vulnerabilities present in versions <2.7.0.
     "urllib3==2.7.0",
     # Security pin: django-auth-adfs -> requests -> idna.
