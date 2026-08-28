@@ -1,19 +1,19 @@
-from rest_framework import viewsets
-from django.contrib.auth.decorators import login_required
+
+
 
 from ..models import Variant, SNV
 from ..serializers import SNVSerializer
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 
 from django.http import Http404
 from django.http.response import JsonResponse
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 def snv_metadata(request, variant_id, **kwargs):
     """ """
 

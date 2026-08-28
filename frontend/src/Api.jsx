@@ -100,6 +100,7 @@ const Api = {
     } catch (response) {
       // BW note: it would be nice to still be able to read the response body
       // for server-provided error messages even if fetch fails
+      console.error("api error catch response:",response);
       return Promise.reject(response);
     }
     return json;

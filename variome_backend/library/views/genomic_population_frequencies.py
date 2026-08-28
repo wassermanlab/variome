@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from django.contrib.auth.decorators import login_required
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 from ..models import Variant, GenomicGnomadFrequency, GenomicVariomeFrequency
 from ..serializers import (
     GenomicGnomadFrequencySerializer,
@@ -18,7 +18,7 @@ from django.http.response import JsonResponse
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 # @access_count_gate()
 def genomic_population_frequencies(request, variant_id, **kwargs):
     """ """

@@ -67,6 +67,8 @@ export default function Variant({pageTitle}) {
           );
         } else if (r.status == 404){
           setError("Variant not found");
+        } else if (r.status == 403) {
+          setError("You are not logged in. Please refresh the page, and log in again.");
         } else {
           setError("Sorry, something went wrong");
         }

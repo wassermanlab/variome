@@ -83,6 +83,7 @@ function SearchProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [resultsMessage, setResultsMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [results, setResults] = useState([]);
   const [nearby, setNearby] = useState([]);
   const [warnings, setWarnings] = useState([]);
@@ -106,7 +107,7 @@ function SearchProvider({ children }) {
         clearTimeout(searchTimeoutRef.current);
         cancelledQueriesRef.current = [...cancelledQueriesRef.current, query]; // query is the previous query
       }
-//      console.log("newQuery", newQuery);
+      //      console.log("newQuery", newQuery);
       setQuery(newQuery);
       setResults([]);
       setLoading(true);
@@ -151,10 +152,9 @@ function SearchProvider({ children }) {
   let doSearch = async function (query) {
     var nearby = [];
     var results = [];
-
+    var error = null;
 
     var parameters = parseParameters(query);
-    console.log("parameters", parameters);
 
     if (_.isEmpty(parameters) || !_.get(parameters, "searchParameters") || !_.get(parameters, "groups")) {
 
@@ -162,48 +162,52 @@ function SearchProvider({ children }) {
       setMatchPairs([]);
       setResultsMessage("No results ( query format is not recognized )");
     } else {
-      try {
 
-        var cleanGroups = _.omitBy(_.get(parameters, "groups", []), _.isNil);
+      var cleanGroups = _.omitBy(_.get(parameters, "groups", []), _.isNil);
 
-        var pairs = _.map(_.toPairs(cleanGroups), ([key, val]) => {
-          if (key == "dbsnp") {
-            return [key, val];
-          } else {
-            return [key, _.toUpper(val)];
-          }
-        });
-
-        setMatchPairs(() => pairs);
-        setWarnings(()=> []);
-        const variantPromise = Api.get("search", parameters.searchParameters);
-
-        if (parameters.searchParameters.ref) {
-          const referenceCheck = Promise.race([
-            Api.ensemblRefCheck(parameters.searchParameters, "2"),
-            new Promise(resolve => setTimeout(() => resolve(null), 5000))
-          ]);
-
-          const referenceResult = await referenceCheck;
-
-          if (_.isObject(referenceResult) && _.get(referenceResult, "seq")) {
-            if (referenceResult.seq == _.get(parameters, "groups.ref", "").toUpperCase()) {
-              console.log("check passes");
-            } else {
-              console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
-              console.log(referenceResult);
-              setWarnings(warnings => [
-                ...warnings,
-                {
-                  label: `⚠️ The ${ASSEMBLY_LABEL} Reference is ${referenceResult.seq} at this position`
-                }
-              ]);
-              console.log("warnings", warnings);
-            }
-
-          }
-
+      var pairs = _.map(_.toPairs(cleanGroups), ([key, val]) => {
+        if (key == "dbsnp") {
+          return [key, val];
+        } else {
+          return [key, _.toUpper(val)];
         }
+      });
+
+      setMatchPairs(() => pairs);
+      setWarnings(() => []);
+      const variantPromise = Api.get("search", parameters.searchParameters).catch((e) => {
+        
+        if (_.get(e, "status") == 403) {
+          error = "You have been logged out. Please refresh the page, and log in again.";
+        }
+        throw e;
+      });
+      if (parameters.searchParameters.ref) {
+        const referenceCheck = Promise.race([
+          Api.ensemblRefCheck(parameters.searchParameters, "2"),
+          new Promise(resolve => setTimeout(() => resolve(null), 5000))
+        ]);
+
+        const referenceResult = await referenceCheck;
+
+        if (_.isObject(referenceResult) && _.get(referenceResult, "seq")) {
+          if (referenceResult.seq == _.get(parameters, "groups.ref", "").toUpperCase()) {
+            console.log("check passes");
+          } else {
+            console.log("reference mismatch", referenceResult.seq, _.get(parameters, "groups.ref", "").toUpperCase());
+            console.log(referenceResult);
+            setWarnings(warnings => [
+              ...warnings,
+              {
+                label: `⚠️ The ${ASSEMBLY_LABEL} Reference is ${referenceResult.seq} at this position`
+              }
+            ]);
+            console.log("warnings", warnings);
+          }
+        }
+      }
+
+      try {
         const variantData = await variantPromise;
 
         results = _.compact(
@@ -215,27 +219,30 @@ function SearchProvider({ children }) {
         );
 
         nearby = _.get(variantData, "results.nearby", [])
-      } catch (error) {
-        console.error(error);
-        setLoading(() => false);
-        setHideResultsOverride(false);
-        setResultsMessage(`Sorry, something went wrong`);
-      }
 
-      if (_.size(results) == 0 && _.size(nearby) == 1) {
-        setResultsMessage(`No variants found at location. 1 variant nearby:`);
-      } else if (_.size(results) == 0 && _.size(nearby) > 1) {
-        setResultsMessage(
-          `No variants found at location. ${_.size(nearby)} variants nearby:`
-        );
-      } else if (_.size(results) == 0 && _.size(nearby) == 0) {
-        setResultsMessage(`No variants found.`);
-      } else if (_.size(nearby) > 1) {
-        setResultsMessage(`${_.size(nearby)} variants nearby:`);
-      } else if (_.size(nearby) == 1) {
-        setResultsMessage(`1 variant nearby:`);
-      } else {
-        setResultsMessage(null);
+        if (_.size(results) == 0 && _.size(nearby) == 1) {
+          setResultsMessage(`No variants found at location. 1 variant nearby:`);
+        } else if (_.size(results) == 0 && _.size(nearby) > 1) {
+          setResultsMessage(
+            `No variants found at location. ${_.size(nearby)} variants nearby:`
+          );
+        } else if (_.size(results) == 0 && _.size(nearby) == 0) {
+          setResultsMessage(`No variants found.`);
+        } else if (_.size(nearby) > 1) {
+          setResultsMessage(`${_.size(nearby)} variants nearby:`);
+        } else if (_.size(nearby) == 1) {
+          setResultsMessage(`1 variant nearby:`);
+        } else {
+          setResultsMessage(null);
+        }
+      } catch {
+        
+              if (error) {
+                setResultsMessage('An error occured during search');
+                setErrorMessage(error);
+                return {};
+              }
+
       }
     }
     return { results, nearby };
@@ -259,7 +266,8 @@ function SearchProvider({ children }) {
         hideResultsOverride,
         setHideResultsOverride,
         warnings,
-        resultsMessage
+        resultsMessage,
+        errorMessage
       }}
     >
       {children}

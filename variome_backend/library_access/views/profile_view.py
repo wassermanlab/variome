@@ -34,7 +34,6 @@ def profile_view_stub(request):
     return JsonResponse(user_json, safe=False)
 
 
-# @login_required
 def profile_view_json(request):
     if not request.user.is_authenticated:
         return JsonResponse({"user": None})

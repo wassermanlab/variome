@@ -17,7 +17,8 @@ from ..serializers import (
 from .snv_annotations import snv_annotations
 
 from rest_framework.decorators import api_view
-from django.contrib.auth.decorators import login_required
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 from django.http import Http404
 from django.http.response import JsonResponse
@@ -26,7 +27,7 @@ from variome_backend.library_access.decorators import access_count_gate
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 @access_count_gate()
 def variant(request, id):
     """_summary_

@@ -6,7 +6,6 @@ from django.conf import settings
 from django.http import JsonResponse
 from .library.models import Variant
 from variome_backend.models import VariomeSettings
-from django.contrib.auth.decorators import login_required
 
 
 def backend_home_page(request):
@@ -39,8 +38,6 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, "development-mode-login.html", context={"form": form})
 
-
-# @login_required
 def get_site_settings(request):
     site_settings = VariomeSettings.objects.get(pk=1)
     example_variant = site_settings.example_snv
