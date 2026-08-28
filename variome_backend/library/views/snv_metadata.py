@@ -10,10 +10,12 @@ from rest_framework.response import Response
 
 from django.http import Http404
 from django.http.response import JsonResponse
+from django.views.decorators.cache import never_cache
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@never_cache
 def snv_metadata(request, variant_id, **kwargs):
     """ """
 

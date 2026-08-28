@@ -15,10 +15,12 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 
 from django.http import Http404
 from django.http.response import JsonResponse
+from django.views.decorators.cache import never_cache
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@never_cache
 # @access_count_gate()
 def genomic_population_frequencies(request, variant_id, **kwargs):
     """ """

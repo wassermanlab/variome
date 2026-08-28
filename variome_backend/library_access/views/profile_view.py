@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.cache import never_cache
 import os
 
 from ..models import UserProfile
@@ -34,6 +35,7 @@ def profile_view_stub(request):
     return JsonResponse(user_json, safe=False)
 
 
+@never_cache
 def profile_view_json(request):
     if not request.user.is_authenticated:
         return JsonResponse({"user": None})

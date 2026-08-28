@@ -3,6 +3,7 @@ import json
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from django.views.decorators.cache import never_cache
 
 from django.http.response import JsonResponse
 from django.db.models import Q, F
@@ -19,6 +20,7 @@ from ..serializers import (
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@never_cache
 def snv_search(request):
     in_result_sets = request.GET.get("resultSets", None)
     in_query = request.GET.get("query", None)

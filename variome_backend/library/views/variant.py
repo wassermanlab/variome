@@ -22,6 +22,7 @@ from rest_framework.decorators import permission_classes
 
 from django.http import Http404
 from django.http.response import JsonResponse
+from django.views.decorators.cache import never_cache
 
 from variome_backend.library_access.decorators import access_count_gate
 
@@ -29,6 +30,7 @@ from variome_backend.library_access.decorators import access_count_gate
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @access_count_gate()
+@never_cache
 def variant(request, id):
     """_summary_
 
