@@ -9,6 +9,8 @@ from django.http.response import JsonResponse
 from django.db.models import Q, F
 from django.db.models.functions import Abs
 
+from variome_backend.settings import IS_DEVELOPMENT
+
 from ..models import (
     Variant,
     SNV,
@@ -61,7 +63,10 @@ def snv_search(request):
 
     if out_error:
         print(f"Error: {out_error}")
-        return Response({"errors": [out_error]}, status=400)
+        if (IS_DEVELOPMENT):
+            return Response({"errors": [out_error]}, status=int(request.GET.get("r", 400)))
+        else:
+            return Response({"errors": [out_error]}, status=400)
 
     in_chr = in_chr.upper()
     in_ref = in_ref.upper() if in_ref else None
@@ -123,5 +128,8 @@ def snv_search(request):
         response_data["results"]["clinvar"] = list(clinvar_results)
         print(f"ClinVar results: {response_data['results']['clinvar']}")
 
-    return Response(response_data)
+    if (IS_DEVELOPMENT):
+        return Response(response_data, status=int(request.GET.get("r", 200)))
+    else:
+        return Response(response_data)
 

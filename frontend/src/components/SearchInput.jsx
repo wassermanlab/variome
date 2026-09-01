@@ -2,16 +2,11 @@ import React from 'react';
 import { useState, useEffect, useContext } from 'react';
 import _ from 'lodash';
 
-import { TextField, List, ListItem, ListItemText, Divider, Box } from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { SearchContext } from './SearchProvider';
 
-import {
-  styled,
-  useTheme
-}
-  from "@mui/material/styles";
-
-export default function SearchInput({ width, marginLeft, inputElementId, variant, sx }) {
+export default function SearchInput({ marginLeft, inputElementId, variant, sx }) {
 
   const searchContext = useContext(SearchContext);
 
@@ -34,15 +29,21 @@ export default function SearchInput({ width, marginLeft, inputElementId, variant
     const q = params.get('q');
     if (q && _.trim(q) != _.trim(inputQuery)) {
       setInputQuery(q);
-      searchContext.debounceUpdateSearch(q);
+      searchContext.submitSearch(q);
     }
   }, []);
 
-  return (<>
-  <TextField 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    searchContext.submitSearch(inputQuery);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", alignItems: "center", marginLeft, ...sx }}>
+      <TextField
       id={inputElementId} 
       placeholder="Search variants"
-      variant="standard"
+      variant={variant}
       value={inputQuery}
       onFocus={() => {
         if (_.isFunction(searchContext.onInputFocus)) {
@@ -53,15 +54,16 @@ export default function SearchInput({ width, marginLeft, inputElementId, variant
       }}
 
       InputProps={{
-        startAdornment:<span style={{marginRight: "8px", cursor:"default"}}>🔎</span>
+        startAdornment: <Search sx={{ marginRight: "8px" }} />
       }}
-      sx={{ width, marginLeft, ...sx }}
+      sx={{width: "100%"}}
       onChange={(event) => {
         setInputQuery(event.target.value);
-        searchContext.debounceUpdateSearch(event.target.value);
-      }
-      }
+      }}
       />
-  </>
+      <Button type="submit" disabled={searchContext.loading} >
+        Submit
+      </Button>
+    </form>
   );
 }

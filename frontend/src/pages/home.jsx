@@ -117,7 +117,7 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{width:"80%"}}/>
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>

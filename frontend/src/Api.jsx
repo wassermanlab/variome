@@ -69,8 +69,10 @@ function cachedFetch(url, query, method = 'GET', data, includeCredentials = true
         }
       })
       .then((json) => {
+        if (!_.isObject(json) && !_.isArray(json)) {
+          return Promise.reject({ error: "The server's response was invalid", json });
+        }
         if (_.isString(_.get(json, 'user.csrf_token'))) {
-          //          console.log('saving csrf token', json.user.csrf_token);
           csrftoken = json.user.csrf_token;
         }
         map[key] = null;
@@ -96,10 +98,7 @@ const Api = {
     var json;
     try {
       json = await cachedFetch(API_URL_BASE + path, query);
-      //      console.log('api get', path, query, json)
     } catch (response) {
-      // BW note: it would be nice to still be able to read the response body
-      // for server-provided error messages even if fetch fails
       console.error("api error catch response:",response);
       return Promise.reject(response);
     }

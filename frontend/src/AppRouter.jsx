@@ -44,16 +44,26 @@ function AppRouter() {
   
   },[_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
 
-  useEffect(() => {
+  function VerifyAuth(){
+    Api.get('user', { json: true }).then((response) => {
+            var user = _.get(response, 'user');
+            if (_.isObject(user) && _.has(user, 'email') && user.email) {
+              setUser(user);
+            } else if (_.isObject(user) && !_.has(user, 'email') ) {
+              console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
+            } else {
+              setUser(null);
+            }
+          }).catch((error) => {
+            console.error("error verifying auth", error);
+            setUser(null);
+          });
+  }
 
-      Api.get('user', { json: true }).then((response) => {
-        var user = _.get(response, 'user');
-        if (_.isObject(user) && _.has(user, 'email') && user.email) {
-          setUser(user);
-        } else if (_.isObject(user) && !_.has(user, 'email') ) {
-          console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
-        }
-      });
+  useEffect(() => {
+      window.addEventListener("browserReactivated", VerifyAuth);
+      VerifyAuth();
+      return () => { window.removeEventListener("browserReactivated", VerifyAuth); }
   }, []);
 
   function ScrollToTop(){

@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { createContext, useState, useRef, useEffect } from "react";
+import { createContext, useState } from "react";
 
 import Constants from '../Constants';
 
@@ -11,9 +11,6 @@ let variant_groups_regex = new RegExp(
   /^(CHR *)?(?<chr>[0-9]{1,2}|[XYM]{1}|MT)\s*[-:>\.\/ _]\s*(?<pos>(\d{1,3}([,. ]\d{3})+|(\d{1,})))\s*[-:>\.\/ _]?\s*(?<ref>[cgtaCGTA]{1,})?\s*[-:>\.\/ _]?\s*(?<alt>[cgtaCGTA]{1,})?$/,
   "i"
 );
-
-const DEBOUNCE_DELAY = 800;
-//const DEBOUNCE_DELAY = 999999;
 
 export const SearchContext = createContext();
 
@@ -59,6 +56,13 @@ const parseParameters = (query) => {
       }
     });
 
+
+    if (_.get(import.meta.env, "DEV")) {
+      const params = new URLSearchParams(window.location.search);
+      var response_code_param = params.get('r');
+    }
+
+
     return {
       searchParameters: {
         query,
@@ -68,6 +72,7 @@ const parseParameters = (query) => {
         pos: groups.pos,
         ...groups.ref ? { ref: groups.ref } : {},//ref: groups.ref,
         ...groups.alt ? { alt: groups.alt } : {},//
+        ... response_code_param ? { r: response_code_param } : {}
       },
       groups: searchSummaryGroups
     };
@@ -90,62 +95,30 @@ function SearchProvider({ children }) {
   const [matchPairs, setMatchPairs] = useState([]);
   const [hideResultsOverride, setHideResultsOverride] = useState(false);
 
-  const cancelledQueriesRef = useRef([]);
-  const searchTimeoutRef = useRef(null);
-
-
-  const debounceUpdateSearch = (newQuery) => {
+  const submitSearch = async (newQuery) => {
+    const trimmedQuery = _.trim(newQuery);
     setHideResultsOverride(false);
 
-    if (!_.isEmpty(newQuery)) {
-
-      if (_.includes(cancelledQueriesRef.current, newQuery)) {
-        //                console.log("uncancel", newQuery);
-        cancelledQueriesRef.current = [..._.without(cancelledQueriesRef.current, newQuery)];
-      }
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-        cancelledQueriesRef.current = [...cancelledQueriesRef.current, query]; // query is the previous query
-      }
-      //      console.log("newQuery", newQuery);
-      setQuery(newQuery);
+    if (!_.isEmpty(trimmedQuery)) {
+      setQuery(trimmedQuery);
       setResults([]);
+      setNearby([]);
       setLoading(true);
       setWarnings([]);
+      setErrorMessage(null);
 
-      searchTimeoutRef.current = setTimeout(async () => {
-
-        if (_.includes(cancelledQueriesRef.current, newQuery)) {
-          //                    console.log("cancelledQueries", cancelledQueriesRef.current);
-          //                    console.log("abort", newQuery);
-        } else {
-
-          var { results, nearby } = await doSearch(_.trim(newQuery));
-
-          if (_.includes(cancelledQueriesRef.current, newQuery)) {
-            console.log("(2) abort", newQuery);
-          } else {
-            console.log("setting results", results);
-            console.log("set nearby", nearby);
-            setResults(() => results);
-            setNearby(() => nearby);
-
-            cancelledQueriesRef.current = [];
-            setLoading(() => false);
-          }
-        }
-
-      }, DEBOUNCE_DELAY);
-
-
+      const { results, nearby } = await doSearch(trimmedQuery);
+      setResults(results);
+      setNearby(nearby);
+      setLoading(false);
     } else {
-      setWarnings(() => []);
-      setResults(() => []);
-      setNearby(() => []);
-      setResultsMessage(() => null);
-      setQuery(() => "");
-      cancelledQueriesRef.current = [];
-      setLoading(() => false);
+      setWarnings([]);
+      setResults([]);
+      setNearby([]);
+      setResultsMessage(null);
+      setErrorMessage(null);
+      setQuery("");
+      setLoading(false);
     }
   }
 
@@ -174,14 +147,7 @@ function SearchProvider({ children }) {
       });
 
       setMatchPairs(() => pairs);
-      setWarnings(() => []);
-      const variantPromise = Api.get("search", parameters.searchParameters).catch((e) => {
-        
-        if (_.get(e, "status") == 403) {
-          error = "You have been logged out. Please refresh the page, and log in again.";
-        }
-        throw e;
-      });
+      setWarnings(() => []); 
       if (parameters.searchParameters.ref) {
         const referenceCheck = Promise.race([
           Api.ensemblRefCheck(parameters.searchParameters, "2"),
@@ -208,7 +174,15 @@ function SearchProvider({ children }) {
       }
 
       try {
-        const variantData = await variantPromise;
+        const variantData = await Api.get("search", parameters.searchParameters).catch((e) => {
+        
+        if (_.get(e, "status") == 403) {
+          error = "You have been logged out. Please refresh the page, and log in again.";
+        } else {
+          error = _.get(e, "error", "Unknown error");
+        }
+        throw e;
+      });
 
         results = _.compact(
           _.flatten([
@@ -238,9 +212,8 @@ function SearchProvider({ children }) {
       } catch {
         
               if (error) {
-                setResultsMessage('An error occured during search');
+                setResultsMessage('An error occured during search.');
                 setErrorMessage(error);
-                return {};
               }
 
       }
@@ -255,7 +228,7 @@ function SearchProvider({ children }) {
   return (
     <SearchContext.Provider
       value={{
-        debounceUpdateSearch,
+        submitSearch,
         matchPairs,
         loading,
         results,
@@ -271,7 +244,7 @@ function SearchProvider({ children }) {
       }}
     >
       {children}
-    </SearchContext.Provider>
+    </SearchContext.Provider> 
   );
 }
 
