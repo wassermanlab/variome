@@ -5,9 +5,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.views.decorators.cache import never_cache
 
-from django.http.response import JsonResponse
 from django.db.models import Q, F
 from django.db.models.functions import Abs
+
+from datetime import datetime
 
 from variome_backend.settings import IS_DEVELOPMENT
 
@@ -24,6 +25,7 @@ from ..serializers import (
 @permission_classes([IsAuthenticated])
 @never_cache
 def snv_search(request):
+    now = datetime.now()
     in_result_sets = request.GET.get("resultSets", None)
     in_query = request.GET.get("query", None)
     in_chr = request.GET.get("chr", None)
@@ -31,9 +33,9 @@ def snv_search(request):
     in_ref = request.GET.get("ref", None)
     in_alt = request.GET.get("alt", None)
 
-    print(
-        f"Parameters received: result_sets={in_result_sets}, query={in_query}, chr={in_chr}, pos={in_pos}, ref={in_ref}, alt={in_alt}"
-    )
+#    print(
+#        f"Parameters received: result_sets={in_result_sets}, query={in_query}, chr={in_chr}, pos={in_pos}, ref={in_ref}, alt={in_alt}"
+#    )
 
     v_pos_limit = 10
     out_error = None
@@ -108,26 +110,28 @@ def snv_search(request):
         response_data["results"]["position"] = list(position_results)
         response_data["results"]["nearby"] = list(nearby_results)
 
-        print(json.dumps(response_data["results"], indent=2))
+#        print(json.dumps(response_data["results"], indent=2))
 
     if "dbsnp" in in_result_sets:
-        print("Processing dbsnp result set")
+#        print("Processing dbsnp result set")
         dbsnp_results = Variant.objects.filter(Q(snv__dbsnp_id=in_query)).values(
             "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
         )
 
         response_data["results"]["dbsnp"] = list(dbsnp_results)
-        print(f"dbSNP results: {response_data['results']['dbsnp']}")
+#        print(f"dbSNP results: {response_data['results']['dbsnp']}")
 
     if "clinvar" in in_result_sets:
-        print("Processing clinvar result set")
+#        print("Processing clinvar result set")
         clinvar_results = Variant.objects.filter(Q(snv__clinvar_vcv=in_query)).values(
             "variant_id", "var_type", "id", *snv_values_to_set, "snv__clinvar_vcv"
         )
 
         response_data["results"]["clinvar"] = list(clinvar_results)
-        print(f"ClinVar results: {response_data['results']['clinvar']}")
+#        print(f"ClinVar results: {response_data['results']['clinvar']}")
 
+    duration = datetime.now() - now
+    response_data["duration_ms"] = int(duration.total_seconds() * 1000)
     if (IS_DEVELOPMENT):
         return Response(response_data, status=int(request.GET.get("r", 200)))
     else:

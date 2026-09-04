@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
 from django.core.exceptions import ObjectDoesNotExist
@@ -16,29 +17,11 @@ def profile_view_redirect(request):
     # do redirect to app
     return redirect(f"{DOMAIN}/")
 
-
-#    return render(request, 'profile.html', {
-#        'user': request.user,
-#    })
-
-
-def profile_view_stub(request):
-    user_json = {
-        "user": {
-            "username": "demo",
-            "email": "demo@example.com",
-            "csrf_token": get_token(request),
-            "variant_access_count": 10,
-            "can_access_variants": True,
-        }
-    }
-    return JsonResponse(user_json, safe=False)
-
-
+@api_view(["GET"])
 @never_cache
 def profile_view_json(request):
     if not request.user.is_authenticated:
-        return JsonResponse({"user": None})
+        return Response({"user": None})
 
     try:
         access_count = request.user.profile.access_count
@@ -63,4 +46,4 @@ def profile_view_json(request):
             "csrf_token": get_token(request),
         }
     }
-    return JsonResponse(user_json, safe=False)
+    return Response(user_json)
