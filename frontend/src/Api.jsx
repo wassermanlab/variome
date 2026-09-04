@@ -111,7 +111,8 @@ const Api = {
           null,
           'POST',
           {
-            query,
+            // collapse insignificant whitespace to cut request size
+            query: _.isString(query) ? _.words(query, /\S+/g).join(' ') : query,
             variables
           },
           false
