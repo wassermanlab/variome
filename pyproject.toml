@@ -8,7 +8,7 @@ authors = [
     { name = "Stephanie Q"}
 ]
 dependencies = [
-    "django==6.0.7",
+    "django==6.1",
     "natsort>=8.4.0",
     "psycopg[binary]>=3.3.4",
     "dj-database-url>=2.1.0",
