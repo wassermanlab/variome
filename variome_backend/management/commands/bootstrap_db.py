@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 from urllib.parse import quote as urlquote
 
-import psycopg2
-import psycopg2.sql
+import psycopg
+import psycopg.sql
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
@@ -123,8 +123,8 @@ class Command(BaseCommand):
         # Create the database (identifiers cannot be parameterized; validated above)
         self.stdout.write(f"Creating database '{db_name}'...")
         cur.execute(
-            psycopg2.sql.SQL("CREATE DATABASE {}").format(
-                psycopg2.sql.Identifier(db_name)
+            psycopg.sql.SQL("CREATE DATABASE {}").format(
+                psycopg.sql.Identifier(db_name)
             )
         )
 
@@ -137,8 +137,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"Creating user '{db_user}'...")
             cur.execute(
-                psycopg2.sql.SQL("CREATE USER {} WITH PASSWORD %s").format(
-                    psycopg2.sql.Identifier(db_user)
+                psycopg.sql.SQL("CREATE USER {} WITH PASSWORD %s").format(
+                    psycopg.sql.Identifier(db_user)
                 ),
                 (db_password,),
             )
@@ -148,11 +148,11 @@ class Command(BaseCommand):
             f"Granting all privileges on '{db_name}' to '{db_user}'..."
         )
         cur.execute(
-            psycopg2.sql.SQL(
+            psycopg.sql.SQL(
                 "GRANT ALL PRIVILEGES ON DATABASE {} TO {}"
             ).format(
-                psycopg2.sql.Identifier(db_name),
-                psycopg2.sql.Identifier(db_user),
+                psycopg.sql.Identifier(db_name),
+                psycopg.sql.Identifier(db_user),
             )
         )
 
@@ -181,7 +181,7 @@ class Command(BaseCommand):
     def _connect_admin(self, host, port, admin_user, admin_password):
         """Connect to the PostgreSQL server using the maintenance database.
 
-        When *admin_user* is None (the default), no user is passed to psycopg2,
+        When *admin_user* is None (the default), no user is passed to psycopg,
         so it falls back to the current OS username — the same behaviour as
         running ``psql`` with no ``-U`` flag (peer/trust authentication on
         Linux/macOS with Homebrew PostgreSQL).
@@ -189,15 +189,15 @@ class Command(BaseCommand):
         conn_kwargs = {
             "host": host,
             "port": port,
-            "database": "postgres",
+            "dbname": "postgres",
         }
         if admin_user:
             conn_kwargs["user"] = admin_user
         if admin_password:
             conn_kwargs["password"] = admin_password
         try:
-            return psycopg2.connect(**conn_kwargs)
-        except psycopg2.OperationalError as e:
+            return psycopg.connect(**conn_kwargs)
+        except psycopg.OperationalError as e:
             self.stderr.write(f"Error connecting to PostgreSQL: {e}")
             self.stderr.write(
                 "Tips:\n"
