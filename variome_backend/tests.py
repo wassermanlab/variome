@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth.models import User
 from django.test import TestCase, RequestFactory
 
+from variome_backend.library.models import GenomicGnomadFrequency, Variant
+from variome_backend.library.views.variant import get_gnomad_toolbox_frequencies
 from variome_backend.library_access.middleware import AlwaysLoggedInMiddleware
 
 
@@ -82,3 +84,77 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
         with patch("variome_backend.library_access.middleware.login") as mock_login:
             middleware(request)
             mock_login.assert_not_called()
+
+
+class GnomadToolboxFrequencyTests(TestCase):
+    @patch(
+        "gnomad_toolbox.filtering.variant.get_single_variant",
+        return_value=MagicMock(
+            take=MagicMock(
+                return_value=[
+                    {
+                        "freq": [
+                            {
+                                "AF": 0.9,
+                                "AC": 137076,
+                                "AN": 152210,
+                                "homozygote_count": 61788,
+                                "hemizygote_count": 0,
+                            }
+                        ]
+                    }
+                ]
+            )
+        ),
+    )
+    @patch("hail.current_backend")
+    def test_returns_all_gnomad_frequency_fields(
+        self, mock_current_backend, mock_get_single_variant
+    ):
+        frequencies = get_gnomad_toolbox_frequencies("22-27039615-T-C")
+
+        self.assertEqual(
+            frequencies,
+            {
+                "af_tot": "0.9000000000",
+                "ac_tot": 137076,
+                "an_tot": 152210,
+                "hom_tot": 61788,
+                "hemi_tot": 0,
+            },
+        )
+        mock_get_single_variant.assert_called_once_with(
+            variant="22-27039615-T-C",
+            data_type="joint",
+            version="4.1",
+        )
+
+    @patch(
+        "variome_backend.library.views.variant.get_gnomad_toolbox_frequencies",
+        side_effect=RuntimeError,
+    )
+    def test_uses_local_gnomad_frequencies_when_toolbox_fails(self, mock_frequencies):
+        variant = Variant.objects.create(variant_id="22-27039615-T-C", var_type="SNV")
+        frequency = GenomicGnomadFrequency.objects.create(
+            variant=variant,
+            af_tot="0.9005720000",
+            ac_tot=137076,
+            an_tot=152210,
+            hom_tot=61788,
+            hemi_tot=0,
+        )
+
+        from variome_backend.library.views.variant import variant as variant_view
+
+        request = RequestFactory().get(f"/api/variant/{variant.id}")
+        request.user = MagicMock(
+            is_authenticated=True,
+            profile=MagicMock(access_count=0, accesses_per_day=1),
+        )
+        response = variant_view(request, variant.id)
+
+        self.assertEqual(response.data["gnomadFrequencies"]["id"], frequency.id)
+        self.assertIn(
+            "gnomAD toolbox unavailable; using locally stored gnomAD frequencies",
+            response.data["errors"],
+        )

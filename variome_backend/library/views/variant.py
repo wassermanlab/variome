@@ -28,6 +28,41 @@ from django.views.decorators.cache import never_cache
 from variome_backend.library_access.decorators import access_count_gate
 
 
+def get_gnomad_toolbox_frequencies(variant_id):
+    import hail as hl
+    from gnomad_toolbox.filtering.variant import get_single_variant
+
+    try:
+        hl.current_backend()
+    except RuntimeError:
+        hl.init(quiet=True)
+
+    rows = get_single_variant(
+        variant=variant_id,
+        data_type="joint",
+        version="4.1",
+    ).take(1)
+    if not rows:
+        raise ValueError("variant not found in gnomAD")
+
+    frequency = rows[0]["freq"][0]
+    fields = {
+        "af_tot": "AF",
+        "ac_tot": "AC",
+        "an_tot": "AN",
+        "hom_tot": "homozygote_count",
+        "hemi_tot": "hemizygote_count",
+    }
+    missing_fields = [field for field in fields.values() if field not in frequency]
+    if missing_fields:
+        raise ValueError(f"gnomAD frequency fields missing: {missing_fields}")
+
+    frequencies = {key: frequency[field] for key, field in fields.items()}
+    if frequencies["af_tot"] is not None:
+        frequencies["af_tot"] = f"{frequencies['af_tot']:.10f}"
+    return frequencies
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @access_count_gate()
@@ -55,7 +90,7 @@ def variant(request, id):
     #    print(f"variant_type: {variant.var_type}")
 
     snv = None
-    gnomadFrequences = None
+    gnomadFrequencies = None
     bvlFrequencies = None
     annotations = None
 
@@ -74,14 +109,24 @@ def variant(request, id):
         errors.append("Error getting annotations")
 
     try:
-        gnomadFrequenciesObject = GenomicGnomadFrequency.objects.get(
-            variant_id=variant.id
-        )
-        gnomadFrequences = GenomicGnomadFrequencySerializer(
-            gnomadFrequenciesObject
-        ).data
-    except GenomicGnomadFrequency.DoesNotExist:
-        errors.append("genomic gnomad frequency not found for this variant")
+        gnomadFrequencies = {
+            "id": variant.id,
+            "variant": VariantSerializer(variant).data,
+            **get_gnomad_toolbox_frequencies(variant.variant_id),
+        }
+    except Exception:
+        try:
+            gnomadFrequenciesObject = GenomicGnomadFrequency.objects.get(
+                variant_id=variant.id
+            )
+            gnomadFrequencies = GenomicGnomadFrequencySerializer(
+                gnomadFrequenciesObject
+            ).data
+            errors.append(
+                "gnomAD toolbox unavailable; using locally stored gnomAD frequencies"
+            )
+        except GenomicGnomadFrequency.DoesNotExist:
+            errors.append("genomic gnomad frequency not found for this variant")
 
     try:
         variomeFrequenciesObject = GenomicVariomeFrequency.objects.get(
@@ -98,7 +143,7 @@ def variant(request, id):
         {
             "variant": VariantSerializer(variant).data,
             "snv": snv,
-            "gnomadFrequencies": gnomadFrequences,
+            "gnomadFrequencies": gnomadFrequencies,
             "bvlFrequencies": bvlFrequencies,
             "annotations": annotations,
             "errors": errors,
