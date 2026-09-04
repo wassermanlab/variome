@@ -3,10 +3,13 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.conf import settings
-from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from django.views.decorators.cache import never_cache
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from .library.models import Variant
 from variome_backend.models import VariomeSettings
-from django.contrib.auth.decorators import login_required
 
 
 def backend_home_page(request):
@@ -39,8 +42,9 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, "development-mode-login.html", context={"form": form})
 
-
-# @login_required
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@never_cache
 def get_site_settings(request):
     site_settings = VariomeSettings.objects.get(pk=1)
     example_variant = site_settings.example_snv
@@ -55,4 +59,4 @@ def get_site_settings(request):
     else:
         settings["settings"]["example_snv"] = None
 
-    return JsonResponse(settings)
+    return Response(settings)

@@ -4,7 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import _ from 'lodash';
-import {Container, Box} from '@mui/material';
+import { Container, Box } from '@mui/material';
 
 import theme from './styles/theme.jsx';
 import Api from './Api.jsx';
@@ -14,7 +14,7 @@ import Home from './pages/home.jsx';
 import Variant from './pages/variant.jsx';
 
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
-import {Content} from './ContentParsing.jsx';
+import { Content } from './ContentParsing.jsx';
 
 
 function AppRouter() {
@@ -31,32 +31,61 @@ function AppRouter() {
 
 
   useEffect(() => {
-      if (!settingsFetched ){
+    if (!settingsFetched) {
 
-          Api.get('settings').then((data) => {
-              console.log(data);
-              setExampleSnv(_.get(data,'settings.example_snv'));
-//              setPageTitle(_.get(data,'settings.site_title'));
-              setHomePageMessage(_.get(data,'settings.home_page_message'));
-              setSettingsFetched(true);
-          });
+      Api.get('settings').then((data) => {
+        console.log(data);
+        setExampleSnv(_.get(data, 'settings.example_snv'));
+        //              setPageTitle(_.get(data,'settings.site_title'));
+        setHomePageMessage(_.get(data, 'settings.home_page_message'));
+        setSettingsFetched(true);
+      });
+    }
+
+  }, [_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
+
+  function VerifyAuth() {
+    Api.get('user', { json: true }).then((response) => {
+      var newUser = _.get(response, 'user');
+      if (_.isObject(newUser) && _.has(newUser, 'email') && newUser.email) {
+        setUser(existingUser => {
+          if (_.isEmpty(existingUser)) {
+            return newUser;
+          } else {
+            return existingUser;
+          }
+        });
+
+      } else if (_.isObject(newUser) && !_.has(newUser, 'email')) {
+        console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
+      } else {
+
+        setUser(existingUser => {
+          if (_.isObject(existingUser)) {
+            return null;
+          } else {
+            return existingUser; // which is null, but won't cause repaint
+          }
+        });
       }
-  
-  },[_.isEmpty(exampleSnv) && _.isEmpty(pageTitle)]);
+    }).catch((error) => {
+      console.error("error verifying auth", error);
+      setUser(null);
+    });
+  }
+
+  var throttledVerify = _.throttle(VerifyAuth, 1000, {leading: true, trailing:false});
 
   useEffect(() => {
-
-      Api.get('user', { json: true }).then((response) => {
-        var user = _.get(response, 'user');
-        if (_.isObject(user) && _.has(user, 'email') && user.email) {
-          setUser(user);
-        } else if (_.isObject(user) && !_.has(user, 'email') ) {
-          console.log("found a logged in user, except there is no email address. Please set it to enable authenticating")
-        }
-      });
+    window.addEventListener("browserReactivated", throttledVerify);
+    throttledVerify();
+    //VerifyAuth()
+    return () => {
+      window.removeEventListener("browserReactivated", throttledVerify); 
+    }
   }, []);
 
-  function ScrollToTop(){
+  function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
       window.scrollTo(0, 0);
@@ -65,15 +94,15 @@ function AppRouter() {
     return null;
   }
 
-  function PageWithContent(content){
+  function PageWithContent(content) {
 
 
     return (
-    <Container maxWidth="xl">
-      <Box>
-        {content}
-      </Box>
-    </Container>
+      <Container maxWidth="xl">
+        <Box>
+          {content}
+        </Box>
+      </Container>
     );
   }
 
@@ -81,16 +110,16 @@ function AppRouter() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-      <ScrollToTop />
+        <ScrollToTop />
         <Routes>
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
               <Routes>
-                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{snv:exampleSnv}} message={homePageMessage}/>} />
+                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{ snv: exampleSnv }} message={homePageMessage} />} />
                 {
-                  Content.map(({name, urlPath, content}) => {
+                  Content.map(({ name, urlPath, content }) => {
                     return (
-                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)}/>
+                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)} />
                     );
                   })
                 }

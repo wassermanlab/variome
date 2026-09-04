@@ -5,6 +5,7 @@ from ..models import (
     GenomicVariomeFrequency,
     VariantAnnotation,
 )
+from datetime import datetime
 
 from ..serializers import (
     VariantSerializer,
@@ -17,17 +18,20 @@ from ..serializers import (
 from .snv_annotations import snv_annotations
 
 from rest_framework.decorators import api_view
-from django.contrib.auth.decorators import login_required
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 from django.http import Http404
-from django.http.response import JsonResponse
+from rest_framework.response import Response
+from django.views.decorators.cache import never_cache
 
 from variome_backend.library_access.decorators import access_count_gate
 
 
 @api_view(["GET"])
-@login_required
+@permission_classes([IsAuthenticated])
 @access_count_gate()
+@never_cache
 def variant(request, id):
     """_summary_
 
@@ -40,18 +44,19 @@ def variant(request, id):
         have different fields
     """
 
+    now = datetime.now()
     errors = []
 
     try:
         variant = Variant.objects.get(id=id)
     except Variant.DoesNotExist:
-        return JsonResponse({"errors": ["Variant not found"]}, status=404)
+        return Response({"errors": ["Variant not found"]}, status=404)
 
     #    print(f"variant_type: {variant.var_type}")
 
     snv = None
     gnomadFrequences = None
-    variomeFrequencies = None
+    bvlFrequencies = None
     annotations = None
 
     try:
@@ -82,19 +87,21 @@ def variant(request, id):
         variomeFrequenciesObject = GenomicVariomeFrequency.objects.get(
             variant_id=variant.id
         )
-        variomeFrequencies = GenomicVariomeFrequencySerializer(
+        bvlFrequencies = GenomicVariomeFrequencySerializer(
             variomeFrequenciesObject
         ).data
     except GenomicVariomeFrequency.DoesNotExist:
         errors.append("genomic variome frequency not found for this variant")
 
-    return JsonResponse(
+    duration = datetime.now() - now
+    return Response(
         {
             "variant": VariantSerializer(variant).data,
             "snv": snv,
             "gnomadFrequencies": gnomadFrequences,
-            "bvlFrequencies": variomeFrequencies,
+            "bvlFrequencies": bvlFrequencies,
             "annotations": annotations,
             "errors": errors,
+            "duration_ms": int(duration.total_seconds() * 1000),
         }
     )

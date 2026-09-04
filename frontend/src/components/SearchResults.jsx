@@ -113,6 +113,9 @@ export default function SearchResults({ sx, overlay }) {
             {isExactMatch() ? null : _.map(searchContext.results, renderSearchResult)}
           </List>
           {searchContext.resultsMessage}
+          <p>
+            {searchContext.errorMessage ? <span style={{color: palette.error.main}}>{searchContext.errorMessage}</span> : null}
+          </p>
           <List>
             {_.map(searchContext.nearby, renderNearbySearchResult)}
           </List>

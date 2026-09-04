@@ -32,7 +32,8 @@ so the reverse operation can cleanly delete exactly those rows.
 """
 
 from django.apps import apps as django_apps
-from django.db import migrations
+from django.db import migrations, transaction
+from django.db.utils import DatabaseError
 
 
 # ---------------------------------------------------------------------------
@@ -74,16 +75,25 @@ def _update_changes(prev, curr):
 def _build_context_user_map(apps):
     """
     Return a {context_id: user_pk} mapping built from the pghistory Context
-    model.  Returns an empty dict if the model is not in the live app registry
-    (i.e. pghistory has been removed from the project).
+    model.  Returns an empty dict if the model is not in the live app registry,
+    or if its table doesn't exist in this database (i.e. pghistory has been
+    removed from the project, or was never migrated here).
     """
     try:
         Context = django_apps.get_model("pghistory", "Context")
     except LookupError:
         return {}
 
+    # Use a savepoint so a missing table doesn't abort the outer migration
+    # transaction on backends (e.g. PostgreSQL) that poison it on error.
+    try:
+        with transaction.atomic():
+            rows = list(Context.objects.values("id", "metadata"))
+    except DatabaseError:
+        return {}
+
     user_map = {}
-    for ctx in Context.objects.values("id", "metadata"):
+    for ctx in rows:
         metadata = ctx.get("metadata") or {}
         user_str = metadata.get("user")
         if user_str:
@@ -124,16 +134,24 @@ def _migrate_event_model(apps, event_app_label, event_model_name,
     if not snapshot_attnames:
         return
 
-    rows = EventModel.objects.order_by("pgh_id").values(
-        "pgh_id",
-        "pgh_created_at",
-        "pgh_label",
-        "pgh_obj_id",
-        "pgh_context_id",
-        *snapshot_attnames,
-    )
+    # Use a savepoint so a missing table doesn't abort the outer migration
+    # transaction on backends (e.g. PostgreSQL) that poison it on error.
+    try:
+        with transaction.atomic():
+            rows = list(
+                EventModel.objects.order_by("pgh_id").values(
+                    "pgh_id",
+                    "pgh_created_at",
+                    "pgh_label",
+                    "pgh_obj_id",
+                    "pgh_context_id",
+                    *snapshot_attnames,
+                )
+            )
+    except DatabaseError:
+        return  # table doesn't exist in this database — nothing to migrate
 
-    if not rows.exists():
+    if not rows:
         return
 
     last_snapshot = {}  # {pgh_obj_id: {field: value}}
@@ -200,6 +218,9 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
     if schema_editor.connection.vendor != "postgresql":
         return
 
+    if not django_apps.is_installed("pghistory"):
+        return  # pghistory no longer installed — nothing to migrate
+
     from auditlog.models import LogEntry
     from django.contrib.contenttypes.models import ContentType
 
@@ -229,6 +250,9 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
 def reverse_migrate_pghistory_to_auditlog(apps, schema_editor):
     if schema_editor.connection.vendor != "postgresql":
         return
+
+    if not django_apps.is_installed("pghistory"):
+        return  # pghistory no longer installed — nothing to reverse
 
     from auditlog.models import LogEntry
 

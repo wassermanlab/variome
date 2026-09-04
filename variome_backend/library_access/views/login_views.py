@@ -1,4 +1,6 @@
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.urls import reverse
@@ -16,8 +18,9 @@ def admin_login(request):
     return redirect("/admin/login")
 
 
+@api_view(["GET"])
 def login_failed(request):
-    return JsonResponse({"error": "Variome Login failed"}, status=401)
+    return Response({"error": "Variome Login failed"}, status=401)
 
 
 def logout_view(request):

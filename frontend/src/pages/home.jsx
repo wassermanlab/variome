@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import _ from "lodash";
-import Markdown from "react-markdown";
+import Markdown from 'markdown-to-jsx/react';
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -117,7 +117,7 @@ export default function Home({
                         Variant Search
                       </Typography>
                       <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{ minWidth: "30vw" }} />
+                        <SearchInput inputElementId="home-search" variant="standard" sx={{width:"80%"}}/>
                         <SearchResults sx={{}} />
                       </SearchProvider>
                     </Grid>

@@ -47,7 +47,7 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
   const FlexBox = styled(Box)({
     display: "flex",
     alignItems: "center",
-    gap: "16px"
+    gap: "4px"
   });
 
   const PlainLink = (props) => (
@@ -80,25 +80,26 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
           <PlainLink to="/">{pageTitle}</PlainLink>
         </Typography>
 
-        <FlexBox sx={{ flexGrow: "1" }}>
-          {user && (
-            <>
-              <AssemblyPicker sx={{ flexShrink: "2" }} />
-              <SearchProvider>
-                <SearchInput inputElementId="navigation-bar-search" variant="standard" sx={{ minWidth: "30vw" }} />
+        <FlexBox sx={{ flexGrow: "1", justifyContent: "start", flexWrap:"wrap" }} >
+            
+            
+              <AssemblyPicker />
+              <SearchProvider >
+                <SearchInput inputElementId="navigation-bar-search" variant="standard" sx={{ marginLeft:"8px", minWidth:"50%",display: user ? "inline-flex" : "none" }} />
                 <Box sx={{
                   display: "block",
                   position: "relative",
                   left: "0",
-                  marginLeft: "-30vw",
+//                  marginLeft: "-30vw",
                   top: "33px",
-                  height: "auto",
+                  height: "auto"
                 }} >
                   <SearchResults
                     overlay
                     sx={{
-                      position: "absolute",
+                      position: "fixed",
                       height: "auto",
+                      left:"33%",
                       width: "50vw",
                       maxHeight: "calc(100vh - 70px)",
                       overflowY: "scroll",
@@ -106,25 +107,24 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
                   />
                 </Box>
               </SearchProvider>
-            </>
-          )}
-        </FlexBox>
+          
+          <div style={{marginLeft:"auto"}} >
 
-        <FlexBox sx={{ justifyContent: "end", flexGrow: "1" }}>
-
-          {user && <>
+          
             <Button id="account-menu-button"
+              sx={{ display: user ? "inline-flex" : "none" }}
               onClick={() => setAccountMenuOpen(true)}
               ref={accountMenuAnchorEl}
-            >
+              >
               <Person sx={{ margin: '10px' }} />
-              {user ? user.email : ""}
-            </Button></>}
+              User Menu
+            </Button>
 
 
-          {!user && <PlainLink reloadDocument to={loginUrl} >
+          <PlainLink reloadDocument to={loginUrl} sx={{ display: user ? "none" : "inline" }} >
             Login
-          </PlainLink>}
+          </PlainLink>
+          </div>
 
           <Menu
             id="basic-menu"
@@ -138,8 +138,8 @@ export default function VariomeToolbar({ user, setNavDrawerOpen, navDrawerOpen, 
             <PlainLink to="/profile" ><MenuItem onClick={closeAccountMenu} >Profile</MenuItem></PlainLink>
             <PlainLink to="/logout"><MenuItem onClick={closeAccountMenu}>Logout </MenuItem> </PlainLink>
           </Menu>
-
         </FlexBox>
+
       </Toolbar>
 
     </>);
