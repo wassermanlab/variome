@@ -9,6 +9,10 @@ from datetime import datetime
 import logging
 from threading import Lock
 
+import hail as hl
+from hail.utils.java import FatalError
+from gnomad_toolbox.filtering.variant import get_single_variant
+
 from ..serializers import (
     VariantSerializer,
     GenomicGnomadFrequencySerializer,
@@ -33,17 +37,16 @@ logger = logging.getLogger(__name__)
 hail_initialization_lock = Lock()
 
 
+class GnomadToolboxError(Exception):
+    """Raised when gnomAD Toolbox cannot provide variant frequencies."""
+
+
 def get_gnomad_toolbox_frequencies(variant_id):
     """Return v4.1 joint gnomAD frequencies, initializing Hail once per process.
 
     Raises:
-        ValueError: If the variant or required gnomAD frequency fields are absent.
-        RuntimeError: If Hail cannot initialize or retrieve the gnomAD release.
+        GnomadToolboxError: If Hail or the gnomAD Toolbox cannot provide data.
     """
-    import hail as hl
-    from hail.utils.java import FatalError
-    from gnomad_toolbox.filtering.variant import get_single_variant
-
     try:
         with hail_initialization_lock:
             try:
@@ -56,11 +59,11 @@ def get_gnomad_toolbox_frequencies(variant_id):
             data_type="joint",
             version="4.1",
         ).take(1)
-    except FatalError as error:
-        raise RuntimeError("Unable to retrieve gnomAD data") from error
+    except (FatalError, OSError, RuntimeError, ValueError) as error:
+        raise GnomadToolboxError("Unable to retrieve gnomAD data") from error
 
     if not rows:
-        raise ValueError("variant not found in gnomAD")
+        raise GnomadToolboxError("Variant not found in gnomAD")
 
     frequency = rows[0]["freq"][0]
     fields = {
@@ -72,7 +75,9 @@ def get_gnomad_toolbox_frequencies(variant_id):
     }
     missing_fields = [field for field in fields.values() if field not in frequency]
     if missing_fields:
-        raise ValueError(f"gnomAD frequency fields missing: {missing_fields}")
+        raise GnomadToolboxError(
+            f"gnomAD frequency fields missing: {missing_fields}"
+        )
 
     frequencies = {key: frequency[field] for key, field in fields.items()}
     if frequencies["af_tot"] is not None:
@@ -101,7 +106,7 @@ def gnomad_frequencies(request):
             "variant": VariantSerializer(variant).data,
             **get_gnomad_toolbox_frequencies(variant_id),
         }
-    except (ImportError, OSError, RuntimeError, ValueError):
+    except GnomadToolboxError:
         logger.exception("Unable to retrieve gnomAD frequencies from the toolbox")
         try:
             frequency = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
