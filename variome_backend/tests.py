@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase, RequestFactory
+from hail.utils.java import FatalError
 
 from variome_backend.library.models import GenomicGnomadFrequency, Variant
 from variome_backend.library.views.variant import get_gnomad_toolbox_frequencies
@@ -136,6 +137,17 @@ class GnomadToolboxFrequencyTests(TestCase):
             data_type="joint",
             version="4.1",
         )
+
+    @patch(
+        "gnomad_toolbox.filtering.variant.get_single_variant",
+        side_effect=FatalError("service unavailable"),
+    )
+    @patch("hail.current_backend")
+    def test_translates_hail_errors_to_runtime_errors(
+        self, mock_current_backend, mock_get_single_variant
+    ):
+        with self.assertRaisesRegex(RuntimeError, "Unable to retrieve gnomAD data"):
+            get_gnomad_toolbox_frequencies("22-27039615-T-C")
 
     @patch(
         "variome_backend.library.views.variant.get_gnomad_toolbox_frequencies",

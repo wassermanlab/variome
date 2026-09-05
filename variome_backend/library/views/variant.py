@@ -34,20 +34,31 @@ hail_initialization_lock = Lock()
 
 
 def get_gnomad_toolbox_frequencies(variant_id):
+    """Return v4.1 joint gnomAD frequencies, initializing Hail once per process.
+
+    Raises:
+        ValueError: If the variant or required gnomAD frequency fields are absent.
+        RuntimeError: If Hail cannot initialize or retrieve the gnomAD release.
+    """
     import hail as hl
+    from hail.utils.java import FatalError
     from gnomad_toolbox.filtering.variant import get_single_variant
 
-    with hail_initialization_lock:
-        try:
-            hl.current_backend()
-        except RuntimeError:
-            hl.init(quiet=True)
+    try:
+        with hail_initialization_lock:
+            try:
+                hl.current_backend()
+            except RuntimeError:
+                hl.init(quiet=True)
 
-    rows = get_single_variant(
-        variant=variant_id,
-        data_type="joint",
-        version="4.1",
-    ).take(1)
+        rows = get_single_variant(
+            variant=variant_id,
+            data_type="joint",
+            version="4.1",
+        ).take(1)
+    except FatalError as error:
+        raise RuntimeError("Unable to retrieve gnomAD data") from error
+
     if not rows:
         raise ValueError("variant not found in gnomAD")
 
@@ -90,7 +101,7 @@ def gnomad_frequencies(request):
             "variant": VariantSerializer(variant).data,
             **get_gnomad_toolbox_frequencies(variant_id),
         }
-    except Exception:
+    except (ImportError, OSError, RuntimeError, ValueError):
         logger.exception("Unable to retrieve gnomAD frequencies from the toolbox")
         try:
             frequency = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
