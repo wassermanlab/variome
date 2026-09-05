@@ -87,6 +87,14 @@ class AlwaysLoggedInMiddlewareTests(TestCase):
 
 
 class GnomadToolboxFrequencyTests(TestCase):
+    def _request(self, query=None):
+        request = RequestFactory().get("/api/gnomad-frequencies", query)
+        request.user = MagicMock(
+            is_authenticated=True,
+            profile=MagicMock(access_count=0, accesses_per_day=1),
+        )
+        return request
+
     @patch(
         "gnomad_toolbox.filtering.variant.get_single_variant",
         return_value=MagicMock(
@@ -148,17 +156,51 @@ class GnomadToolboxFrequencyTests(TestCase):
             gnomad_frequencies as gnomad_frequencies_view,
         )
 
-        request = RequestFactory().get(
-            "/api/gnomad-frequencies", {"variant": variant.variant_id}
-        )
-        request.user = MagicMock(
-            is_authenticated=True,
-            profile=MagicMock(access_count=0, accesses_per_day=1),
-        )
+        request = self._request({"variant": variant.variant_id})
         response = gnomad_frequencies_view(request)
 
         self.assertEqual(response.data["gnomadFrequencies"]["id"], frequency.id)
         self.assertIn(
             "gnomAD toolbox unavailable; using locally stored gnomAD frequencies",
+            response.data["errors"],
+        )
+
+    def test_requires_variant_parameter(self):
+        from variome_backend.library.views.variant import (
+            gnomad_frequencies as gnomad_frequencies_view,
+        )
+
+        response = gnomad_frequencies_view(self._request())
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"], ["Variant parameter is required"])
+
+    def test_returns_not_found_for_unknown_variant(self):
+        from variome_backend.library.views.variant import (
+            gnomad_frequencies as gnomad_frequencies_view,
+        )
+
+        response = gnomad_frequencies_view(self._request({"variant": "22-1-A-T"}))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["errors"], ["Variant not found"])
+
+    @patch(
+        "variome_backend.library.views.variant.get_gnomad_toolbox_frequencies",
+        side_effect=RuntimeError,
+    )
+    def test_reports_missing_local_frequencies_when_toolbox_fails(self, mock_frequencies):
+        variant = Variant.objects.create(variant_id="22-27039615-T-C", var_type="SNV")
+        from variome_backend.library.views.variant import (
+            gnomad_frequencies as gnomad_frequencies_view,
+        )
+
+        response = gnomad_frequencies_view(
+            self._request({"variant": variant.variant_id})
+        )
+
+        self.assertIsNone(response.data["gnomadFrequencies"])
+        self.assertIn(
+            "genomic gnomad frequency not found for this variant",
             response.data["errors"],
         )

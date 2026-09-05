@@ -77,20 +77,20 @@ export default function Variant({pageTitle}) {
   }, [varId]);
 
   useEffect(() => {
-      if (!variant || !variant.variant_id) {
-        return;
-      }
+    if (!variant || !variant.variant_id) {
+      return;
+    }
 
-      setGnomadLoading(true);
-      Api.get("gnomad-frequencies", { variant: variant.variant_id })
-        .then(({ gnomadFrequencies }) => {
-          setGnomadFrequencies(gnomadFrequencies);
-          setGnomadLoading(false);
-        })
-        .catch(() => {
-          setGnomadFrequencies(null);
-          setGnomadLoading(false);
-        });
+    setGnomadLoading(true);
+    Api.get("gnomad-frequencies", { variant: variant.variant_id })
+      .then(({ gnomadFrequencies }) => {
+        setGnomadFrequencies(gnomadFrequencies);
+        setGnomadLoading(false);
+      })
+      .catch(() => {
+        setGnomadFrequencies(null);
+        setGnomadLoading(false);
+      });
   }, [variant]);
 
   return (

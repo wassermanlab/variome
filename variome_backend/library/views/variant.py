@@ -6,6 +6,8 @@ from ..models import (
     VariantAnnotation,
 )
 from datetime import datetime
+import logging
+from threading import Lock
 
 from ..serializers import (
     VariantSerializer,
@@ -27,15 +29,19 @@ from django.views.decorators.cache import never_cache
 
 from variome_backend.library_access.decorators import access_count_gate
 
+logger = logging.getLogger(__name__)
+hail_initialization_lock = Lock()
+
 
 def get_gnomad_toolbox_frequencies(variant_id):
     import hail as hl
     from gnomad_toolbox.filtering.variant import get_single_variant
 
-    try:
-        hl.current_backend()
-    except RuntimeError:
-        hl.init(quiet=True)
+    with hail_initialization_lock:
+        try:
+            hl.current_backend()
+        except RuntimeError:
+            hl.init(quiet=True)
 
     rows = get_single_variant(
         variant=variant_id,
@@ -85,6 +91,7 @@ def gnomad_frequencies(request):
             **get_gnomad_toolbox_frequencies(variant_id),
         }
     except Exception:
+        logger.exception("Unable to retrieve gnomAD frequencies from the toolbox")
         try:
             frequency = GenomicGnomadFrequency.objects.get(variant_id=variant.id)
             frequencies = GenomicGnomadFrequencySerializer(frequency).data
