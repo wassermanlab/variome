@@ -144,14 +144,18 @@ class GnomadToolboxFrequencyTests(TestCase):
             hemi_tot=0,
         )
 
-        from variome_backend.library.views.variant import variant as variant_view
+        from variome_backend.library.views.variant import (
+            gnomad_frequencies as gnomad_frequencies_view,
+        )
 
-        request = RequestFactory().get(f"/api/variant/{variant.id}")
+        request = RequestFactory().get(
+            "/api/gnomad-frequencies", {"variant": variant.variant_id}
+        )
         request.user = MagicMock(
             is_authenticated=True,
             profile=MagicMock(access_count=0, accesses_per_day=1),
         )
-        response = variant_view(request, variant.id)
+        response = gnomad_frequencies_view(request)
 
         self.assertEqual(response.data["gnomadFrequencies"]["id"], frequency.id)
         self.assertIn(

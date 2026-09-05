@@ -51,14 +51,12 @@ export default function Variant({pageTitle}) {
     setGnomadLoading(true);
 
     Api.get("variant/" + varId)
-      .then(({ variant, snv, gnomadFrequencies, bvlFrequencies, annotations }) => {
+      .then(({ variant, snv, bvlFrequencies, annotations }) => {
 //        console.log("variant", variant);
         setVariant(variant);
         setVariantMetadata(snv);
-        setGnomadFrequencies(gnomadFrequencies);
         setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
-        setGnomadLoading(false);
         setLoading(false);
       })
       .catch((r) => {
@@ -77,6 +75,23 @@ export default function Variant({pageTitle}) {
         setLoading(false);
       });
   }, [varId]);
+
+  useEffect(() => {
+      if (!variant || !variant.variant_id) {
+        return;
+      }
+
+      setGnomadLoading(true);
+      Api.get("gnomad-frequencies", { variant: variant.variant_id })
+        .then(({ gnomadFrequencies }) => {
+          setGnomadFrequencies(gnomadFrequencies);
+          setGnomadLoading(false);
+        })
+        .catch(() => {
+          setGnomadFrequencies(null);
+          setGnomadLoading(false);
+        });
+  }, [variant]);
 
   return (
     <Container maxWidth="xl">

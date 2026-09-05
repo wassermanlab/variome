@@ -26,6 +26,7 @@ from .views import backend_home_page, get_site_settings
 
 api_urls = [
     path("variant/<str:id>", library.variant, name="variant"),
+    path("gnomad-frequencies", library.gnomad_frequencies, name="gnomad_frequencies"),
     path("search", library.snv_search, name="search"),
     path("user/", access.profile_view_json, name="profile"),
     path("settings", get_site_settings, name="settings"),
