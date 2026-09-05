@@ -31,7 +31,8 @@ dependencies = [
     # Security pin: django depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/142
     "sqlparse>=0.6.0",
     # Security pin: django-auth-adfs depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/128 plus others
-    "pyjwt>=2.13.0"
+    "pyjwt>=2.13.0",
+    "gnomad-toolbox==0.0.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.13"

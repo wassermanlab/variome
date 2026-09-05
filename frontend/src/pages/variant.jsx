@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import _ from "lodash";
 import {
   Box,
   Card,
@@ -49,13 +48,13 @@ export default function Variant({pageTitle}) {
     setbvlFrequencies(null);
     setVariantAnnotations(null);
     setLoading(true);
+    setGnomadLoading(true);
 
     Api.get("variant/" + varId)
       .then(({ variant, snv, bvlFrequencies, annotations }) => {
 //        console.log("variant", variant);
         setVariant(variant);
         setVariantMetadata(snv);
-        //          setGnomadFrequencies(gnomadFrequencies);
         setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
         setLoading(false);
@@ -72,61 +71,26 @@ export default function Variant({pageTitle}) {
         } else {
           setError("Sorry, something went wrong");
         }
+        setGnomadLoading(false);
         setLoading(false);
       });
   }, [varId]);
 
   useEffect(() => {
+    if (!variant || !variant.variant_id) {
+      return;
+    }
 
     setGnomadLoading(true);
-    if (variant && variant.variant_id) {
-      var QUERY = `
-    query getVariant($variantId: String!) {
-      variant(variantId: $variantId, dataset: gnomad_r4) {
-        joint {
-          ac
-          an
-          homozygote_count
-        }
-      }
-    }
-    `;
-      if (_.includes(["X","Y"], _.get(variantMetadata, 'chr'))) {
-      QUERY = `
-    query getVariant($variantId: String!) {
-      variant(variantId: $variantId, dataset: gnomad_r4) {
-        joint {
-          ac
-          an
-          homozygote_count
-          hemizygote_count
-        }
-      }
-    }
-    `;
-      }
-      Api.gnomadGraphQLRequest(QUERY, { variantId: variant.variant_id })
-        .then((data) => {
-          var variant = _.get(data, "data.variant", {});
-          console.log("variant", variant);
-          var ac_tot =
-            _.get(variant, "joint.ac");
-          var an_tot =
-            _.get(variant, "joint.an");
-            //handle 0??
-          var af_tot = _.divide(ac_tot, an_tot);
-          var hom_tot =
-            _.get(variant, "joint.homozygote_count")
-          var hemi_tot =
-            _.get(variant, "joint.hemizygote_count")
-
-          //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
-          setTimeout(() => {
-            setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot, hemi_tot });
-            setGnomadLoading(false);
-          }, 5000);
-        });
-    }
+    Api.get("gnomad-frequencies", { variant: variant.variant_id })
+      .then(({ gnomadFrequencies }) => {
+        setGnomadFrequencies(gnomadFrequencies);
+        setGnomadLoading(false);
+      })
+      .catch(() => {
+        setGnomadFrequencies(null);
+        setGnomadLoading(false);
+      });
   }, [variant]);
 
   return (
