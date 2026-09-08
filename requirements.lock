@@ -36,7 +36,7 @@ django-extensions==3.2.3
     # via variome (pyproject.toml)
 django-tracking2==0.5.1
     # via variome (pyproject.toml)
-djangorestframework==3.17.1
+djangorestframework==3.18.1
     # via variome (pyproject.toml)
 idna==3.15
     # via
