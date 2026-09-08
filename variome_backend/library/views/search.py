@@ -70,7 +70,7 @@ def snv_search(request):
         else:
             return Response({"errors": [out_error]}, status=400)
 
-    in_chr = in_chr.upper()
+    in_chr = in_chr.upper() if in_chr else None
     in_ref = in_ref.upper() if in_ref else None
     in_alt = in_alt.upper() if in_alt else None
 

@@ -201,7 +201,7 @@ Per-file hash differences are reported in the log output.
 
 ## Running backend tests
 
-All backend tests (middleware and VCF import filters) live in `variome_backend/tests/`.
+All backend tests (middleware and VCF import filters) live in `test/backend/variome_backend/`.
 
 First, install dev dependencies:
 
@@ -212,27 +212,24 @@ uv sync --dev
 Run all backend tests once:
 
 ```
-DB= uv run python manage.py test variome_backend.tests --verbosity=2
+./test.sh -unit -all -v
 ```
 
-Tests run against an in-memory SQLite database (no Postgres connection needed). If the `DB` environment variable is set in your shell, prefix the command with `DB=` to clear it for the test run, or simply use the watch script below which handles this automatically.
+Backend tests run through `test.sh` use an in-memory SQLite database, including when `DB` is set for local PostgreSQL development.
 
-Run all backend tests and automatically re-run whenever a `.py` file changes (recommended during development):
-
-```
-bash run_backend_tests.sh
-```
-
-Or inline, without the script:
+Install browser-test dependencies and Chromium once:
 
 ```
-uv run watchmedo shell-command \
-    --patterns="*.py" \
-    --recursive \
-    --drop \
-    --command='uv run python manage.py test variome_backend.tests --verbosity=2' \
-    .
+cd test/e2e && npm install && npx playwright install chromium
 ```
+
+Run backend and browser tests with watching and press Enter to rerun on demand:
+
+```
+./test.sh
+```
+
+Use `./test.sh -e2e`, `./test.sh -unit`, `./test.sh -f test_search.SnvSearchTests`, or `./test.sh -f home.spec.mjs` to target a suite or test. E2E ports and timeout can be configured with `E2E_BACKEND_PORT`, `E2E_FRONTEND_PORT`, and `-e TIMEOUT_MS`.
 
 ### attributions
 

@@ -179,3 +179,6 @@ data/backups/*
 package-lock.json
 
 vcf_import/output
+test/e2e/node_modules/
+test/e2e/test-results/
+test/e2e/playwright-report/

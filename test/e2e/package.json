@@ -1,0 +1,12 @@
+{
+  "name": "variome-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:verbose": "E2E_WEB_LOGS=1 playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
