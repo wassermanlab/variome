@@ -33,9 +33,9 @@ def snv_search(request):
     in_ref = request.GET.get("ref", None)
     in_alt = request.GET.get("alt", None)
 
-#    print(
-#        f"Parameters received: result_sets={in_result_sets}, query={in_query}, chr={in_chr}, pos={in_pos}, ref={in_ref}, alt={in_alt}"
-#    )
+    #    print(
+    #        f"Parameters received: result_sets={in_result_sets}, query={in_query}, chr={in_chr}, pos={in_pos}, ref={in_ref}, alt={in_alt}"
+    #    )
 
     v_pos_limit = 10
     out_error = None
@@ -65,8 +65,10 @@ def snv_search(request):
 
     if out_error:
         print(f"Error: {out_error}")
-        if (IS_DEVELOPMENT):
-            return Response({"errors": [out_error]}, status=int(request.GET.get("r", 400)))
+        if IS_DEVELOPMENT:
+            return Response(
+                {"errors": [out_error]}, status=int(request.GET.get("r", 400))
+            )
         else:
             return Response({"errors": [out_error]}, status=400)
 
@@ -110,30 +112,29 @@ def snv_search(request):
         response_data["results"]["position"] = list(position_results)
         response_data["results"]["nearby"] = list(nearby_results)
 
-#        print(json.dumps(response_data["results"], indent=2))
+    #        print(json.dumps(response_data["results"], indent=2))
 
     if "dbsnp" in in_result_sets:
-#        print("Processing dbsnp result set")
+        #        print("Processing dbsnp result set")
         dbsnp_results = Variant.objects.filter(Q(snv__dbsnp_id=in_query)).values(
             "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
         )
 
         response_data["results"]["dbsnp"] = list(dbsnp_results)
-#        print(f"dbSNP results: {response_data['results']['dbsnp']}")
+    #        print(f"dbSNP results: {response_data['results']['dbsnp']}")
 
     if "clinvar" in in_result_sets:
-#        print("Processing clinvar result set")
+        #        print("Processing clinvar result set")
         clinvar_results = Variant.objects.filter(Q(snv__clinvar_vcv=in_query)).values(
             "variant_id", "var_type", "id", *snv_values_to_set, "snv__clinvar_vcv"
         )
 
         response_data["results"]["clinvar"] = list(clinvar_results)
-#        print(f"ClinVar results: {response_data['results']['clinvar']}")
+    #        print(f"ClinVar results: {response_data['results']['clinvar']}")
 
     duration = datetime.now() - now
     response_data["duration_ms"] = int(duration.total_seconds() * 1000)
-    if (IS_DEVELOPMENT):
+    if IS_DEVELOPMENT:
         return Response(response_data, status=int(request.GET.get("r", 200)))
     else:
         return Response(response_data)
-
