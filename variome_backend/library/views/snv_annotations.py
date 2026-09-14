@@ -2,7 +2,7 @@
 from ..models import Variant, VariantTranscript
 
 
-def snv_annotations(variant_id, database=None):
+def snv_annotations(variant_id):
     """gets the annotations for a variant's transcripts, organized by gene name"""
     errors = []
     transcripts_by_gene = []

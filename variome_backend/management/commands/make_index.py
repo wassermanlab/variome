@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection, models
 
-from variome_backend.library.models import SNV, Variant
+from variome_backend.library.models import SNV, Variant, VariantAnnotation, VariantConsequence, VariantTranscript, Transcript, GenomicVariomeFrequency
 
 log = logging.getLogger("management")
 
@@ -20,14 +20,12 @@ class Command(BaseCommand):
     # Field choices are based on the filters used in library/views/search.py
     # and the list_filter options in library/admin.
     INDEXES = [
-        # snv_search filters/orders on chr + pos (exact position and nearby range lookups)
+        # SNV: critical for search
         (SNV, models.Index(fields=["chr", "pos"], name="snv_chr_pos_idx")),
-        # snv_search dbsnp result set does an exact match on dbsnp_id
         (SNV, models.Index(fields=["dbsnp_id"], name="snv_dbsnp_id_idx")),
-        # snv_search clinvar result set does an exact match on clinvar_vcv
         (SNV, models.Index(fields=["clinvar_vcv"], name="snv_clinvar_vcv_idx")),
-        # VariantAdmin.list_filter filters on var_type
-        (Variant, models.Index(fields=["var_type"], name="variant_var_type_idx")),
+        # VariantAnnotation: required for joins in snv_annotations()
+        (VariantAnnotation, models.Index(fields=["variant_transcript"], name="variant_annotation_vt_idx")),
     ]
 
     def handle(self, *args, **options):
