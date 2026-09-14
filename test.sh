@@ -83,15 +83,98 @@ run_suite() {
     quiet_log="$(mktemp)"
     "$@" >"$quiet_log" 2>&1
     exit_code=$?
-    rm -f "$quiet_log"
 
     if [[ "$exit_code" -eq 0 ]]; then
       echo "${suite} OK"
+      rm -f "$quiet_log"
       return 0
     fi
 
-    echo "${suite} failed (exit ${exit_code})"
-    notify_failure "$suite" "${suite} failed (exit ${exit_code})"
+    local result_kind="failed"
+    if grep -qiE '(^|[^a-z])(error|traceback|exception|eaddrinuse|command not found|no such file|timed out)($|[^a-z])' "$quiet_log"; then
+      result_kind="error"
+    fi
+
+    local assertion_location=""
+    local assertion_detail=""
+    assertion_location="$(grep -E 'File ".*", line [0-9]+' "$quiet_log" | tail -n1 || true)"
+    assertion_detail="$(grep -m2 -E 'AssertionError|assert .* failed|expect\(.*\)|Expected:|Received:' "$quiet_log" || true)"
+
+    local failure_detail=""
+    failure_detail="$(grep -m1 -E '^(FAIL|ERROR): ' "$quiet_log" || true)"
+    if [[ -n "$failure_detail" ]]; then
+      if [[ -n "$assertion_location" ]]; then
+        failure_detail="${failure_detail}
+${assertion_location}"
+      fi
+      if [[ -n "$assertion_detail" ]]; then
+        failure_detail="${failure_detail}
+${assertion_detail}"
+      fi
+    elif [[ -n "$assertion_detail" ]]; then
+      if [[ -n "$assertion_location" ]]; then
+        failure_detail="${assertion_location}
+${assertion_detail}"
+      else
+        failure_detail="$assertion_detail"
+      fi
+    fi
+    if [[ -z "$failure_detail" ]]; then
+      failure_detail="$(grep -m1 -E '^\s*[0-9]+\) |^\s*✘\s+[0-9]+' "$quiet_log" || true)"
+    fi
+    if [[ -z "$failure_detail" ]]; then
+      failure_detail="$(awk 'NF { line=$0 } END { print line }' "$quiet_log")"
+    fi
+
+    echo "❌ ${suite} ${result_kind} (exit ${exit_code})"
+    if [[ -n "$failure_detail" ]]; then
+      echo "$failure_detail"
+    fi
+
+    notify_failure "$suite" "${suite} ${result_kind} (exit ${exit_code})"
+    rm -f "$quiet_log"
+    return 1
+  fi
+
+  if [[ "$VERBOSITY" -eq 1 ]]; then
+    local v1_log
+    v1_log="$(mktemp)"
+
+    "$@" >"$v1_log" 2>&1
+    exit_code=$?
+
+    end_ts="$(date +%s)"
+    elapsed="$((end_ts - start_ts))"
+
+    if [[ "$exit_code" -eq 0 ]]; then
+      echo "${suite} passed (${elapsed}s)"
+      rm -f "$v1_log"
+      return 0
+    fi
+
+    echo "${suite} FAILED (${elapsed}s)"
+
+    # Show concise failures while hiding traceback stacks for -v.
+    local summary_lines
+    summary_lines="$(grep -E '^(FAIL|ERROR): |^FAILED \(|^AssertionError|^E\s+|^F\s+|^\s*Expected:|^\s*Received:' "$v1_log" || true)"
+    if [[ -n "$summary_lines" ]]; then
+      echo "$summary_lines"
+
+      # Include root exception lines (without stack trace) indented for readability.
+      local exception_lines
+      exception_lines="$(grep -E '^[A-Za-z_][A-Za-z0-9_]*(Error|Exception): ' "$v1_log" | head -n 3 || true)"
+      if [[ -n "$exception_lines" ]]; then
+        while IFS= read -r exc_line; do
+          [[ -z "$exc_line" ]] && continue
+          printf '\t%s\n' "$exc_line"
+        done <<< "$exception_lines"
+      fi
+    else
+      awk 'NF { line=$0 } END { print line }' "$v1_log"
+    fi
+
+    notify_failure "$suite" "${suite} failed (${elapsed}s)"
+    rm -f "$v1_log"
     return 1
   fi
 

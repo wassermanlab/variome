@@ -141,13 +141,13 @@ class Command(BaseCommand):
             "--out-chr",
             default=True,
             action=argparse.BooleanOptionalAction,
-            help="Prefix chromosome names with 'chr'",
+            help="Prefix chromosome names with 'chr' - does not use a prefix when false",
         )
         parser.add_argument(
             "--out-hyphens",
             default=True,
             action=argparse.BooleanOptionalAction,
-            help="Use hyphens in variant IDs (e.g. 1-100-A-G); use underscores when disabled",
+            help="Use hyphens in variant IDs (e.g. 1-100-A-G); uses underscores when false",
         )
         parser.add_argument(
             "--default-transcript-source",
@@ -364,14 +364,8 @@ class Command(BaseCommand):
             return
 
         # DB import mode
-        importer_options = {
-            "path": options["input_tsv_dir"],
-            "progress": options["progress"],
-            "failfast": options["failfast"],
-            "ignore-existing": options["ignore-existing"],
-            "batch": options["batch"],
-            "delete": options["delete"],
-        }
+        importer_options = options
+        importer_options["path"] = options["input_tsv_dir"]
 
         errors_map = {}
         warnings_map = {}

@@ -151,6 +151,8 @@ class Importer:
 
         self.delete = options["delete"]
 
+        self.delimiter = "-" if options["out_hyphens"] else "_"
+
     def get_input_path(self):
         """Get input path for this data type. May use self.path_component to
         build path"""
@@ -1133,7 +1135,7 @@ class VariantTranscriptImporter(Importer):
         the database (i.e. if update rather than create is needed)"""
         if self.noexisting:
             return False
-        chromosome, _ = row["variant"].split("-", 1)
+        chromosome, _ = row["variant"].split(self.delimiter, 1)
         if self.current_chromosome != chromosome:
             self.cache_chromosome(chromosome)
         return (row["variant"], row["transcript"]) in self.existing
@@ -1276,8 +1278,8 @@ class AnnotationImporter(Importer):
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
-                first=StrIndex("variant__variant_id", V("-")) + 1,
-                length=StrIndex(Substr("variant__variant_id", F("first")), V("-")) - 1,
+                first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
+                length=StrIndex(Substr("variant__variant_id", F("first")), V(self.delimiter)) - 1,
                 pos=Cast(
                     Substr("variant__variant_id", F("first"), F("length")),
                     IntegerField(),
@@ -1302,7 +1304,7 @@ class AnnotationImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        chromosome, position, _ = row["variant"].split("-", 2)
+        chromosome, position, _ = row["variant"].split(self.delimiter, 2)
         position = int(position)
         if (
             self.current_chromosome != chromosome
@@ -1458,8 +1460,8 @@ class ConsequenceImporter(Importer):
         q = Q(variant__variant_id__startswith=f"{chromosome}-")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
-                first=StrIndex("variant__variant_id", V("-")) + 1,
-                length=StrIndex(Substr("variant__variant_id", F("first")), V("-")) - 1,
+                first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
+                length=StrIndex(Substr("variant__variant_id", F("first")), V(self.delimiter)) - 1,
                 pos=Cast(
                     Substr("variant__variant_id", F("first"), F("length")),
                     IntegerField(),
@@ -1485,7 +1487,7 @@ class ConsequenceImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        chromosome, position, _ = row["variant"].split("-", 2)
+        chromosome, position, _ = row["variant"].split(self.delimiter, 2)
         position = int(position)
         if (
             self.current_chromosome != chromosome

@@ -380,6 +380,8 @@ class TestSnvsCallFilter(FocusableTestCase):
         self.assertIn('type', result[0])
         self.assertIn('chr', result[0])
         self.assertIn('pos', result[0])
+        self.assertIn('dbsnp_id', result[0])
+        self.assertEqual(result[0]['dbsnp_id'], "rs200028125")
 
 
 class TestGenomicBvlFrequenciesCallFilter(FocusableTestCase):
