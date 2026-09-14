@@ -195,10 +195,10 @@ function SearchProvider({ children }) {
         nearby = _.get(variantData, "results.nearby", [])
 
         if (_.size(results) == 0 && _.size(nearby) == 1) {
-          setResultsMessage(`No variants found at location. 1 variant nearby:`);
+          setResultsMessage(`No matching variant found at location. 1 variant nearby:`);
         } else if (_.size(results) == 0 && _.size(nearby) > 1) {
           setResultsMessage(
-            `No variants found at location. ${_.size(nearby)} variants nearby:`
+            `No matching variant found at location. ${_.size(nearby)} variants nearby:`
           );
         } else if (_.size(results) == 0 && _.size(nearby) == 0) {
           setResultsMessage(`No variants found.`);
