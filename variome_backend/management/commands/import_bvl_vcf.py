@@ -127,7 +127,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--vcf",
             dest="vcf_file",
-            required=True,
+            default="data/fixtures/vcf/variome.vcf",
             help="Path to input VCF file (plain or gzipped)",
         )
 
