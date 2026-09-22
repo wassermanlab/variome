@@ -156,6 +156,13 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
+        parser.add_argument(
+            "--out-hyphens",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Use hyphens in variant IDs (e.g. 1-100-A-G); uses underscores when false",
+        )
+
     def handle(self, **options):
         transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
