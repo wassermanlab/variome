@@ -12,13 +12,105 @@ from datetime import datetime
 
 from variome_backend.settings import IS_DEVELOPMENT
 
-from ..models import (
-    Variant,
-    SNV,
-)
-from ..serializers import (
-    VariantSerializer,
-)
+from ..models import Variant
+
+
+v_pos_limit = 10
+snv_values_to_set = ["snv__pos", "snv__chr", "snv__ref", "snv__alt"]
+
+def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
+    
+    in_pos = int(in_pos)
+    v_pos_upper = in_pos + 499
+    v_pos_lower = in_pos - 499
+
+    position_filter_ref_alt = {
+        "snv__chr": in_chr,
+        "snv__pos": in_pos,
+    }
+
+    if in_ref:
+        position_filter_ref_alt["snv__ref"] = in_ref
+    if in_alt:
+        position_filter_ref_alt["snv__alt"] = in_alt
+
+    position_results = list(Variant.objects.filter(**position_filter_ref_alt).values(
+        "variant_id", "var_type", "id", *snv_values_to_set
+    )[:v_pos_limit])
+
+    n_ref_alt_matches = len(position_results)
+
+    print(position_results)
+    ids_to_exclude = [v["variant_id"] for v in position_results]
+    print("exclude:")
+    print(ids_to_exclude)
+
+    id_not_in_clause = ~Q(variant_id__in=ids_to_exclude)
+
+    additional_position_results = list(
+      Variant.objects.filter(
+        snv__chr = in_chr,
+        snv__pos = in_pos,
+    ).filter(id_not_in_clause).values(
+        "variant_id", "var_type", "id", *snv_values_to_set
+    )[:v_pos_limit - n_ref_alt_matches])
+
+    print("additional position")
+    print(additional_position_results)
+
+    if len(additional_position_results) > 0:
+        position_results.extend(additional_position_results)
+
+
+    print(position_results)
+
+    nearby_results = (
+        Variant.objects.filter(
+            snv__chr=in_chr, snv__pos__range=(v_pos_lower, v_pos_upper)
+        )
+        .exclude(snv__pos=in_pos)
+        .annotate(bp_distance=Abs(F("snv__pos") - in_pos))
+        .order_by("bp_distance")
+        .values("variant_id", "var_type", "id", *snv_values_to_set, "bp_distance")[
+            :v_pos_limit
+        ]
+    )
+
+    nearby_results = list(nearby_results)
+
+    print(nearby_results)
+    print("pos")
+    print(position_results)
+    return (position_results, nearby_results)
+
+
+def standard_validate(chr, pos, ref = None, alt = None):
+    out_error = None
+
+    try:
+        chr_int_cast = int(chr)
+    except:
+        chr_int_cast = None
+
+    try:
+        pos_int_cast = int(pos)
+    except ValueError:
+        pos_int_cast = None
+        return f"Invalid position (must be numeric): {pos}"
+    except:
+        return f"Invalid position (must be numeric)"
+
+
+    if not chr:
+        out_error = "Chromosome is null"
+    elif chr.upper() not in ["M", "X", "Y"] and ( chr_int_cast is None or chr_int_cast < 1 or chr_int_cast > 22):
+        out_error = f"Invalid chromosome: {str(chr)}"
+    elif not pos:
+        out_error = "Position is null"
+    elif int(pos_int_cast) < 0:
+        out_error = f"Invalid position: {pos}"
+
+    return out_error
 
 
 @api_view(["GET"])
@@ -37,7 +129,6 @@ def snv_search(request):
     #        f"Parameters received: result_sets={in_result_sets}, query={in_query}, chr={in_chr}, pos={in_pos}, ref={in_ref}, alt={in_alt}"
     #    )
 
-    v_pos_limit = 10
     out_error = None
 
     # Validate input
@@ -50,19 +141,7 @@ def snv_search(request):
     elif not in_query:
         out_error = "Query is null"
     elif "position" in in_result_sets:
-        if not in_chr:
-            out_error = "Chromosome is null"
-        elif in_chr.upper() not in ["M", "X", "Y"] and not (1 <= int(in_chr) <= 22):
-            out_error = f"Invalid chromosome: {in_chr}"
-        elif not in_pos:
-            out_error = "Position is null"
-        elif int(in_pos) < 0:
-            out_error = f"Invalid position: {in_pos}"
-        try:
-            in_pos = int(in_pos)
-        except ValueError:
-            out_error = f"Invalid position (must be numeric): {in_pos}"
-
+        out_error = standard_validate(in_chr, in_pos, in_ref, in_alt)
     if out_error:
         print(f"Error: {out_error}")
         if IS_DEVELOPMENT:
@@ -78,39 +157,11 @@ def snv_search(request):
 
     response_data = {"term": in_query, "results": {}}
 
-    snv_values_to_set = ["snv__pos", "snv__chr", "snv__ref", "snv__alt"]
 
     if "position" in in_result_sets:
-        v_pos_upper = in_pos + 499
-        v_pos_lower = in_pos - 499
-
-        position_filter = {
-            "snv__chr": in_chr,
-            "snv__pos": in_pos,
-        }
-        if in_ref:
-            position_filter["snv__ref"] = in_ref
-        if in_alt:
-            position_filter["snv__alt"] = in_alt
-
-        position_results = Variant.objects.filter(**position_filter).values(
-            "variant_id", "var_type", "id", *snv_values_to_set
-        )[:v_pos_limit]
-
-        nearby_results = (
-            Variant.objects.filter(
-                snv__chr=in_chr, snv__pos__range=(v_pos_lower, v_pos_upper)
-            )
-            .exclude(snv__pos=in_pos)
-            .annotate(bp_distance=Abs(F("snv__pos") - in_pos))
-            .order_by("bp_distance")
-            .values("variant_id", "var_type", "id", *snv_values_to_set, "bp_distance")[
-                :v_pos_limit
-            ]
-        )
-
-        response_data["results"]["position"] = list(position_results)
-        response_data["results"]["nearby"] = list(nearby_results)
+        (position, nearby) = standard_search(in_chr, in_pos, in_ref, in_alt)
+        response_data["results"]["position"] = position
+        response_data["results"]["nearby"] = nearby
 
     #        print(json.dumps(response_data["results"], indent=2))
 

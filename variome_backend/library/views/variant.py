@@ -2,8 +2,7 @@ from ..models import (
     Variant,
     SNV,
     GenomicGnomadFrequency,
-    GenomicVariomeFrequency,
-    VariantAnnotation,
+    GenomicVariomeFrequency
 )
 from datetime import datetime
 
@@ -11,7 +10,6 @@ from ..serializers import (
     VariantSerializer,
     GenomicGnomadFrequencySerializer,
     GenomicVariomeFrequencySerializer,
-    VariantAnnotationSerializer,
     SNVSerializer,
 )
 

@@ -1,0 +1,41 @@
+##fileformat=VCFv4.2
+##hailversion=0.2.97-937922d7f46c
+##INFO=<ID=ClinVar_Variation_ID,Number=1,Type=Float,Description="ClinVar variation id">
+##VEP="v101" time="2022-09-19 20:58:12" cache="/mnt/common/SILENT/Act3/VEP/homo_sapiens_merged/105_GRCh37" ensembl-io=101.943b6c2 ensembl=101.856c8e8 ensembl-variation=101.819eef2 ensembl-funcgen=101.b918a49 1000genomes="phase3" COSMIC="92" ClinVar="202012" HGMD-PUBLIC="20204" assembly="GRCh37.p13" dbSNP="154" gencode="GENCODE 19" genebuild="2011-04" gnomAD="r2.1" polyphen="2.2.2" refseq="2020-10-26 17:03:42 - GCF_000001405.25_GRCh37.p13_genomic.gff" regbuild="1.0" sift="sift5.2.2"
+##INFO=<ID=CSQ,Number=.,Type=String,Description="Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|DISTANCE|STRAND|FLAGS|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|TSL|REFSEQ_MATCH|SOURCE|REFSEQ_OFFSET|GIVEN_REF|USED_REF|BAM_EDIT|SIFT|PolyPhen|HGVS_OFFSET|CLIN_SIG|SOMATIC|PHENO|VAR_SYNONYMS|CADD_PHRED|CADD_RAW|SpliceAI_pred_DP_AG|SpliceAI_pred_DP_AL|SpliceAI_pred_DP_DG|SpliceAI_pred_DP_DL|SpliceAI_pred_DS_AG|SpliceAI_pred_DS_AL|SpliceAI_pred_DS_DG|SpliceAI_pred_DS_DL|SpliceAI_pred_SYMBOL">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	1000	1_1000_A_G	A	G	99.9	.	ClinVar_Variation_ID=12345.678;CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||rs123||||SNV|||||||||||||||||||||||||||
+1	1005	1_1005_C_T	C	T	99.9	.	CSQ=T|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+1	1020	1_1020_G_A	G	A	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+2	1000	2_1000_A_G	A	G	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||rs123||||SNV|||||||||||||||||||||||||||
+4	2000	4_2000_T_C	T	C	99.9	.	CSQ=C|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+4	2000	4_2000_T_G	T	G	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+4	2100	4_2100_C_G	C	G	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+7	2000	7_2000_TAA_TA	TAA	TA	99.9	.	CSQ=TA|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+3	50	3_50_AT_T	AT	T	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+3	50	3_50_AT_A	AT	A	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+3	100	3_100_A_G	A	G	99.9	.	CSQ=G|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+3	100	3_100_AG_GT	AG	GT	99.9	.	CSQ=GT|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||MNV|||||||||||||||||||||||||||
+3	101	3_101_G_T	G	T	99.9	.	CSQ=T|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||SNV|||||||||||||||||||||||||||
+5	100	5_100_A_ATGT	A	ATGT	99.9	.	CSQ=ATGT|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||insertion|||||||||||||||||||||||||||
+5	100	5_100_ATGT_A	ATGT	A	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	200	10_200_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	201	10_201_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	202	10_202_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	203	10_203_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	204	10_204_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	205	10_205_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	206	10_206_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	207	10_207_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	209	10_209_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	210	10_210_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	211	10_211_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	212	10_212_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	213	10_213_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	214	10_214_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_AT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_ATAT	A	AT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_ATATAT	A	ATAT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_ATATATAT	A	ATATAT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_ATATATATAT	A	ATATATAT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
+10	220	10_220_A_ATATATATATAT	A	ATATATATAT	99.9	.	CSQ=A|missense_variant|MODERATE|GENE1|ENSG00000000001|Transcript|ENST00000000001|protein_coding||||||||||||||deletion|||||||||||||||||||||||||||
