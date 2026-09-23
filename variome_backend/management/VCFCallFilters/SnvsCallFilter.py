@@ -40,7 +40,10 @@ class SnvsCallFilter(CallFilter):
             clinvar_from_info = record.INFO.get("ClinVar_Variation_ID", None)
             for ev in existing_variation_list:
                 if ev.startswith("rs"):
-                    dbsnp_ids.append(ev)
+                    if "&" in ev:
+                        [ dbsnp_ids.append(ev_id) for ev_id in ev.split("&")]
+                    else:
+                        dbsnp_ids.append(ev)
                 if ev.startswith("VCV"):
                     clinvar_vcvs.append(ev)
             NA = self.settings.NA
@@ -124,7 +127,7 @@ class SnvsCallFilter(CallFilter):
                 'alt': alt,
                 'cadd_score': cadd_score,
                 'cadd_intr': cadd_intr,
-                'dbsnp_id': dbsnp_ids[0] if dbsnp_ids else NA,
+                'dbsnp_id': dbsnp_ids[0] if dbsnp_ids else NA, # TODO: verify if it's acceptable to omit all but one of these rs ID's
                 'dbsnp_url': dbsnp_url,
                 'ucsc_url': ucsc_url,
                 'ensembl_url': ensembl_url,

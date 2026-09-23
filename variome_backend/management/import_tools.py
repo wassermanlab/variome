@@ -2,6 +2,7 @@ import enum
 import logging
 import csv
 import sys
+from datetime import datetime
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -13,6 +14,7 @@ from django.db import connection, transaction
 from django.core.management.color import no_style
 
 import variome_backend.library.models as bvlmodels
+
 
 log = logging.getLogger("management")
 
@@ -113,10 +115,6 @@ class Importer:
     # CSV dialect to use (override if a particular importer needs to)
     csv_dialect = bvlDialect
 
-    # Batch size for bulk creates - 999 is limit for SQLite, larger numbers
-    # may make things faster with PostgreSQL
-    batch_size = 999
-
     # Set this when debugging, if you want to stop after a certain number of input rows
     # have been processed
     limit = None
@@ -135,6 +133,8 @@ class Importer:
 
         # Base path to input data
         self.path = Path(options["path"])
+
+        self.batch_size = options["batchsize"]
 
         # Whether to show progress indication
         self.progress = options["progress"]
@@ -200,10 +200,12 @@ class Importer:
                 errors, warnings, n_count = self._process_rows(
                     self.reader, errors, warnings, use_csv_reader=True
                 )
+#                print("222222 after process_rows", errors)
         else:
             errors, warnings, n_count = self._process_rows(
                 row_iter, errors, warnings, use_csv_reader=False
             )
+#            print("333333 after process_rows", errors)
 
         if not self.failfast:
             # errors in middle of transaction get swallowed without try / except here
@@ -217,6 +219,7 @@ class Importer:
                 n_success = 0
         else:
             n_success = self.model.objects.count()
+#        print("44444 returning ", errors)
         return errors, warnings, (n_count, n_success)
 
     def _process_rows(self, row_iter, errors, warnings, use_csv_reader=False):
@@ -226,6 +229,8 @@ class Importer:
         """
         n_count = 0
         bulk_create = []
+        now_time = datetime.now()
+        batch_num = 1
         try:
             for row in row_iter:
                 n_count += 1
@@ -234,8 +239,9 @@ class Importer:
                 else:
                     self._row_num = n_count
                 if self.progress and self._row_num % 1000 == 0:
+                    now_time2 = datetime.now()
                     sys.stderr.write(
-                        f"{self.object_name} {self._row_num}...\n"
+                        f"{self.object_name} {self._row_num} (took {(now_time2 - now_time).total_seconds()} seconds)...\n"
                     )
                 if self.limit is not None and self.limit < self._row_num:
                     warnings.append(ImportMessage(
@@ -276,15 +282,20 @@ class Importer:
                             return errors, warnings, n_count
 
                 if len(bulk_create) >= self.batch_size:
+                    batch_num = batch_num + 1
                     try:
                         self.model.objects.bulk_create(bulk_create)
                         bulk_create = []
                     except Exception as e:
-                        errors.append(ImportMessage(
+                        msg = ImportMessage(
                             ImportCode.BULK_CREATE_FAILED,
                             f"error in bulk create of {self.object_name_plural} "
-                            f"after input row {self._row_num}: {e}\nrow: {row}",
-                        ))
+                            f"batch number {batch_num} - "
+                            f"between rows {(batch_num - 1)*self.batch_size} and {batch_num*self.batch_size}. self._row_num is {self._row_num}"
+                        )
+#                        print(msg)
+                        errors.append(msg)
+                        bulk_create = [] #<---- FIXES issue of batch size suddenly going to 1 after a DB exception
                         if self.failfast:
                             return errors, warnings, n_count
             # Run out of input rows, tidy up outstanding create/updates
@@ -292,11 +303,13 @@ class Importer:
                 try:
                     self.model.objects.bulk_create(bulk_create)
                 except Exception as e:
-                    errors.append(ImportMessage(
+                    msg = ImportMessage(
                         ImportCode.BULK_CREATE_FAILED,
                         f"error in bulk create of {self.object_name_plural} "
                         f"after end of input: row {self._row_num}\nrow: {row}",
-                    ))
+                    )
+#                    print(msg)
+                    errors.append(msg)
                     if self.failfast:
                         return errors, warnings, n_count
         except csv.Error as e:
@@ -306,6 +319,10 @@ class Importer:
             ))
             if self.failfast:
                 return errors, warnings, n_count
+#        print("END END END END")
+#        print("errors at end", errors)
+#        print("Warnings at end", warnings)
+#        print("n count at end", n_count)
         return errors, warnings, n_count
 
 

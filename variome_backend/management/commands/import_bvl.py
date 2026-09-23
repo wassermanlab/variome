@@ -119,6 +119,12 @@ class Command(BaseCommand):
             help="Whether to batch database updates in order to improve performance",
         )
         parser.add_argument(
+            "--batchsize",
+            type=int,
+            default=999,
+            help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
+        )
+        parser.add_argument(
             "--delete",
             default=False,
             action=argparse.BooleanOptionalAction,

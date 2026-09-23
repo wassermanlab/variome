@@ -241,6 +241,12 @@ class Command(BaseCommand):
             help="Batch database updates to improve performance",
         )
         parser.add_argument(
+            "--batchsize",
+            type=int,
+            default=999,
+            help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
+        )
+        parser.add_argument(
             "--delete",
             default=False,
             action=argparse.BooleanOptionalAction,
@@ -389,9 +395,23 @@ class Command(BaseCommand):
             warnings_map["Severity"] = warnings
             counts_map["Severity"] = counts
         for label, _table_name, filter_cls, importer_cls in table_specs:
-            errors_map[label], warnings_map[label], counts_map[label] = (
-                importer_cls(importer_options).import_data(make_row_iter(filter_cls))
-            )
+            try:
+                data = make_row_iter(filter_cls)
+#                print("11111 data created")
+                importer = importer_cls(importer_options)
+#                print("11111 importer created")
+                
+                errors_map[label], warnings_map[label], counts_map[label] = (importer.import_data(data)) 
+                # errors get returned to here even when exception occurs inside importer.import_data. but next line does not log. why??
+#                print("11111 the importer did import")
+            except Exception as e:
+                import traceback
+                logging.error(traceback.format_exc())
+                errors_map[label], warnings_map[label], counts_map[label] = (
+                  [
+                    bvltools.ImportMessage(bvltools.ImportCode.BULK_CREATE_FAILED, "unknown error in bulk import (possibly db validation issue). run with --no-batch to see")
+                  ],[],(0,0))
+                pass
             log_timing(label)
 
         for entity_type, errs in errors_map.items():
