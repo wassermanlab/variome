@@ -23,6 +23,18 @@ import unittest
 import os
 import copy
 
+from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
+from variome_backend.management.VCFCallFilters.GenesCallFilter import GenesCallFilter
+from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import TranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsCallFilter import VariantsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
+from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
+from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
+from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+
 from variome_backend.management.vcf_import_settings import VcfImportSettings
 
 # Default test settings (matches defaults used in production)
@@ -30,7 +42,7 @@ SETTINGS = VcfImportSettings(
     VCF_FILE=None,
     NA=".",
     OUT_CHR=True,
-    OUT_HYPHENS=True,
+    OUT_HYPHENS=False,
     DEFAULT_TRANSCRIPT_SOURCE="E",
     CADD_DAMAGING_THRESHOLD=20,
     INPUT_TSV_PATH="data/fixtures",
@@ -85,17 +97,6 @@ class FocusableTestCase(unittest.TestCase):
                 self.skipTest("Skipping - not focused method")
 
 
-from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
-from variome_backend.management.VCFCallFilters.GenesCallFilter import GenesCallFilter
-from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import TranscriptsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsCallFilter import VariantsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
-from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
-from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
-from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
-from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
 
 
 # Helper function to get fixture paths

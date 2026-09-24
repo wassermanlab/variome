@@ -162,13 +162,6 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
-        parser.add_argument(
-            "--out-hyphens",
-            default=True,
-            action=argparse.BooleanOptionalAction,
-            help="Use hyphens in variant IDs (e.g. 1-100-A-G); uses underscores when false",
-        )
-
     def handle(self, **options):
         transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
@@ -216,6 +209,12 @@ class Command(BaseCommand):
         vts_counts = None
         ann_counts = None
         con_counts = None
+
+        options['out_hyphens'] = True
+        # too fragile to allow customizing the variant id delimiter right now
+        # variant_id is used in joins across TSVs in the output script(s)
+        # so it's natural to follow the TSV input instead of using a flag
+        # TODO - test with underscore-delimited variant_id TSVs (ibvl's format)
 
         if options["severities"]:
             sev_errors, sev_warnings, sev_counts = bvltools.SeverityImporter(

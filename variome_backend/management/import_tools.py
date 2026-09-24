@@ -1137,7 +1137,7 @@ class VariantTranscriptImporter(Importer):
         return True, row
 
     def cache_chromosome(self, chromosome):
-        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        q = Q(variant__variant_id__startswith=f"{chromosome}")
         qs = self.model.objects.filter(q).values(
             "variant__variant_id", "transcript__transcript_id", "pk"
         )
@@ -1278,7 +1278,7 @@ class AnnotationImporter(Importer):
             f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
         )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1292,7 +1292,7 @@ class AnnotationImporter(Importer):
                 for obj in qs
             }
 
-        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        q = Q(variant__variant_id__startswith=f"{chromosome}")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
@@ -1458,7 +1458,7 @@ class ConsequenceImporter(Importer):
             f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
         )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}-")
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1474,7 +1474,7 @@ class ConsequenceImporter(Importer):
                 for obj in qs
             }
 
-        q = Q(variant__variant_id__startswith=f"{chromosome}-")
+        q = Q(variant__variant_id__startswith=f"{chromosome}")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
