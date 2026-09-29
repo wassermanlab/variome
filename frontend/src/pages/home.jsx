@@ -88,11 +88,16 @@ export default function Home({
                     </Link>{*/}
                   </Grid>
                   <Grid item xs={6} justifyContent={"center"} flexGrow={2} >
-                    <Markdown components={{
-                      p: ({ node, ...props }) => <div style={HomeImageStyle} className="home-image" {...props} />
-                    }}>
-                        {HomeContent.image}
-                      </Markdown>
+                    <Markdown options={{createElement: (type, props, children) => {
+                        return (
+                          <div className="home-image" >
+                            {React.createElement(type, props, children)}
+                          </div>
+                        )},
+                      }} 
+                    >
+                      {HomeContent.image}
+                    </Markdown>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -212,9 +217,15 @@ export default function Home({
             gap: "30px"
           }}
         >
-            <Markdown components={{
-                      p: ({ node, ...props }) => <div style={{width:"250px"}} className="home-image" {...props} />
-                    }}>
+            <Markdown option={{
+              createElement: (type, props, children)=> {
+                return (
+                  <div style={{width:"250px"}} className="home-image">
+                    {React.createElement(type, props, children)}
+                  </div>
+                )
+              }
+            }}>
                         {HomeContent["footer image"]}
                       </Markdown>
                       {/*}
