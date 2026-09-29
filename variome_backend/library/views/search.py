@@ -40,10 +40,8 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
 
     n_ref_alt_matches = len(position_results)
 
-    print(position_results)
+#    print(position_results)
     ids_to_exclude = [v["variant_id"] for v in position_results]
-    print("exclude:")
-    print(ids_to_exclude)
 
     id_not_in_clause = ~Q(variant_id__in=ids_to_exclude)
 
@@ -55,14 +53,13 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
         "variant_id", "var_type", "id", *snv_values_to_set
     )[:v_pos_limit - n_ref_alt_matches])
 
-    print("additional position")
-    print(additional_position_results)
+#    print("additional position")
+#    print(additional_position_results)
 
     if len(additional_position_results) > 0:
         position_results.extend(additional_position_results)
 
-
-    print(position_results)
+#    print(position_results)
 
     nearby_results = (
         Variant.objects.filter(
@@ -78,9 +75,9 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
 
     nearby_results = list(nearby_results)
 
-    print(nearby_results)
-    print("pos")
-    print(position_results)
+#    print(nearby_results)
+#    print("pos")
+#    print(position_results)
     return (position_results, nearby_results)
 
 
