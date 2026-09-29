@@ -54,7 +54,7 @@ pyjwt==2.13.0
     # via
     #   variome (pyproject.toml)
     #   django-auth-adfs
-pymysql==1.1.2
+pymysql==1.2.3
     # via variome (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via django-auditlog

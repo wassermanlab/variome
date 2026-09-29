@@ -21,7 +21,7 @@ dependencies = [
     "vcfpy>=0.14.2",
     "tenacity>=9.1.4",
     "python-dotenv>=1.0.1",
-    "pymysql>=1.1.2",
+    "pymysql>=1.2.3",
     # temporary pin to address https://github.com/wassermanlab/variome/security/dependabot/82
     # Remove once all dependencies require this minimal version.
     "cryptography>=50.0.0",
@@ -32,7 +32,7 @@ dependencies = [
     # Security pin: django depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/142
     "sqlparse>=0.6.0",
     # Security pin: django-auth-adfs depends on this - the pin fixes https://github.com/wassermanlab/variome/security/dependabot/128 plus others
-    "pyjwt>=2.13.0"
+    "pyjwt>=2.13.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.13"
