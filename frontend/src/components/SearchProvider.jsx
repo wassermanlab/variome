@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 
 import Constants from '../Constants';
 
@@ -22,6 +22,8 @@ const parseParameters = (query) => {
     //    ref: null,
     //    alt: null
   });
+  groups = _.mapValues(groups, _.toUpper);
+  
   if (_.includes(groups.chr, "m") || _.includes(groups.chr, "M")) {
     //might be "MT"
     groups.chr = "M";
@@ -70,8 +72,8 @@ const parseParameters = (query) => {
         selectedAssembly: "GRCh38",
         chr: groups.chr,
         pos: groups.pos,
-        ...groups.ref ? { ref: groups.ref } : {},//ref: groups.ref,
-        ...groups.alt ? { alt: groups.alt } : {},//
+        ...groups.ref ? { ref: _.upperCase(groups.ref) } : {},//ref: groups.ref,
+        ...groups.alt ? { alt: _.upperCase(groups.alt) } : {},//
         ... response_code_param ? { r: response_code_param } : {}
       },
       groups: searchSummaryGroups
@@ -86,8 +88,10 @@ const parseParameters = (query) => {
 // a react component that doesn't have UI (render) but still uses state and effects
 function SearchProvider({ children }) {
   const [loading, setLoading] = useState(false);
+  const [groups, setGroups] = useState([]);
   const [query, setQuery] = useState("");
   const [resultsMessage, setResultsMessage] = useState(null);
+  const [nearbyMessage, setNearbyMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
   const [results, setResults] = useState([]);
   const [nearby, setNearby] = useState([]);
@@ -99,28 +103,27 @@ function SearchProvider({ children }) {
     const trimmedQuery = _.trim(newQuery);
     setHideResultsOverride(false);
 
+    setResultsMessage(() => null);
+    setNearbyMessage(() => null);
+    setErrorMessage(() => null);
+    setWarnings(() => []);
+    setResults(() => []);
+    setNearby(() => []);
     if (!_.isEmpty(trimmedQuery)) {
-      setQuery(trimmedQuery);
-      setResults([]);
-      setNearby([]);
-      setLoading(true);
-      setWarnings([]);
-      setErrorMessage(null);
-
+      console.log("set query to ", trimmedQuery)
+      setQuery(()=> trimmedQuery);
+      setLoading(() => true);
+      
       const { results, nearby } = await doSearch(trimmedQuery);
+      setLoading(() => false);
       setResults(results);
       setNearby(nearby);
-      setLoading(false);
     } else {
-      setWarnings([]);
-      setResults([]);
-      setNearby([]);
-      setResultsMessage(null);
-      setErrorMessage(null);
-      setQuery("");
-      setLoading(false);
+      console.log("reset everything because trimmed Query was empty")
+      setQuery(() => "");
     }
   }
+
 
   let doSearch = async function (query) {
     var nearby = [];
@@ -128,15 +131,18 @@ function SearchProvider({ children }) {
     var error = null;
 
     var parameters = parseParameters(query);
-
+    
     if (_.isEmpty(parameters) || !_.get(parameters, "searchParameters") || !_.get(parameters, "groups")) {
-
+//      console.log("params is empty, searchParams is empty, no groups, so no results.")
       setLoading(() => false);
       setMatchPairs([]);
-      setResultsMessage("No results ( query format is not recognized )");
+      setErrorMessage("Query format is not recognized.");
+      setResultsMessage("--")
     } else {
-
-      var cleanGroups = _.omitBy(_.get(parameters, "groups", []), _.isNil);
+      
+      var cleanGroups = _.omitBy(_.get(parameters, "groups", []), _.isEmpty);
+//      console.log("clean groups", cleanGroups);
+      setGroups(cleanGroups);
 
       var pairs = _.map(_.toPairs(cleanGroups), ([key, val]) => {
         if (key == "dbsnp") {
@@ -146,12 +152,15 @@ function SearchProvider({ children }) {
         }
       });
 
+//      console.log("set match pairs", pairs);
       setMatchPairs(() => pairs);
       setWarnings(() => []); 
+
+      var ensembleRefCheckProblem = null;
       if (parameters.searchParameters.ref) {
         const referenceCheck = Promise.race([
-          Api.ensemblRefCheck(parameters.searchParameters, "2"),
-          new Promise(resolve => setTimeout(() => resolve(null), 5000))
+          Api.ensemblRefCheck(parameters.searchParameters, "2").catch(e =>{ ensembleRefCheckProblem = e;}),
+          new Promise(resolve => setTimeout(() => {ensembleRefCheckProblem = new Error("timed out"); resolve(null)}, 5000))
         ]);
 
         const referenceResult = await referenceCheck;
@@ -170,6 +179,8 @@ function SearchProvider({ children }) {
             ]);
             console.log("warnings", warnings);
           }
+        } else if (ensembleRefCheckProblem){
+          console.error("ensemble problem", ensembleRefCheckProblem); //TODO show it in the UI
         }
       }
 
@@ -203,11 +214,14 @@ function SearchProvider({ children }) {
         } else if (_.size(results) == 0 && _.size(nearby) == 0) {
           setResultsMessage(`No variants found.`);
         } else if (_.size(nearby) > 1) {
-          setResultsMessage(`${_.size(nearby)} variants nearby:`);
+          setResultsMessage(null);
+          setNearbyMessage(`Variants nearby:`)
         } else if (_.size(nearby) == 1) {
-          setResultsMessage(`1 variant nearby:`);
+          setResultsMessage(null);
+          setNearbyMessage(`1 variant nearby:`)
         } else {
           setResultsMessage(null);
+          setNearbyMessage(null);
         }
       } catch {
         
@@ -221,25 +235,23 @@ function SearchProvider({ children }) {
     return { results, nearby };
   };
 
-  function onInputFocus() {
-    setHideResultsOverride(false);
-  }
-
   return (
     <SearchContext.Provider
       value={{
         submitSearch,
+        groups,
         matchPairs,
         loading,
         results,
         nearby,
         query,
         setQuery,
-        onInputFocus,
+        onInputFocus: ()=>{},
         hideResultsOverride,
         setHideResultsOverride,
         warnings,
         resultsMessage,
+        nearbyMessage,
         errorMessage
       }}
     >

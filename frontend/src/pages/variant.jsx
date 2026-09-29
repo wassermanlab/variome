@@ -120,11 +120,12 @@ export default function Variant({pageTitle}) {
           var hemi_tot =
             _.get(variant, "joint.hemizygote_count")
 
-          //          console.log("gnomad freqs", { ac_tot, an_tot, af_tot, hom_tot });
-          setTimeout(() => {
             setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot, hemi_tot });
             setGnomadLoading(false);
-          }, 5000);
+        }).catch(e =>{
+            console.error(e.message);
+            setGnomadLoading(false);
+            setGnomadFrequencies({ ac_tot:"gnomAD connection error"})
         });
     }
   }, [variant]);
