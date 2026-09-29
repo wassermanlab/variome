@@ -11,14 +11,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import { Link as MuiLink } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import Button from "@mui/material/Button";
-import SearchInput from "../components/SearchInput";
-import SearchResults from "../components/SearchResults";
-import SearchProvider from "../components/SearchProvider";
 import Link from "../components/Link";
 import Api from "../Api";
 
@@ -110,16 +104,6 @@ export default function Home({
                 <CardContent>
                   <Grid container>
                     <Grid item xs={6}>
-                      <Typography
-                        variant="h5"
-                        sx={{ fontWeight: "light", paddingBottom: "5%" }}
-                      >
-                        Variant Search
-                      </Typography>
-                      <SearchProvider>
-                        <SearchInput inputElementId="home-search" variant="standard" sx={{width:"80%"}}/>
-                        <SearchResults sx={{}} />
-                      </SearchProvider>
                     </Grid>
                     <Grid
                       item

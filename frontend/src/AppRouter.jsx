@@ -2,7 +2,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Component, captureOwnerStack } from 'react';
 import _ from 'lodash';
 import { Container, Box } from '@mui/material';
 
@@ -16,6 +16,41 @@ import Variant from './pages/variant.jsx';
 import AppLayoutWithNavigation from './AppLayoutWithNavigation.jsx';
 import { Content } from './ContentParsing.jsx';
 
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    // Update state so the next render will show the fallback UI.
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error(
+      error,
+      // Example "componentStack":
+      //   in ComponentThatThrows (created by App)
+      //   in ErrorBoundary (created by App)
+      //   in div (created by App)
+      //   in App
+      info.componentStack,
+      // Warning: `captureOwnerStack` is not available in production.
+      captureOwnerStack(),
+    );
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // You can render any custom fallback UI
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
 
 function AppRouter() {
   //  const [user, setUser] = useState({email:"asdf@example.com"});
@@ -114,19 +149,21 @@ function AppRouter() {
         <Routes>
           <Route path="/*" element={
             <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
-              <Routes>
-                <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{ snv: exampleSnv }} message={homePageMessage} />} />
-                {
-                  Content.map(({ name, urlPath, content }) => {
-                    return (
-                      <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)} />
-                    );
-                  })
-                }
-                {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
-                {user && <Route path="/profile" element={<Profile user={user} />} />}
-                {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
-              </Routes>
+              <ErrorBoundary fallback={<p>Something went wrong</p>}>
+                <Routes>
+                  <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{ snv: exampleSnv }} message={homePageMessage} />} />
+                  {
+                    Content.map(({ name, urlPath, content }) => {
+                      return (
+                        <Route key={urlPath} path={`/${urlPath}`} element={PageWithContent(content)} />
+                      );
+                    })
+                  }
+                  {user && <Route path="/variant/:varId" loader={({ params }) => { }} action={({ params }) => { }} element={<Variant pageTitle={pageTitle} />} />}
+                  {user && <Route path="/profile" element={<Profile user={user} />} />}
+                  {user && <Route path="/logout" element={<Logout user={user} setUser={setUser} />} />}
+                </Routes>
+              </ErrorBoundary>
             </AppLayoutWithNavigation>
           } />
         </Routes>
