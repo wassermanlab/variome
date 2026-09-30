@@ -317,7 +317,6 @@ class Command(BaseCommand):
             return filter_cls(vcf_file, settings, **filter_kwargs).getTableRows()
 
         if not options["delete"]:
-            print("check to make sure chr and hyphen setting is congruent")
             first_existing_variant = bvltools.VariantImporter.model.objects.first()
             print(first_existing_variant)
             check_fail_reason = False

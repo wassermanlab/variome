@@ -16,6 +16,7 @@ class VariantAnnotation(models.Model):
         on_delete=models.CASCADE,
         db_column="variant_transcript",
         related_name="annotation",
+        db_index=True
     )
     hgvsp = models.CharField(max_length=255, blank=True, default="")
     polyphen = models.CharField(max_length=255, blank=True, default="")

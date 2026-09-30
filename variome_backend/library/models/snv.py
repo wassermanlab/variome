@@ -8,8 +8,8 @@ class SNV(models.Model):
     )
     type = models.CharField(max_length=30)
     length = models.IntegerField(null=True)
-    chr = models.CharField(max_length=3)
-    pos = models.IntegerField()
+    chr = models.CharField(max_length=3, db_index=True)
+    pos = models.IntegerField(db_index=True)
     ref = models.CharField(max_length=400)
     alt = models.CharField(max_length=255)
     cadd_intr = models.CharField(max_length=255, blank=True, default="")
@@ -17,11 +17,11 @@ class SNV(models.Model):
         decimal_places=5, max_digits=10, blank=True, null=True
     )
     dbsnp_url = models.CharField(max_length=511, blank=True, default="")
-    dbsnp_id = models.CharField(max_length=30, blank=True, default="")
+    dbsnp_id = models.CharField(max_length=30, blank=True, default="", db_index=True)
     ucsc_url = models.CharField(max_length=511, blank=True, default="")
     ensembl_url = models.CharField(max_length=511, blank=True, default="")
     clinvar_vcv = models.DecimalField(
-        decimal_places=3, max_digits=15, blank=True, null=True
+        decimal_places=3, max_digits=15, blank=True, null=True, db_index=True
     )
     clinvar_url = models.CharField(max_length=511, blank=True, default="")
     gnomad_url = models.CharField(max_length=511, blank=True, default="")

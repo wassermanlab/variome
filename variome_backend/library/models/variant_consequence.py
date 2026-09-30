@@ -9,6 +9,7 @@ class VariantConsequence(models.Model):
         on_delete=models.CASCADE,
         db_column="variant_transcript",
         related_name="consequence",
+        db_index=True
     )
     severity = models.ForeignKey(
         Severity, on_delete=models.CASCADE, db_column="severity"
