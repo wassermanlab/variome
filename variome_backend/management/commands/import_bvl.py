@@ -125,6 +125,13 @@ class Command(BaseCommand):
             help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
         )
         parser.add_argument(
+            "--dedupe-cache-window",
+            "-c",
+            type=int,
+            default=10000000,
+            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used"
+        )
+        parser.add_argument(
             "--delete",
             default=False,
             action=argparse.BooleanOptionalAction,

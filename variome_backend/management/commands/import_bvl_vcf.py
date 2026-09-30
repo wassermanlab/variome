@@ -127,7 +127,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--vcf",
             dest="vcf_file",
-            default="data/fixtures/vcf/variome.vcf",
+            default="data/fixtures/vcf/variome-tiny.vcf",
             help="Path to input VCF file (plain or gzipped)",
         )
 
@@ -199,6 +199,14 @@ class Command(BaseCommand):
                 "Directory of an existing TSV set to compare hashes against. "
                 "Requires --convert-to-tsv."
             ),
+        )
+
+        parser.add_argument(
+            "--dedupe-cache-window",
+            "-c",
+            type=int,
+            default=10000,
+            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used"
         )
 
         # --- Table selection (mirrors import_bvl) ---
@@ -308,6 +316,23 @@ class Command(BaseCommand):
         def make_row_iter(filter_cls, **filter_kwargs):
             return filter_cls(vcf_file, settings, **filter_kwargs).getTableRows()
 
+        if not options["delete"]:
+            print("check to make sure chr and hyphen setting is congruent")
+            first_existing_variant = bvltools.VariantImporter.model.objects.first()
+            print(first_existing_variant)
+            check_fail_reason = False
+            if first_existing_variant is not None:
+                if "-" in first_existing_variant.variant_id and not options["out_hyphens"]:
+                    check_fail_reason = "-"
+                if "_" in first_existing_variant.variant_id and options["out_hyphens"]:
+                    check_fail_reason = "_"
+                if "chr" in first_existing_variant.variant_id and not options["out_chr"]:
+                    check_fail_reason = "chr prefix"
+                if "chr" not in first_existing_variant.variant_id and options["out_chr"]:
+                    check_fail_reason = "no chr prefix"
+            if check_fail_reason:
+                log.error(f"inconsistent variant_id format was detected: Existing data uses {check_fail_reason}. Please adjust --out-hyphens or --out-chr flags to make consistent with your first variant's ID, which is {first_existing_variant.variant_id}")
+                exit()
         # Table selection flags and corresponding filter / importer pairs
         table_specs = []
         if options["genes"]:

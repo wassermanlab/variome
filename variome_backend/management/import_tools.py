@@ -136,6 +136,8 @@ class Importer:
 
         self.batch_size = options["batchsize"]
 
+        self.dedupe_cache_window = options["dedupe_cache_window"]
+
         # Whether to show progress indication
         self.progress = options["progress"]
 
@@ -243,6 +245,7 @@ class Importer:
                     sys.stderr.write(
                         f"{self.object_name} {self._row_num} (took {(now_time2 - now_time).total_seconds()} seconds)...\n"
                     )
+                    now_time = datetime.now()
                 if self.limit is not None and self.limit < self._row_num:
                     warnings.append(ImportMessage(
                         ImportCode.PROCESSING_LIMIT_HIT,
@@ -392,7 +395,7 @@ class SeverityImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 severity_number=row["severity_number"],
@@ -452,7 +455,7 @@ class GeneImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 short_name=row["short_name"],
@@ -482,7 +485,7 @@ class VariantImporter(Importer):
         }
 
     def check_existing(self, row):
-        """Return true is row represents an object that already exists in
+        """Return true if row represents an object that already exists in
         the database (i.e. if update rather than create is needed)"""
         return row["variant_id"] in self.existing
 
@@ -539,7 +542,7 @@ class VariantImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=row["variant_id"],
@@ -661,7 +664,7 @@ class TranscriptImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 transcript_id=row["transcript_id"],
@@ -801,7 +804,7 @@ class SNVImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=self.variants[row["variant"]],
@@ -950,7 +953,7 @@ class GVFImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=self.variants[row["variant"]],
@@ -1062,7 +1065,7 @@ class GGFImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=self.variants[row["variant"]],
@@ -1137,7 +1140,7 @@ class VariantTranscriptImporter(Importer):
         return True, row
 
     def cache_chromosome(self, chromosome):
-        q = Q(variant__variant_id__startswith=f"{chromosome}")
+        q = Q(variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
         qs = self.model.objects.filter(q).values(
             "variant__variant_id", "transcript__transcript_id", "pk"
         )
@@ -1215,7 +1218,7 @@ class VariantTranscriptImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_id=self.variants[row["variant"]],
@@ -1240,7 +1243,6 @@ class AnnotationImporter(Importer):
 
     model = bvlmodels.VariantAnnotation
     path_component = "variants_annotations"
-    cache_positions = 10000000
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
@@ -1249,36 +1251,12 @@ class AnnotationImporter(Importer):
         self.existing = {}
         self.vts = {}
 
-        # Too demanding of RAM
-        #
-        # self.existing = {
-        #     (
-        #         obj["variant_transcript__variant__variant_id"],
-        #         obj["variant_transcript__transcript__transcript_id"]
-        #     ): (
-        #         obj["pk"]
-        #     )
-        #     for obj in self.model.objects.values(
-        #         "variant_transcript__variant__variant_id",
-        #         "variant_transcript__transcript__transcript_id",
-        #         "pk"
-        #     )
-        # }
-        # self.vts = {
-        #     (obj["variant_id"], obj["transcript_id"]): obj["pk"]
-        #     for obj in bvlmodels.VariantTranscript.objects.values(
-        #         "pk",
-        #         "variant_id",
-        #         "transcript_id"
-        #     )
-        # }
-
     def cache_chromosome(self, chromosome, position):
         sys.stderr.write(
-            f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
+            f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
         )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}")
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1292,7 +1270,7 @@ class AnnotationImporter(Importer):
                 for obj in qs
             }
 
-        q = Q(variant__variant_id__startswith=f"{chromosome}")
+        q = Q(variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
@@ -1302,7 +1280,7 @@ class AnnotationImporter(Importer):
                     IntegerField(),
                 ),
             )
-            .filter(q, pos__gte=position, pos__lte=position + self.cache_positions)
+            .filter(q, pos__gte=position, pos__lte=position + self.dedupe_cache_window)
             .values("pk", "variant__variant_id", "transcript__transcript_id")
         )
         self.vts = {
@@ -1326,7 +1304,7 @@ class AnnotationImporter(Importer):
         if (
             self.current_chromosome != chromosome
             or position is None
-            or position > self.cached_position + self.cache_positions
+            or position > self.cached_position + self.dedupe_cache_window
         ):
             self.cache_chromosome(chromosome, position)
         errors = []
@@ -1413,7 +1391,7 @@ class AnnotationImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
@@ -1440,7 +1418,6 @@ class ConsequenceImporter(Importer):
 
     model = bvlmodels.VariantConsequence
     path_component = "variants_consequences"
-    cache_positions = 10000000
 
     def populate_caches(self):
         self.noexisting = self.model.objects.count() == 0
@@ -1455,10 +1432,10 @@ class ConsequenceImporter(Importer):
 
     def cache_chromosome(self, chromosome, position):
         sys.stderr.write(
-            f"Caching chromosome {chromosome} from positions: {position} to {position + self.cache_positions}\n"
+            f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
         )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}")
+            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1474,7 +1451,7 @@ class ConsequenceImporter(Importer):
                 for obj in qs
             }
 
-        q = Q(variant__variant_id__startswith=f"{chromosome}")
+        q = Q(variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
@@ -1484,7 +1461,7 @@ class ConsequenceImporter(Importer):
                     IntegerField(),
                 ),
             )
-            .filter(q, pos__gte=position, pos__lte=position + self.cache_positions)
+            .filter(q, pos__gte=position, pos__lte=position + self.dedupe_cache_window)
             .values("pk", "variant__variant_id", "transcript__transcript_id")
         )
 
@@ -1509,7 +1486,7 @@ class ConsequenceImporter(Importer):
         if (
             self.current_chromosome != chromosome
             or position is None
-            or position > self.cached_position + self.cache_positions
+            or position > self.cached_position + self.dedupe_cache_window
         ):
             self.cache_chromosome(chromosome, position)
         errors = []
@@ -1591,7 +1568,7 @@ class ConsequenceImporter(Importer):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
         Return True, obj on success or False, ImportMessage on failure"""
-        # int(float(foo)) to convert possible scientific notation to int. sucks.
+        # int(float(foo)) to convert possible scientific notation to int.
         try:
             obj, created = self.model.objects.update_or_create(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
