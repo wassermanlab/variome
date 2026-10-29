@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal, InvalidOperation
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
@@ -13,6 +14,7 @@ from datetime import datetime
 from variome_backend.settings import IS_DEVELOPMENT
 
 from ..models import Variant
+from variome_backend.library_access.models import SearchQueryAction
 
 
 v_pos_limit = 10
@@ -115,7 +117,7 @@ def standard_validate(chr, pos, ref = None, alt = None):
 @never_cache
 def snv_search(request):
     now = datetime.now()
-    in_result_sets = request.GET.get("resultSets", None)
+    in_result_sets = request.GET.get("resultSets", "")
     in_query = request.GET.get("query", None)
     in_chr = request.GET.get("chr", None)
     in_pos = request.GET.get("pos", None)
@@ -139,7 +141,18 @@ def snv_search(request):
         out_error = "Query is null"
     elif "position" in in_result_sets:
         out_error = standard_validate(in_chr, in_pos, in_ref, in_alt)
+    if not out_error and "clinvar" in in_result_sets:
+        try:
+            if not Decimal(in_query).is_finite():
+                out_error = f"Invalid ClinVar ID: {in_query}"
+        except InvalidOperation:
+            out_error = f"Invalid ClinVar ID: {in_query}"
     if out_error:
+        SearchQueryAction.objects.create(
+            query=in_query or "",
+            reference_genome=request.GET.get("selectedAssembly", "GRCh38")[:32],
+            is_valid=False,
+        )
         print(f"Error: {out_error}")
         if IS_DEVELOPMENT:
             return Response(
@@ -179,6 +192,13 @@ def snv_search(request):
 
         response_data["results"]["clinvar"] = list(clinvar_results)
     #        print(f"ClinVar results: {response_data['results']['clinvar']}")
+
+    SearchQueryAction.objects.create(
+        query=in_query,
+        reference_genome=request.GET.get("selectedAssembly", "GRCh38")[:32],
+        result_count=sum(len(results) for results in response_data["results"].values()),
+        is_valid=True,
+    )
 
     duration = datetime.now() - now
     response_data["duration_ms"] = int(duration.total_seconds() * 1000)

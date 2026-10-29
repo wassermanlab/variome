@@ -6,6 +6,7 @@ from django.test import TransactionTestCase
 from django.urls import reverse
 
 from variome_backend.library.models import SNV
+from variome_backend.library_access.models import SearchQueryAction
 
 from variome_backend.library.views import search
 
@@ -41,6 +42,11 @@ class SnvSearchResultsByID(TransactionTestCase):
         results = response.json()["results"]["dbsnp"]
         self.assertEqual({item["snv__chr"] for item in results}, {"1", "2"})
         self.assertTrue(all(item["snv__dbsnp_id"] == "rs123" for item in results))
+        action = SearchQueryAction.objects.get()
+        self.assertEqual(action.query, "rs123")
+        self.assertEqual(action.result_count, len(results))
+        self.assertTrue(action.is_valid)
+        self.assertEqual(action.reference_genome, "GRCh38")
 
     def test_clinvar_search_returns_matching_variants(self):
         response = self.client.get(
@@ -52,6 +58,18 @@ class SnvSearchResultsByID(TransactionTestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["id"], self.match.variant.id)
         self.assertEqual(results[0]["snv__clinvar_vcv"], 12345.678)
+        self.assertEqual(SearchQueryAction.objects.get().result_count, 1)
+
+    def test_valid_search_without_results_is_tracked(self):
+        response = self.client.get(
+            self.url,
+            {"resultSets": "dbsnp", "query": "rs999999", "selectedAssembly": "GRCh38"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        action = SearchQueryAction.objects.get()
+        self.assertEqual(action.result_count, 0)
+        self.assertTrue(action.is_valid)
 
 
 class SnvSearchHttpRequests(TransactionTestCase):
@@ -71,6 +89,36 @@ class SnvSearchHttpRequests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["errors"], ["Invalid result set: unsupported"])
+        action = SearchQueryAction.objects.get()
+        self.assertEqual(action.query, "value")
+        self.assertFalse(action.is_valid)
+        self.assertEqual(action.result_count, 0)
+
+    def test_missing_result_set_is_tracked_as_invalid(self):
+        response = self.client.get(self.url, {"query": "unrecognized"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(SearchQueryAction.objects.get().is_valid)
+
+    def test_invalid_position_is_tracked(self):
+        response = self.client.get(
+            self.url,
+            {"query": "chr90-1000", "resultSets": "position", "chr": "90", "pos": "1000"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(SearchQueryAction.objects.get().is_valid)
+
+    def test_invalid_clinvar_queries_are_tracked(self):
+        for query in ["0x1234", "not-a-number", "NaN", "Infinity"]:
+            with self.subTest(query=query):
+                response = self.client.get(
+                    self.url, {"query": query, "resultSets": "clinvar"}
+                )
+                self.assertEqual(response.status_code, 400)
+                action = SearchQueryAction.objects.get(query=query)
+                self.assertFalse(action.is_valid)
+                self.assertEqual(action.result_count, 0)
 
     def test_search_requires_authentication(self):
         self.client.logout()
@@ -78,6 +126,7 @@ class SnvSearchHttpRequests(TransactionTestCase):
         response = self.client.get(self.url, {"resultSets": "dbsnp", "query": "rs123"})
 
         self.assertEqual(response.status_code, 403)
+        self.assertFalse(SearchQueryAction.objects.exists())
 
     def test_position_search_http_structure(self):
         response = self.client.get(
@@ -95,6 +144,7 @@ class SnvSearchHttpRequests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         self.assertEqual(body["term"], "chr1-1000-A-G")
+        self.assertEqual(SearchQueryAction.objects.get().result_count, 3)
         self.assertEqual(
             [item["id"] for item in body["results"]["position"]],
             [self.match.variant.id],

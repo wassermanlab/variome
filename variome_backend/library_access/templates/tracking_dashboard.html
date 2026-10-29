@@ -176,7 +176,11 @@
   <body>
     <div style="padding:1em;">
       <h4>Tracking Dashboard</h4>
-        
+      <div role="tablist" aria-label="Tracking views">
+        <button type="button" role="tab" id="variant-tab" aria-controls="variant-tracking" aria-selected="true">Variant views</button>
+        <button type="button" role="tab" id="search-tab" aria-controls="search-tracking" aria-selected="false">Search queries</button>
+      </div>
+      <section id="variant-tracking" role="tabpanel" aria-labelledby="variant-tab">
       <div name="tracking-filters" class="filters">
         <form method="get">
           <table>
@@ -237,7 +241,11 @@
         </form>
       </div>
 
-      <div id="react-root" />
+      <div id="react-root"></div>
+      </section>
+      <section id="search-tracking" role="tabpanel" aria-labelledby="search-tab" hidden>
+        <div id="search-query-root" data-url="{% url 'search_query_actions' %}"></div>
+      </section>
     </div>
     &nbsp;
 

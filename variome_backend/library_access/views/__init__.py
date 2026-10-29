@@ -9,4 +9,4 @@ from .login_views import (
     LoginRedirectView,
 )
 from .tracking_dashboard import tracking_dashboard
-
+from .search_queries import invalid_search_query, search_query_actions

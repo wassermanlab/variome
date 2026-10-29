@@ -10,6 +10,17 @@ import os
 ACCESSES_PER_DAY = os.getenv("ACCESSES_PER_DAY", 100)
 
 
+class SearchQueryAction(models.Model):
+    query = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    reference_genome = models.CharField(max_length=32, default="GRCh38")
+    result_count = models.PositiveIntegerField(default=0)
+    is_valid = models.BooleanField()
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     accesses_per_day = models.IntegerField(default=ACCESSES_PER_DAY)

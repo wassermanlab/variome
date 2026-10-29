@@ -4,6 +4,108 @@ import { useState } from "react";
 */
 const useState = React.useState;
 
+function SearchQueryDashboard({ url }) {
+  const [filters, setFilters] = useState({ start: "", end: "", is_valid: "" });
+  const [request, setRequest] = useState({ page: 1 });
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+    fetch(`${url}?${new URLSearchParams(request)}`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error("Unable to load searches. Check your filters and dashboard access.");
+        return response.json();
+      })
+      .then(setData)
+      .catch(error => {
+        if (error.name !== "AbortError") setError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [url, request]);
+
+  const updateFilter = event => {
+    setFilters({ ...filters, [event.target.name]: event.target.value });
+  };
+
+  return <div>
+    <h5>Search queries</h5>
+    <p>Anonymous searches, newest first. Result counts include nearby variants.
+      Times are shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.</p>
+    <form onSubmit={event => {
+      event.preventDefault();
+      setRequest({ ...filters, page: 1 });
+    }}>
+      <label>Start date
+        <input type="date" name="start" value={filters.start} onChange={updateFilter} />
+      </label>
+      <label>End date
+        <input type="date" name="end" value={filters.end} onChange={updateFilter} />
+      </label>
+      <label>Validity
+        <select className="browser-default" name="is_valid" value={filters.is_valid} onChange={updateFilter}>
+          <option value="">All searches</option>
+          <option value="true">Valid</option>
+          <option value="false">Invalid</option>
+        </select>
+      </label>
+      <button type="submit" className="btn" disabled={loading}>Apply search filters</button>
+    </form>
+    {loading && <p role="status">Loading searches…</p>}
+    {error && <p role="alert">{error}</p>}
+    {!loading && !error && data && <>
+      <p>{data.count} searches</p>
+      <table>
+        <thead><tr>
+          <th>Date and time</th><th>Query</th><th>Reference genome</th><th>Results</th><th>Valid</th>
+        </tr></thead>
+        <tbody>
+          {data.results.map((action, index) => <tr key={index}>
+            <td>{new Date(action.created_at).toLocaleString()}</td>
+            <td style={{ overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>{action.query}</td>
+            <td>{action.reference_genome}</td>
+            <td>{action.result_count}</td>
+            <td>{action.is_valid ? "Yes" : "No"}</td>
+          </tr>)}
+          {!data.results.length && <tr><td colSpan="5">No searches found.</td></tr>}
+        </tbody>
+      </table>
+      <button type="button" disabled={data.page <= 1}
+        onClick={() => setRequest({ ...request, page: data.page - 1 })}>Previous</button>
+      <span> Page {data.page} of {data.pages} </span>
+      <button type="button" disabled={data.page >= data.pages}
+        onClick={() => setRequest({ ...request, page: data.page + 1 })}>Next</button>
+    </>}
+  </div>;
+}
+
+let searchQueryRoot;
+["variant", "search"].forEach(name => {
+  document.getElementById(`${name}-tab`).addEventListener("click", () => {
+    ["variant", "search"].forEach(panel => {
+      const selected = panel === name;
+      document.getElementById(`${panel}-tracking`).hidden = !selected;
+      document.getElementById(`${panel}-tab`).setAttribute("aria-selected", String(selected));
+    });
+    if (name === "search" && !searchQueryRoot) {
+      const element = document.getElementById("search-query-root");
+      searchQueryRoot = ReactDOM.createRoot(element);
+      searchQueryRoot.render(<SearchQueryDashboard url={element.dataset.url} />);
+    }
+  });
+});
+
 // for truncating text when names get too big
 function truncateText(text, maxLength) {
   if (text.length > maxLength) {
