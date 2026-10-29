@@ -16,7 +16,7 @@ cryptography==50.0.1
     #   django-auth-adfs
 dj-database-url==3.1.2
     # via variome (pyproject.toml)
-django==6.1.1
+django==6.1.2
     # via
     #   variome (pyproject.toml)
     #   dj-database-url
@@ -36,7 +36,7 @@ django-extensions==3.2.3
     # via variome (pyproject.toml)
 django-tracking2==0.5.1
     # via variome (pyproject.toml)
-djangorestframework==3.18.1
+djangorestframework==3.18.3
     # via variome (pyproject.toml)
 idna==3.15
     # via
@@ -50,7 +50,7 @@ psycopg-binary==3.3.4
     # via psycopg
 pycparser==2.22
     # via cffi
-pyjwt==2.13.0
+pyjwt==2.15.1
     # via
     #   variome (pyproject.toml)
     #   django-auth-adfs
@@ -70,7 +70,7 @@ sqlparse==0.6.0
     #   django
 tenacity==9.1.4
     # via variome (pyproject.toml)
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   variome (pyproject.toml)
     #   django-auth-adfs
