@@ -1,11 +1,11 @@
-import json
+from decimal import Decimal, InvalidOperation
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.views.decorators.cache import never_cache
 
-from django.db.models import Q, F
+from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Abs
 
 from datetime import datetime
@@ -18,8 +18,30 @@ from ..models import Variant
 v_pos_limit = 10
 snv_values_to_set = ["snv__pos", "snv__chr", "snv__ref", "snv__alt"]
 
+
+def normalize_chromosome(chromosome):
+    chromosome = chromosome.upper() if chromosome else None
+    if chromosome and chromosome.startswith("CHR"):
+        chromosome = chromosome[3:]
+    return "M" if chromosome == "MT" else chromosome
+
+
+def search_queryset(mitochondrial=False, extra_fields=()):
+    queryset = Variant.objects.all()
+    if mitochondrial:
+        # Keep the existing search result keys for both variant types.
+        aliases = {
+            f"snv__{field}": F(f"mt__{field}")
+            for field in ("pos", "ref", "alt", *extra_fields)
+        }
+        aliases["snv__chr"] = Value("M", output_field=CharField())
+        queryset = queryset.filter(mt__isnull=False).annotate(**aliases)
+    return queryset
+
+
 def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
-    
+    in_chr = normalize_chromosome(in_chr)
+    queryset = search_queryset(mitochondrial=in_chr == "M")
     in_pos = int(in_pos)
     v_pos_upper = in_pos + 499
     v_pos_lower = in_pos - 499
@@ -34,7 +56,7 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
     if in_alt:
         position_filter_ref_alt["snv__alt"] = in_alt
 
-    position_results = list(Variant.objects.filter(**position_filter_ref_alt).values(
+    position_results = list(queryset.filter(**position_filter_ref_alt).values(
         "variant_id", "var_type", "id", *snv_values_to_set
     )[:v_pos_limit])
 
@@ -46,7 +68,7 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
     id_not_in_clause = ~Q(variant_id__in=ids_to_exclude)
 
     additional_position_results = list(
-      Variant.objects.filter(
+      queryset.filter(
         snv__chr = in_chr,
         snv__pos = in_pos,
     ).filter(id_not_in_clause).values(
@@ -62,7 +84,7 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
 #    print(position_results)
 
     nearby_results = (
-        Variant.objects.filter(
+        queryset.filter(
             snv__chr=in_chr, snv__pos__range=(v_pos_lower, v_pos_upper)
         )
         .exclude(snv__pos=in_pos)
@@ -82,6 +104,8 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
 
 
 def standard_validate(chr, pos, ref = None, alt = None):
+    original_chr = chr
+    chr = normalize_chromosome(chr)
     out_error = None
 
     try:
@@ -101,7 +125,7 @@ def standard_validate(chr, pos, ref = None, alt = None):
     if not chr:
         out_error = "Chromosome is null"
     elif chr.upper() not in ["M", "X", "Y"] and ( chr_int_cast is None or chr_int_cast < 1 or chr_int_cast > 22):
-        out_error = f"Invalid chromosome: {str(chr)}"
+        out_error = f"Invalid chromosome: {str(original_chr)}"
     elif not pos:
         out_error = "Position is null"
     elif int(pos_int_cast) < 0:
@@ -115,7 +139,7 @@ def standard_validate(chr, pos, ref = None, alt = None):
 @never_cache
 def snv_search(request):
     now = datetime.now()
-    in_result_sets = request.GET.get("resultSets", None)
+    in_result_sets = request.GET.get("resultSets", "")
     in_query = request.GET.get("query", None)
     in_chr = request.GET.get("chr", None)
     in_pos = request.GET.get("pos", None)
@@ -148,7 +172,7 @@ def snv_search(request):
         else:
             return Response({"errors": [out_error]}, status=400)
 
-    in_chr = in_chr.upper() if in_chr else None
+    in_chr = normalize_chromosome(in_chr)
     in_ref = in_ref.upper() if in_ref else None
     in_alt = in_alt.upper() if in_alt else None
 
@@ -164,20 +188,32 @@ def snv_search(request):
 
     if "dbsnp" in in_result_sets:
         #        print("Processing dbsnp result set")
-        dbsnp_results = Variant.objects.filter(Q(snv__dbsnp_id=in_query)).values(
-            "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
-        )
-
-        response_data["results"]["dbsnp"] = list(dbsnp_results)
+        response_data["results"]["dbsnp"] = []
+        for mitochondrial in (False, True):
+            dbsnp_results = search_queryset(mitochondrial, ("dbsnp_id",)).filter(
+                snv__dbsnp_id=in_query
+            ).values(
+                "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
+            )
+            response_data["results"]["dbsnp"].extend(dbsnp_results)
     #        print(f"dbSNP results: {response_data['results']['dbsnp']}")
 
     if "clinvar" in in_result_sets:
         #        print("Processing clinvar result set")
-        clinvar_results = Variant.objects.filter(Q(snv__clinvar_vcv=in_query)).values(
-            "variant_id", "var_type", "id", *snv_values_to_set, "snv__clinvar_vcv"
-        )
-
-        response_data["results"]["clinvar"] = list(clinvar_results)
+        try:
+            clinvar_vcv = Decimal(in_query.upper().removeprefix("VCV"))
+            if not clinvar_vcv.is_finite():
+                raise InvalidOperation
+        except InvalidOperation:
+            return Response({"errors": ["Invalid ClinVar VCV"]}, status=400)
+        response_data["results"]["clinvar"] = []
+        for mitochondrial in (False, True):
+            clinvar_results = search_queryset(mitochondrial, ("clinvar_vcv",)).filter(
+                snv__clinvar_vcv=clinvar_vcv
+            ).values(
+                "variant_id", "var_type", "id", *snv_values_to_set, "snv__clinvar_vcv"
+            )
+            response_data["results"]["clinvar"].extend(clinvar_results)
     #        print(f"ClinVar results: {response_data['results']['clinvar']}")
 
     duration = datetime.now() - now

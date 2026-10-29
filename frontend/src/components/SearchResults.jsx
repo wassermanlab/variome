@@ -19,7 +19,9 @@ export default function SearchResults({ sx, overlay }) {
   function isExactMatch(result) {
     var is = _.isObject(result) && _.size(searchContext.matchPairs) === 4;
     _.each(searchContext.groups, (val, key) => {
-      if (_.get(result, `snv__${key}`) != val){
+      const actual = _.get(result, `snv__${key}`);
+      const normalize = value => key === "chr" && /^(M|MT)$/i.test(value) ? "M" : value;
+      if (normalize(actual) != normalize(val)){
         is = false;
       }
     });

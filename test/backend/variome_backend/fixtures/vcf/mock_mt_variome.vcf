@@ -1,0 +1,24 @@
+##fileformat=VCFv4.2
+##contig=<ID=MT,length=16569>
+##FILTER=<ID=PASS,Description="Passed all filters">
+##INFO=<ID=TYPE,Number=1,Type=String,Description="Variant class">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Allele number">
+##INFO=<ID=AC_hom,Number=A,Type=Integer,Description="Homoplasmic count">
+##INFO=<ID=AC_het,Number=A,Type=Integer,Description="Heteroplasmic count">
+##INFO=<ID=AF_hom,Number=A,Type=Float,Description="Homoplasmic frequency">
+##INFO=<ID=AF_het,Number=A,Type=Float,Description="Heteroplasmic frequency">
+##INFO=<ID=max_observed_heteroplasmy,Number=A,Type=Float,Description="Maximum heteroplasmy">
+##INFO=<ID=heteroplasmy_histogram,Number=.,Type=Integer,Description="Heteroplasmy bin counts">
+##INFO=<ID=ClinVar_Variation_ID,Number=1,Type=String,Description="ClinVar variation ID">
+##INFO=<ID=CSQ,Number=.,Type=String,Description="VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|Existing_variation|VARIANT_CLASS|SOURCE|BIOTYPE|HGVSc|HGVSp|SIFT|PolyPhen">
+##FORMAT=<ID=AN,Number=1,Type=Integer,Description="Allele number">
+##FORMAT=<ID=AC_hom,Number=1,Type=Integer,Description="Homoplasmic count">
+##FORMAT=<ID=AC_het,Number=1,Type=Integer,Description="Heteroplasmic count">
+##FORMAT=<ID=AF_hom,Number=1,Type=Float,Description="Homoplasmic frequency">
+##FORMAT=<ID=AF_het,Number=1,Type=Float,Description="Heteroplasmic frequency">
+##FORMAT=<ID=max_observed_heteroplasmy,Number=1,Type=Float,Description="Maximum heteroplasmy">
+##FORMAT=<ID=heteroplasmy_histogram,Number=.,Type=Integer,Description="Heteroplasmy bin counts">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	cohort
+MT	8602	.	T	C	100	PASS	TYPE=SNV;AN=100;AC_hom=5;AC_het=10;AF_hom=0.05;AF_het=0.1;max_observed_heteroplasmy=0.95;heteroplasmy_histogram=5,10,15,8,6,4,3,2,1,1;ClinVar_Variation_ID=123;CSQ=C|missense_variant|MODERATE|MT-ATP6|ENSG00000198899|Transcript|ENST00000361899|rs879029014|SNV|Ensembl|protein_coding|ENST00000361899:c.321T>C|ENSP00000355046:p.Ile107Thr||	AN	100
+MT	8603	.	TA	T	100	PASS	TYPE=deletion;CSQ=-|frameshift_variant|HIGH|MT-ATP6|ENSG00000198899|Transcript|ENST00000361899|rs123&VCV000456|deletion|Ensembl|protein_coding|ENST00000361899:c.322del|ENSP00000355046:p.Ile108fs||	AN:AC_hom:AC_het:AF_hom:AF_het:max_observed_heteroplasmy:heteroplasmy_histogram	100:0:1:0:0.01:0.2:1,0,0,0,0,0,0,0,0,0
+MT	8604	.	A	G	.	PASS	AN=0;AC_hom=0;AC_het=0	AN	0

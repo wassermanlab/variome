@@ -836,6 +836,76 @@ class SNVImporter(Importer):
             )
 
 
+class MTImporter(SNVImporter):
+    """Import mitochondrial metadata using the shared variant lookup machinery."""
+
+    model = bvlmodels.MT
+    path_component = "mts"
+
+    def clean_data(self, row):
+        row = dict(row)
+        for field in self.model._meta.fields:
+            if field.name in row and row[field.name] == ".":
+                row[field.name] = None if field.null else ""
+        if row.get("clinvar_vcv") not in (None, ""):
+            row["clinvar_vcv"] = str(row["clinvar_vcv"]).removeprefix("VCV")
+        return True, row
+
+    def _values(self, row):
+        return {key: value for key, value in row.items() if key != "variant"}
+
+    def created_row_object(self, row):
+        try:
+            return True, self.model(
+                variant_id=self.variants[row["variant"]], **self._values(row)
+            )
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_CREATE_FAILED,
+                f"error creating {self.object_name} for {row['variant']}: {e}",
+            )
+
+    def update(self, row):
+        try:
+            count = self.model.objects.filter(
+                variant_id=self.variants[row["variant"]]
+            ).update(**self._values(row))
+            if count != 1:
+                return False, ImportMessage(
+                    ImportCode.UNEXPECTED_UPDATE_COUNT,
+                    f"expected one {self.object_name} for {row['variant']}, found {count}",
+                )
+            return True, count
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_UPDATE_FAILED,
+                f"error updating {self.object_name} for {row['variant']}: {e}",
+            )
+
+    def update_or_create(self, row):
+        try:
+            obj, created = self.model.objects.update_or_create(
+                variant_id=self.variants[row["variant"]],
+                defaults=self._values(row),
+            )
+            return True, obj
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_UPSERT_FAILED,
+                f"error saving {self.object_name} for {row['variant']}: {e}",
+            )
+
+
+class MtVariomeFrequencyImporter(MTImporter):
+    model = bvlmodels.MtVariomeFrequency
+    path_component = "mt_variome_frequencies"
+
+
+class MtGnomadFrequencyImporter(MTImporter):
+    model = bvlmodels.MtGnomadFrequency
+    path_component = "mt_gnomad_frequencies"
+
+
 class GVFImporter(Importer):
     """Importer class to locate the GVF data file and load GVFs from it"""
 

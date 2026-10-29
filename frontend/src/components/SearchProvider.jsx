@@ -8,7 +8,7 @@ const ASSEMBLY_LABEL = Constants.assemblyVersions["2"];
 import Api from '../Api';
 
 let variant_groups_regex = new RegExp(
-  /^(CHR *)?(?<chr>[0-9]{1,2}|[XYM]{1}|MT)\s*[-:>\.\/ _]\s*(?<pos>(\d{1,3}([,. ]\d{3})+|(\d{1,})))\s*[-:>\.\/ _]?\s*(?<ref>[cgtaCGTA]{1,})?\s*[-:>\.\/ _]?\s*(?<alt>[cgtaCGTA]{1,})?$/,
+  /^(CHR *)?(?<chr>MT|[XYM]|[0-9]{1,2})\s*[-:>\.\/ _]\s*(?<pos>(\d{1,3}([,. ]\d{3})+|(\d{1,})))\s*[-:>\.\/ _]?\s*(?<ref>[cgtaCGTA]{1,})?\s*[-:>\.\/ _]?\s*(?<alt>[cgtaCGTA]{1,})?$/,
   "i"
 );
 
@@ -24,9 +24,11 @@ const parseParameters = (query) => {
   });
   groups = _.mapValues(groups, _.toUpper);
   
-  if (_.includes(groups.chr, "m") || _.includes(groups.chr, "M")) {
-    //might be "MT"
+  if (groups.chr === "M" || groups.chr === "MT") {
     groups.chr = "M";
+  }
+  if (groups.pos) {
+    groups.pos = groups.pos.replace(/[,. ]/g, "");
   }
 
   var resultsSetTests = {

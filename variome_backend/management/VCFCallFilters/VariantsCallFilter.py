@@ -28,7 +28,9 @@ class VariantsCallFilter(CallFilter):
                 #IBVL vcf dialect uses VARIANT_CLASS in CSQ for variant type
                 var_classes = self.get_csq_values(record, "VARIANT_CLASS")
                 var_type = var_classes[0] if isinstance(var_classes, list) and var_classes else None
-            if var_type not in ["SNV", "SNP"] and var_type is not None:
+            if self.is_mitochondrial(record):
+                var_type = "M"
+            elif var_type not in ["SNV", "SNP"] and var_type is not None:
                 var_type = "INDEL"
             elif var_type is None:
                 var_type = self.settings.NA

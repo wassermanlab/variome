@@ -10,7 +10,14 @@ class VariomeSettings(models.Model):
     example_snv = models.ForeignKey(
         Variant, on_delete=models.SET_NULL, null=True, blank=True
     )
-    #    example_mt = models.ForeignKey('library.snv', on_delete=models.CASCADE, blank=True, null=True)
+    example_mt = models.ForeignKey(
+        Variant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="mitochondrial_example_settings",
+        limit_choices_to={"var_type": "M"},
+    )
     #    example_sv = models.ForeignKey('library.snv', on_delete=models.CASCADE, blank=True, null=True)
 
     def save(self, *args, **kwargs):

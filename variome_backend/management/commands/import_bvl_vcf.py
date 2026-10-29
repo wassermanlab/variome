@@ -1,7 +1,5 @@
 import argparse
-import gzip
 import hashlib
-import io
 import json
 import logging
 import pprint
@@ -22,46 +20,37 @@ from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter imp
 from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
 from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
 from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
+from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
 log = logging.getLogger("management")
 
 
-def check_vcf(vcf_path):
+def check_vcf(vcf_path, settings):
     """Check a VCF file (gzipped or plain) for read errors. Logs warnings on failure."""
-    import vcfpy
-    is_gz = vcf_path.endswith('.gz')
     log.info("Checking VCF file: %s", vcf_path)
-    open_func = gzip.open if is_gz else open
-    mode = 'rb' if is_gz else 'r'
     n = 0
     last_record = None
-    with open_func(vcf_path, mode) as f:
-        text_f = io.TextIOWrapper(f, encoding='utf-8') if is_gz else f
-        try:
-            vcf_reader = vcfpy.Reader(stream=text_f)
-            info_fields = " ".join(vcf_reader.header.info_ids())
-            log.info("VCF INFO fields:\n%s", info_fields)
-            csq = vcf_reader.header.get_info_field_info("CSQ")
-            if csq:
-                csq_elements = csq.description.split("Format: ")[1]
-                csq_fields = " ".join(csq_elements.split("|"))
-                log.info("VCF CSQ fields:\n%s", csq_fields)
-            else:
-                log.info("No CSQ field found in VCF INFO header.")
-            for record in vcf_reader:
-                n += 1
-                last_record = record
-        except Exception as e:
-            log.warning("Error reading VCF file %s: %s", vcf_path, e)
-            if last_record is not None:
-                log.warning("Last successful record was number %d: %s", n, last_record)
-                log.warning(
-                    "The VCF file will continue to be processed, but this may indicate "
-                    "a problem that could lead to incomplete or incorrect results."
-                )
-            else:
-                log.warning("No records were successfully read from the VCF file.")
-                sys.exit(1)
+    try:
+        call_filter = VariantsCallFilter(vcf_path, settings)
+        info_fields = " ".join(call_filter.vcf_header.info_ids())
+        log.info("VCF INFO fields:\n%s", info_fields)
+        log.info("VCF CSQ fields:\n%s", " ".join(call_filter.csq_fields))
+        for record in call_filter.vcf_record_stream():
+            n += 1
+            last_record = record
+    except Exception as e:
+        log.warning("Error reading VCF file %s: %s", vcf_path, e)
+        if last_record is not None:
+            log.warning("Last successful record was number %d: %s", n, last_record)
+            log.warning(
+                "The VCF file will continue to be processed, but this may indicate "
+                "a problem that could lead to incomplete or incorrect results."
+            )
+        else:
+            log.warning("No records were successfully read from the VCF file.")
+            sys.exit(1)
 
 
 def _write_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
@@ -222,6 +211,10 @@ class Command(BaseCommand):
                             help="Process SNVs?")
         parser.add_argument("--gvfs", default=True, action=argparse.BooleanOptionalAction,
                             help="Process genomic variome frequencies?")
+        parser.add_argument("--mts", default=True, action=argparse.BooleanOptionalAction,
+                            help="Process mitochondrial metadata and cohort frequencies?")
+        parser.add_argument("--mt-gnomad-tsv", default=None,
+                            help="Optional gnomAD mitochondrial frequency TSV to intersect with the VCF")
         parser.add_argument("--annotations", default=True, action=argparse.BooleanOptionalAction,
                             help="Process variant annotations?")
         parser.add_argument("--consequences", default=True, action=argparse.BooleanOptionalAction,
@@ -310,10 +303,12 @@ class Command(BaseCommand):
 
         convert_to_tsv = options["convert_to_tsv"]
 
-        check_vcf(vcf_file)
+        check_vcf(vcf_file, settings)
 
         # Helper that returns a row generator for the given filter class
         def make_row_iter(filter_cls, **filter_kwargs):
+            if filter_cls is MtGnomadFrequenciesCallFilter:
+                filter_kwargs["tsv_path"] = options["mt_gnomad_tsv"]
             return filter_cls(vcf_file, settings, **filter_kwargs).getTableRows()
 
         if not options["delete"]:
@@ -344,6 +339,11 @@ class Command(BaseCommand):
             table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
         if options["gvfs"]:
             table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
+        if options["mts"]:
+            table_specs.append(("MT", "mts", MtsCallFilter, bvltools.MTImporter))
+            table_specs.append(("MT frequency", "mt_variome_frequencies", MtBvlFrequenciesCallFilter, bvltools.MtVariomeFrequencyImporter))
+            if options["mt_gnomad_tsv"]:
+                table_specs.append(("MT gnomAD frequency", "mt_gnomad_frequencies", MtGnomadFrequenciesCallFilter, bvltools.MtGnomadFrequencyImporter))
         if options["vts"]:
             table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter))
         if options["annotations"]:

@@ -161,7 +161,7 @@ const Api = {
       if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
         
           json = await getFetch(
-            `https://rest.ensembl.org/sequence/region/human/${chr}:${pos}..${posEnd}:1`,
+            `https://rest.ensembl.org/sequence/region/human/${/^(M|MT)$/i.test(chr) ? "MT" : chr}:${pos}..${posEnd}:1`,
             {"content-type":"application/json",
               "coord_system_version":coordSystemVersion
             },
