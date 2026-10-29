@@ -1,0 +1,15 @@
+#!/bin/bash
+# Project-local uv shim — invokes .venv/bin/python directly
+# No external uv dependency, no /tmp operations
+# Safe for clean DB migrations and E2E tests
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="$PROJECT_ROOT/.venv/bin/python"
+
+if [[ "$1" == "run" ]]; then
+  shift
+  "$PYTHON" "$@"
+else
+  echo "Error: Only 'uv run' is supported via this shim" >&2
+  exit 1
+fi
