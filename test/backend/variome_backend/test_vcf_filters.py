@@ -141,6 +141,13 @@ class TestBaseFilter(FocusableTestCase):
         csq_values = self.testInstance.get_csq_values(records[1], 'SYMBOL')
         self.assertEqual(csq_values, ['LA16c-60H5.7', 'NBEAP3'])
 
+    def test_csq_without_description(self):
+        with patch("vcfpy.Header.get_info_field_info") as get_info:
+            get_info.return_value.description = None
+            instance = self.MockFilter(get_fixture_path("mock_snv.vcf"), SETTINGS)
+        self.assertEqual(instance.csq_fields, [])
+        self.assertEqual(instance.csq_index_map, {})
+
     def test_range_parameters(self):
         test_settings = copy.deepcopy(SETTINGS)
         test_settings.RANGES = '22:300-350'
@@ -563,6 +570,27 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
             row = instance.getTableRows()[0]
         self.assertEqual(row["an"], 100)
         self.assertEqual(row["ac_het"], 1)
+
+    def test_multiallelic_cohort_metrics_are_selected_per_alt(self):
+        instance = MtBvlFrequenciesCallFilter(
+            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),
+            SETTINGS,
+        )
+        record = next(record for record in instance.vcf_record_stream() if record.POS == 9055)
+        record.INFO.update({
+            "AC_hom": [1, 2], "AC_het": [3, 4],
+            "AF_hom": [0.1, 0.2], "AF_het": [0.3, 0.4],
+            "max_observed_heteroplasmy": [0.8, 0.9],
+        })
+        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+            rows = instance.getTableRows()
+        self.assertEqual([row["variant"] for row in rows], ["chrM_9055_G_T", "chrM_9055_G_A"])
+        self.assertEqual([row["an"] for row in rows], [4, 4])
+        self.assertEqual([row["ac_hom"] for row in rows], [1, 2])
+        self.assertEqual([row["ac_het"] for row in rows], [3, 4])
+        self.assertEqual([row["af_hom"] for row in rows], [0.1, 0.2])
+        self.assertEqual([row["af_het"] for row in rows], [0.3, 0.4])
+        self.assertEqual([row["max_hl"] for row in rows], [0.8, 0.9])
 
 
 class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):

@@ -157,6 +157,13 @@ Use the `import_bvl_vcf` management command to import data directly from a VCF f
 Mitochondrial records (`M`, `MT`, `chrM` or `chrMT`) are imported into separate
 metadata and frequency tables. Both the IBVL tabular MT export and standard
 Variome VCF INFO/FORMAT metrics are supported. IDs use `M` consistently.
+The supplied `data/fixtures/vcf/mt.vcf` Mutect2 example is also supported,
+including sites with multiple alternate alleles. VEP `CSQ` annotations are
+optional; without them, gene/transcript annotations and CSQ-derived identifiers
+remain absent. `INFO/AN` is retained as supplied. Missing MT-specific cohort
+metrics remain null: sample `FORMAT/AF` values are allele fractions, not cohort
+frequencies, and are not converted into homoplasmic/heteroplasmic counts or
+frequencies.
 An optional preprocessed gnomAD mitochondrial TSV can be supplied with
 `--mt-gnomad-tsv /path/to/gnomad_mt.tsv`; only variants present in the VCF are
 imported. Its columns are `chromosome`, `position`, `ref`, `alt`, `AN`, `AC_hom`,

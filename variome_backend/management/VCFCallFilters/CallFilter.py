@@ -78,10 +78,11 @@ class CallFilter(ABC):
             self.vcf_header = vcfpy.Reader(
                 stream=io.StringIO("".join(header_lines))
             ).header
-        csq = self.vcf_header.get_info_field_info("CSQ")
-        if csq and "Format: " in csq.description:
-            self.csq_fields = csq.description.split("Format: ")[1].split("|")
-            self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+        if "CSQ" in self.vcf_header.info_ids():
+            csq = self.vcf_header.get_info_field_info("CSQ")
+            if csq.description and "Format: " in csq.description:
+                self.csq_fields = csq.description.split("Format: ")[1].split("|")
+                self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
 
     @staticmethod
     def is_mitochondrial(record):
@@ -205,7 +206,12 @@ class CallFilter(ABC):
         """
         return record.INFO.get(field_name, fallback)
 
-    def make_variant_id(self, record: vcfpy.Record) -> str:
+    def make_variant_ids(self, record: vcfpy.Record) -> List[str]:
+        # Preserve the existing genomic import behavior; MT sites may have multiple ALTs.
+        alleles = record.ALT if self.is_mitochondrial(record) else record.ALT[:1]
+        return [self.make_variant_id(record, alt.value) for alt in alleles]
+
+    def make_variant_id(self, record: vcfpy.Record, alt: Optional[str] = None) -> str:
         OUT_HYPHENS = self.settings.OUT_HYPHENS
         OUT_CHR = self.settings.OUT_CHR
 
@@ -222,7 +228,8 @@ class CallFilter(ABC):
             chrom = "chr" + chrom
         pos = record.POS
         ref = record.REF
-        alt = record.ALT[0].value  # assuming single ALT allele
+        if alt is None:
+            alt = record.ALT[0].value
         if OUT_HYPHENS:
             # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"

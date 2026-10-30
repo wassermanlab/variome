@@ -15,9 +15,10 @@ class MtGnomadFrequenciesCallFilter(CallFilter):
         if not self.tsv_path:
             return
         variants = {
-            self.make_variant_id(record)
+            variant
             for record in self.vcf_record_stream()
             if self.is_mitochondrial(record)
+            for variant in self.make_variant_ids(record)
         }
         seen = set()
         with open(self.tsv_path, encoding="utf-8", newline="") as stream:
