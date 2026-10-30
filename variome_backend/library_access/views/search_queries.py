@@ -33,6 +33,10 @@ class SearchQueryFilterForm(forms.Form):
         required=False, choices=[("", "All"), ("true", "Valid"), ("false", "Invalid")]
     )
     page = forms.IntegerField(required=False, min_value=1)
+    page_size = forms.IntegerField(required=False, min_value=1, max_value=200)
+    sort = forms.ChoiceField(
+        required=False, choices=[("newest", "Newest first"), ("oldest", "Oldest first")]
+    )
 
     def clean(self):
         data = super().clean()
@@ -57,7 +61,11 @@ def search_query_actions(request):
         actions = actions.filter(created_at__date__lte=filters["end"])
     if filters["is_valid"]:
         actions = actions.filter(is_valid=filters["is_valid"] == "true")
-    paginator = Paginator(actions, 50)
+    ordering = (
+        ("created_at", "id") if filters["sort"] == "oldest" else ("-created_at", "-id")
+    )
+    actions = actions.order_by(*ordering)
+    paginator = Paginator(actions, filters["page_size"] or 50)
     page_number = filters["page"] or 1
     if page_number > paginator.num_pages:
         return JsonResponse({"errors": {"page": ["Page does not exist."]}}, status=400)
@@ -71,10 +79,13 @@ def search_query_actions(request):
                     "reference_genome",
                     "result_count",
                     "is_valid",
+                    "chromosome",
+                    "position",
                 )
             ),
             "count": paginator.count,
             "page": page.number,
             "pages": paginator.num_pages,
+            "page_size": paginator.per_page,
         }
     )

@@ -47,6 +47,8 @@ class SnvSearchResultsByID(TransactionTestCase):
         self.assertEqual(action.result_count, len(results))
         self.assertTrue(action.is_valid)
         self.assertEqual(action.reference_genome, "GRCh38")
+        self.assertIsNone(action.chromosome)
+        self.assertIsNone(action.position)
 
     def test_clinvar_search_returns_matching_variants(self):
         response = self.client.get(
@@ -99,6 +101,8 @@ class SnvSearchHttpRequests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertFalse(SearchQueryAction.objects.get().is_valid)
+        self.assertIsNone(SearchQueryAction.objects.get().chromosome)
+        self.assertIsNone(SearchQueryAction.objects.get().position)
 
     def test_invalid_position_is_tracked(self):
         response = self.client.get(
@@ -145,6 +149,8 @@ class SnvSearchHttpRequests(TransactionTestCase):
         body = response.json()
         self.assertEqual(body["term"], "chr1-1000-A-G")
         self.assertEqual(SearchQueryAction.objects.get().result_count, 3)
+        self.assertEqual(SearchQueryAction.objects.get().chromosome, "1")
+        self.assertEqual(SearchQueryAction.objects.get().position, 1000)
         self.assertEqual(
             [item["id"] for item in body["results"]["position"]],
             [self.match.variant.id],
@@ -179,6 +185,20 @@ class SnvSearchHttpRequests(TransactionTestCase):
                 },
             ],
         )
+
+
+    def test_valid_position_without_matches_records_normalized_coordinates(self):
+        response = self.client.get(
+            self.url,
+            {"query": "chrx-00042", "resultSets": "position", "chr": "x", "pos": "00042"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        action = SearchQueryAction.objects.get()
+        self.assertTrue(action.is_valid)
+        self.assertEqual(action.result_count, 0)
+        self.assertEqual(action.chromosome, "X")
+        self.assertEqual(action.position, 42)
 
 
 class SnvSearchStandardResults(TransactionTestCase):

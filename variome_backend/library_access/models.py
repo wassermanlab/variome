@@ -16,6 +16,8 @@ class SearchQueryAction(models.Model):
     reference_genome = models.CharField(max_length=32, default="GRCh38")
     result_count = models.PositiveIntegerField(default=0)
     is_valid = models.BooleanField()
+    chromosome = models.CharField(max_length=2, blank=True, null=True)
+    position = models.PositiveBigIntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at", "-id"]

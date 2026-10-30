@@ -26,6 +26,8 @@ class InvalidSearchTracking(TestCase):
                 "user": self.user.pk,
                 "is_valid": True,
                 "result_count": 123,
+                "chromosome": "1",
+                "position": 1000,
             },
             content_type="application/json",
         )
@@ -36,6 +38,8 @@ class InvalidSearchTracking(TestCase):
         self.assertEqual(action.reference_genome, "GRCh38")
         self.assertFalse(action.is_valid)
         self.assertEqual(action.result_count, 0)
+        self.assertIsNone(action.chromosome)
+        self.assertIsNone(action.position)
         self.assertGreaterEqual(action.created_at, before)
         self.assertLessEqual(action.created_at, timezone.now())
         self.assertFalse(any(field.is_relation for field in action._meta.fields))
@@ -128,11 +132,79 @@ class SearchQueryAnalytics(TestCase):
         self.assertEqual(data["results"][0]["query"], "query-50")
         self.assertEqual(
             set(data["results"][0]),
-            {"query", "created_at", "reference_genome", "result_count", "is_valid"},
+            {
+                "query",
+                "created_at",
+                "reference_genome",
+                "result_count",
+                "is_valid",
+                "chromosome",
+                "position",
+            },
         )
         second_page = self.client.get(self.url, {"page": 2}).json()
         self.assertEqual([row["query"] for row in second_page["results"]], ["query-0"])
         self.assertIn("no-store", response["Cache-Control"])
+        self.assertEqual(data["page_size"], 50)
+
+    def test_custom_page_size_and_date_sorting(self):
+        self.grant_dashboard_access()
+        for index in range(5):
+            action = SearchQueryAction.objects.create(
+                query=f"query-{index}", is_valid=True
+            )
+            SearchQueryAction.objects.filter(pk=action.pk).update(
+                created_at=timezone.now() - timedelta(days=5 - index)
+            )
+
+        for sort, queries in [
+            ("oldest", ["query-0", "query-1"]),
+            ("newest", ["query-4", "query-3"]),
+        ]:
+            with self.subTest(sort=sort):
+                data = self.client.get(self.url, {"page_size": 2, "sort": sort}).json()
+                self.assertEqual(data["page_size"], 2)
+                self.assertEqual(data["count"], 5)
+                self.assertEqual(data["pages"], 3)
+                self.assertEqual([row["query"] for row in data["results"]], queries)
+
+        last_page = self.client.get(
+            self.url, {"page": 3, "page_size": 2, "sort": "oldest"}
+        ).json()
+        self.assertEqual([row["query"] for row in last_page["results"]], ["query-4"])
+
+    def test_date_sorting_is_stable_for_identical_timestamps(self):
+        self.grant_dashboard_access()
+        for query in ["first", "second", "third"]:
+            SearchQueryAction.objects.create(query=query, is_valid=True)
+        SearchQueryAction.objects.update(created_at=timezone.now())
+        for sort, expected in [
+            ("oldest", ["first", "second", "third"]),
+            ("newest", ["third", "second", "first"]),
+        ]:
+            queries = [
+                self.client.get(
+                    self.url, {"sort": sort, "page_size": 1, "page": page}
+                ).json()["results"][0]["query"]
+                for page in range(1, 4)
+            ]
+            self.assertEqual(queries, expected)
+
+    def test_coordinate_data_and_legacy_records(self):
+        self.grant_dashboard_access()
+        SearchQueryAction.objects.create(
+            query="chr1-1000", is_valid=True, chromosome="1", position=1000
+        )
+        SearchQueryAction.objects.create(query="legacy", is_valid=True)
+        SearchQueryAction.objects.create(query="invalid", is_valid=False)
+        rows = {
+            row["query"]: row for row in self.client.get(self.url).json()["results"]
+        }
+        self.assertEqual(rows["chr1-1000"]["chromosome"], "1")
+        self.assertEqual(rows["chr1-1000"]["position"], 1000)
+        for query in ["legacy", "invalid"]:
+            self.assertIsNone(rows[query]["chromosome"])
+            self.assertIsNone(rows[query]["position"])
 
     def test_date_and_validity_filters(self):
         self.grant_dashboard_access()
@@ -157,6 +229,11 @@ class SearchQueryAnalytics(TestCase):
             {"page": "0"},
             {"page": "two"},
             {"page": "2"},
+            {"page_size": "0"},
+            {"page_size": "-1"},
+            {"page_size": "201"},
+            {"page_size": "two"},
+            {"sort": "query"},
         ]:
             with self.subTest(filters=filters):
                 self.assertEqual(self.client.get(self.url, filters).status_code, 400)
@@ -164,7 +241,9 @@ class SearchQueryAnalytics(TestCase):
     def test_empty_analytics_and_dashboard_tab(self):
         self.grant_dashboard_access()
         data = self.client.get(self.url).json()
-        self.assertEqual(data, {"results": [], "count": 0, "page": 1, "pages": 1})
+        self.assertEqual(
+            data, {"results": [], "count": 0, "page": 1, "pages": 1, "page_size": 50}
+        )
         response = self.client.get(reverse("tracking_dashboard"))
         self.assertContains(response, 'id="search-tab"')
         self.assertContains(response, f'data-url="{self.url}"')

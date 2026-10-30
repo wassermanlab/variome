@@ -198,6 +198,8 @@ def snv_search(request):
         reference_genome=request.GET.get("selectedAssembly", "GRCh38")[:32],
         result_count=sum(len(results) for results in response_data["results"].values()),
         is_valid=True,
+        chromosome=in_chr if "position" in in_result_sets else None,
+        position=int(in_pos) if "position" in in_result_sets else None,
     )
 
     duration = datetime.now() - now
