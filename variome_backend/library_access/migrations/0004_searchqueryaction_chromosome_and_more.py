@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library_access', '0003_searchqueryaction'),
+        ("library_access", "0003_searchqueryaction"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='searchqueryaction',
-            name='chromosome',
+            model_name="searchqueryaction",
+            name="chromosome",
             field=models.CharField(blank=True, max_length=2, null=True),
         ),
         migrations.AddField(
-            model_name='searchqueryaction',
-            name='position',
+            model_name="searchqueryaction",
+            name="position",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
     ]

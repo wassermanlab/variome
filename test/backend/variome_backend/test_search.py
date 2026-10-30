@@ -200,6 +200,21 @@ class SnvSearchHttpRequests(TransactionTestCase):
         self.assertEqual(action.chromosome, "X")
         self.assertEqual(action.position, 42)
 
+    def test_numeric_chromosome_is_normalized_before_searching_and_tracking(self):
+        response = self.client.get(
+            self.url,
+            {"query": "chr001-1000", "resultSets": "position", "chr": "001", "pos": "1000"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        action = SearchQueryAction.objects.get()
+        self.assertEqual(action.chromosome, "1")
+        self.assertEqual(action.position, 1000)
+        self.assertTrue(action.is_valid)
+        self.assertEqual(
+            response.json()["results"]["position"][0]["id"], self.match.variant.id
+        )
+
 
 class SnvSearchStandardResults(TransactionTestCase):
     def setUp(self):

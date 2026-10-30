@@ -162,6 +162,8 @@ def snv_search(request):
             return Response({"errors": [out_error]}, status=400)
 
     in_chr = in_chr.upper() if in_chr else None
+    if "position" in in_result_sets and in_chr not in ("X", "Y", "M"):
+        in_chr = str(int(in_chr))
     in_ref = in_ref.upper() if in_ref else None
     in_alt = in_alt.upper() if in_alt else None
 
