@@ -282,8 +282,8 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
+    @transaction.atomic
     def handle(self, **options):
-        transaction.set_autocommit(False)
         log.debug("import_bvl_vcf got options:\n%s", pprint.pformat(options))
         start_time = time()
         self.log_all_errors = options["log_all_errors"]
@@ -421,21 +421,18 @@ class Command(BaseCommand):
         for label, _table_name, filter_cls, importer_cls in table_specs:
             try:
                 data = make_row_iter(filter_cls)
-#                print("11111 data created")
                 importer = importer_cls(importer_options)
-#                print("11111 importer created")
-                
-                errors_map[label], warnings_map[label], counts_map[label] = (importer.import_data(data)) 
-                # errors get returned to here even when exception occurs inside importer.import_data. but next line does not log. why??
-#                print("11111 the importer did import")
+                errors_map[label], warnings_map[label], counts_map[label] = importer.import_data(data)
             except Exception as e:
-                import traceback
-                logging.error(traceback.format_exc())
+                log.exception("Import failed for %s", label)
                 errors_map[label], warnings_map[label], counts_map[label] = (
-                  [
-                    bvltools.ImportMessage(bvltools.ImportCode.BULK_CREATE_FAILED, "unknown error in bulk import (possibly db validation issue). run with --no-batch to see")
-                  ],[],(0,0))
-                pass
+                    [bvltools.ImportMessage(
+                        bvltools.ImportCode.BULK_CREATE_FAILED,
+                        f"table import failed and was rolled back: {e}",
+                    )],
+                    [],
+                    None,
+                )
             log_timing(label)
 
         for entity_type, errs in errors_map.items():
@@ -443,26 +440,23 @@ class Command(BaseCommand):
         for entity_type, warns in warnings_map.items():
             self.log_warnings(entity_type, warns)
 
-        if options["rollback-on-error"]:
-            if any(errors_map.values()):
-                sys.stderr.write("\nNot committing transaction (errors)\n")
-                transaction.rollback()
-                return
-
-        if options["dry-run"]:
+        if options["rollback-on-error"] and any(errors_map.values()):
+            self.stderr.write("\nNot committing transaction (errors)")
+            transaction.set_rollback(True)
+            status = "ROLLED BACK: operations below were not committed"
+        elif options["dry-run"]:
             sys.stderr.write("\nNot committing transaction (dry-run)\n")
-            transaction.rollback()
+            transaction.set_rollback(True)
+            status = "DRY RUN: operations below were not committed"
         else:
-            transaction.commit()
+            status = "COMMITTED"
 
-        def report_counts(model, counts):
-            if counts:
-                total, success = counts
-                percent = round(100 * success / total, 5) if total else 100
-                sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
-                
+        self.stdout.write(f"\nImport summary ({status})")
         for entity_type, counts in counts_map.items():
-            report_counts(entity_type, counts)
+            if counts is None:
+                self.stdout.write(f"{entity_type}: FAILED; table rolled back, counts unavailable")
+            else:
+                self.stdout.write(f"{entity_type}: {counts}")
 
         end_time = time()
         elapsed = end_time - start_time

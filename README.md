@@ -180,6 +180,16 @@ python manage.py create_indices
 
 Run `python manage.py import_bvl_vcf --help` for a full list of options.
 
+The final summary reports per-table input rows processed, rows created,
+existing rows updated, rows skipped (ignored existing rows, rejected data, or
+pending inserts abandoned on an early stop),
+rows failed, and existing rows deleted by `--delete`. These are counts for this
+run, not whole-table database totals. "Updated" includes existing rows whose
+values were already identical; it is not a count of changed field values.
+Bulk creates count only after the insert succeeds. Dry-run and rollback
+summaries explicitly mark operations as not committed. Deleted counts exclude
+cascaded deletions of related tables.
+
 ## Key options
 
 | Option | Default | Description |

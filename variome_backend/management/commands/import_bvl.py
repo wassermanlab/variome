@@ -169,8 +169,8 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
+    @transaction.atomic
     def handle(self, **options):
-        transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
         start_time = time()
         self.log_all_errors = options["log_all_errors"]
@@ -305,6 +305,7 @@ class Command(BaseCommand):
         self.log_warnings("Annotation", ann_warnings)
         self.log_warnings("Consequence", con_warnings)
 
+        status = "COMMITTED"
         if options["rollback-on-error"]:
             if (
                 sev_errors
@@ -319,24 +320,20 @@ class Command(BaseCommand):
                 or vts_errors
             ):
                 sys.stderr.write("\nNot committing transaction (errors)\n")
-                transaction.rollback()
-                return
+                transaction.set_rollback(True)
+                status = "ROLLED BACK: operations below were not committed"
 
         # if dry run, rollback transaction
-        if options["dry-run"]:
+        if options["dry-run"] and status == "COMMITTED":
             sys.stderr.write("\nNot committing transaction (dry-run)\n")
-            transaction.rollback()
-        else:
-            transaction.commit()
+            transaction.set_rollback(True)
+            status = "DRY RUN: operations below were not committed"
+
+        self.stdout.write(f"\nImport summary ({status})")
 
         def report_counts(model, counts):
-            if counts:
-                (total, success) = counts
-                if total == 0:
-                    percent = 100
-                else:
-                    percent = round(100 * success / total, 5)
-                sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
+            if counts is not None:
+                self.stdout.write(f"{model}: {counts}")
 
         report_counts("Severity", sev_counts)
         report_counts("Gene", gen_counts)
