@@ -186,6 +186,8 @@ pending inserts abandoned on an early stop),
 rows failed, and existing rows deleted by `--delete`. These are counts for this
 run, not whole-table database totals. "Updated" includes existing rows whose
 values were already identical; it is not a count of changed field values.
+Counts are right-aligned in a table, with a ✅ for tables without failures and
+a ❌ for tables with failed rows or import errors.
 Bulk creates count only after the insert succeeds. Dry-run and rollback
 summaries explicitly mark operations as not committed. Deleted counts exclude
 cascaded deletions of related tables.

@@ -452,11 +452,8 @@ class Command(BaseCommand):
             status = "COMMITTED"
 
         self.stdout.write(f"\nImport summary ({status})")
-        for entity_type, counts in counts_map.items():
-            if counts is None:
-                self.stdout.write(f"{entity_type}: FAILED; table rolled back, counts unavailable")
-            else:
-                self.stdout.write(f"{entity_type}: {counts}")
+        for line in bvltools.format_import_counts(counts_map, errors_map):
+            self.stdout.write(line)
 
         end_time = time()
         elapsed = end_time - start_time

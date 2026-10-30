@@ -76,6 +76,37 @@ class ImportCounts:
         )
 
 
+def format_import_counts(counts_map, errors_map):
+    """Format per-run counts with right-aligned numeric columns."""
+    if not counts_map:
+        return []
+    fields = ("processed", "created", "updated", "skipped", "failed", "deleted")
+    name_width = max(len("Table"), *(len(name) for name in counts_map))
+    values = {
+        name: [f"{getattr(counts, field):,}" if counts is not None else "-"
+               for field in fields]
+        for name, counts in counts_map.items()
+    }
+    widths = [
+        max(len(field.title()), *(len(row[index]) for row in values.values()))
+        for index, field in enumerate(fields)
+    ]
+    lines = [
+        f"   {'Table':<{name_width}}  "
+        + "  ".join(f"{field.title():>{width}}" for field, width in zip(fields, widths))
+    ]
+    for name, counts in counts_map.items():
+        failed = counts is None or counts.failed > 0 or bool(errors_map.get(name))
+        icon = "❌" if failed else "✅"
+        line = f"{icon} {name:<{name_width}}  " + "  ".join(
+            f"{value:>{width}}" for value, width in zip(values[name], widths)
+        )
+        if counts is None:
+            line += "  FAILED; table rolled back, counts unavailable"
+        lines.append(line)
+    return lines
+
+
 # Number of example messages shown per group before truncating
 _MESSAGES_SHOWN_PER_GROUP = 10
 

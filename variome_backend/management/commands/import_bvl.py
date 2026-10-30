@@ -331,20 +331,22 @@ class Command(BaseCommand):
 
         self.stdout.write(f"\nImport summary ({status})")
 
-        def report_counts(model, counts):
-            if counts is not None:
-                self.stdout.write(f"{model}: {counts}")
-
-        report_counts("Severity", sev_counts)
-        report_counts("Gene", gen_counts)
-        report_counts("Variant", var_counts)
-        report_counts("Transcript", tra_counts)
-        report_counts("SNV", snv_counts)
-        report_counts("GVF", gvf_counts)
-        report_counts("GGF", ggf_counts)
-        report_counts("Variant Transcript", vts_counts)
-        report_counts("Annotation", ann_counts)
-        report_counts("Consequence", con_counts)
+        results = [
+            ("Severity", sev_counts, sev_errors),
+            ("Gene", gen_counts, gen_errors),
+            ("Variant", var_counts, var_errors),
+            ("Transcript", tra_counts, tra_errors),
+            ("SNV", snv_counts, snv_errors),
+            ("GVF", gvf_counts, gvf_errors),
+            ("GGF", ggf_counts, ggf_errors),
+            ("Variant Transcript", vts_counts, vts_errors),
+            ("Annotation", ann_counts, ann_errors),
+            ("Consequence", con_counts, con_errors),
+        ]
+        counts_map = {name: counts for name, counts, _ in results if counts is not None}
+        errors_map = {name: errors for name, _, errors in results}
+        for line in bvltools.format_import_counts(counts_map, errors_map):
+            self.stdout.write(line)
 
         end_time = time()
         elapsed_time = end_time - start_time

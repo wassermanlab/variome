@@ -10,7 +10,7 @@ from django.test import TestCase, TransactionTestCase
 
 from variome_backend.library.models import Severity, Variant
 from variome_backend.management.import_tools import (
-    ImportCode, ImportCounts, ImportMessage, VariantImporter,
+    ImportCode, ImportCounts, ImportMessage, VariantImporter, format_import_counts,
 )
 
 
@@ -153,7 +153,37 @@ class ImportCountsTests(TestCase):
         self.assert_counts(counts, processed=1, skipped=1)
 
 
+class ImportCountFormattingTests(TestCase):
+    def test_alignment_and_status(self):
+        counts = {
+            "Gene": ImportCounts(),
+            "Variant Transcript": ImportCounts(processed=12345, created=12344, failed=1),
+            "MT": None,
+            "Annotation": ImportCounts(),
+        }
+        lines = format_import_counts(counts, {"Annotation": ["read error"]})
+        self.assertTrue(lines[1].startswith("✅ Gene"))
+        self.assertTrue(lines[2].startswith("❌ Variant Transcript"))
+        self.assertTrue(lines[3].startswith("❌ MT"))
+        self.assertTrue(lines[4].startswith("❌ Annotation"))
+        self.assertIn("12,345", lines[2])
+        self.assertIn("counts unavailable", lines[3])
+        # Emoji occupy two terminal cells, so replace them with two spaces.
+        display = [line.replace("✅", "  ").replace("❌", "  ") for line in lines]
+        for field in ("Processed", "Created", "Updated", "Skipped", "Failed", "Deleted"):
+            end = display[0].index(field) + len(field)
+            for line in display[1:]:
+                self.assertNotEqual(line[end - 1], " ")
+                if field != "Deleted":
+                    self.assertEqual(line[end:end + 2], "  ")
+        self.assertEqual(format_import_counts({}, {}), [])
+
+
 class ImportSummaryTests(TransactionTestCase):
+    def assert_summary_row(self, output, name, values, icon="✅"):
+        row = next(line for line in output.splitlines() if line.startswith(f"{icon} {name} "))
+        self.assertEqual(row.split(), [icon, *name.split(), *map(str, values)])
+
     def run_import(self, **options):
         output = io.StringIO()
         errors = io.StringIO()
@@ -168,17 +198,17 @@ class ImportSummaryTests(TransactionTestCase):
         Variant.objects.create(variant_id="M-1-A-G", var_type="M")
         output, _ = self.run_import()
         self.assertIn("Import summary (COMMITTED)", output)
-        self.assertIn("Variant: processed=158, created=158, updated=0, skipped=0, failed=0", output)
-        self.assertIn("Gene: processed=0, created=0, updated=0, skipped=0, failed=0", output)
+        self.assert_summary_row(output, "Variant", [158, 158, 0, 0, 0, 0])
+        self.assert_summary_row(output, "Gene", [0, 0, 0, 0, 0, 0])
         output, _ = self.run_import(batch=False)
-        self.assertIn("Variant: processed=158, created=0, updated=158, skipped=0, failed=0", output)
-        self.assertIn("MT: processed=158, created=0, updated=158, skipped=0, failed=0", output)
+        self.assert_summary_row(output, "Variant", [158, 0, 158, 0, 0, 0])
+        self.assert_summary_row(output, "MT", [158, 0, 158, 0, 0, 0])
         self.assertNotIn("out of", output)
 
     def test_dry_run_counts_are_explicitly_uncommitted(self):
         output, _ = self.run_import(**{"dry-run": True})
         self.assertIn("DRY RUN: operations below were not committed", output)
-        self.assertIn("Variant: processed=158, created=158", output)
+        self.assert_summary_row(output, "Variant", [158, 158, 0, 0, 0, 0])
         self.assertFalse(Variant.objects.exists())
         self.assertFalse(Severity.objects.exists())
 
@@ -188,14 +218,15 @@ class ImportSummaryTests(TransactionTestCase):
         )):
             output, _ = self.run_import(**{"rollback-on-error": True})
         self.assertIn("ROLLED BACK: operations below were not committed", output)
-        self.assertIn("Variant: processed=158, created=0, updated=0, skipped=0, failed=158", output)
+        self.assert_summary_row(output, "Variant", [158, 0, 0, 0, 158, 0], icon="❌")
         self.assertFalse(Variant.objects.exists())
         self.assertFalse(Severity.objects.exists())
 
     def test_table_exception_does_not_report_successful_zero_counts(self):
         with patch.object(VariantImporter, "import_data", side_effect=RuntimeError("test failure")):
             output, _ = self.run_import(**{"rollback-on-error": True})
-        self.assertIn("Variant: FAILED; table rolled back, counts unavailable", output)
+        self.assertIn("❌ Variant", output)
+        self.assertIn("FAILED; table rolled back, counts unavailable", output)
         self.assertFalse(Variant.objects.exists())
 
     def test_tsv_command_uses_same_counts_and_honors_dry_run(self):
@@ -218,5 +249,5 @@ class ImportSummaryTests(TransactionTestCase):
                     "import_bvl", path=directory, progress=False, stdout=output,
                     **options, **{"dry-run": dry_run},
                 )
-                self.assertIn("Variant: processed=1, created=1, updated=0", output.getvalue())
+                self.assert_summary_row(output.getvalue(), "Variant", [1, 1, 0, 0, 0, 0])
                 self.assertEqual(Variant.objects.exists(), not dry_run)
