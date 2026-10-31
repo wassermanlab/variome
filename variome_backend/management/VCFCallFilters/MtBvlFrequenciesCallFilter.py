@@ -1,8 +1,11 @@
 from variome_backend.management.VCFCallFilters.CallFilter import CallFilter
 from typing import List, Dict, Any
 import json
+import math
 
 HISTOGRAM_BINS = 10
+HOMOPLASMY_THRESHOLD = 0.95
+COHORT_FIELDS = ("AC_hom", "AC_het", "AF_hom", "AF_het")
 
 
 class MtBvlFrequenciesCallFilter(CallFilter):
@@ -14,7 +17,7 @@ class MtBvlFrequenciesCallFilter(CallFilter):
 
     @staticmethod
     def sample_heteroplasmy_levels(record, allele_index):
-        """Per-sample FORMAT/AF (heteroplasmy level) of carriers of one ALT allele."""
+        """Valid per-sample FORMAT/AF of one ALT, including reference observations."""
         levels = []
         for call in record.calls:
             value = call.data.get("AF")
@@ -23,8 +26,12 @@ class MtBvlFrequenciesCallFilter(CallFilter):
             if value in (None, "", "."):
                 continue
             level = float(value)
-            if level > 0:
-                levels.append(level)
+            if not math.isfinite(level) or not 0 <= level <= 1:
+                raise ValueError(
+                    f"Invalid FORMAT/AF {value} in sample {call.sample} "
+                    f"at {record.CHROM}:{record.POS}"
+                )
+            levels.append(level)
         return levels
 
     @staticmethod
@@ -62,7 +69,8 @@ class MtBvlFrequenciesCallFilter(CallFilter):
                 return cast(value) if value not in (None, "", ".") else None
 
             an = number("AN", int)
-            if not an:
+            derive_from_samples = "AF" in getattr(record, "FORMAT", [])
+            if not an and not derive_from_samples:
                 continue
             hl_histogram = fields.get("heteroplasmy_histogram")
             if isinstance(hl_histogram, list) and len(hl_histogram) == 1 and isinstance(hl_histogram[0], str):
@@ -75,29 +83,39 @@ class MtBvlFrequenciesCallFilter(CallFilter):
             if isinstance(hl_histogram, dict):
                 hl_histogram = hl_histogram.get("bin_freq", [])
             hl_hist = ",".join(map(str, hl_histogram)) if hl_histogram else ""
-            derive_from_samples = (
-                fields is record.INFO and "AF" in getattr(record, "FORMAT", [])
-            )
+            has_cohort_metrics = any(name in fields for name in COHORT_FIELDS)
             for allele_index, variant in enumerate(self.make_variant_ids(record)):
                 if variant in seen:
                     continue
                 seen.add(variant)
                 allele_hist = hl_hist
                 max_hl = number("max_observed_heteroplasmy", float, allele_index)
+                allele_an = an
+                ac_hom = number("AC_hom", int, allele_index)
+                ac_het = number("AC_het", int, allele_index)
+                af_hom = number("AF_hom", float, allele_index)
+                af_het = number("AF_het", float, allele_index)
                 if derive_from_samples:
-                    # Without cohort metrics, sample FORMAT/AF values are heteroplasmy levels
                     levels = self.sample_heteroplasmy_levels(record, allele_index)
-                    if levels and not allele_hist:
-                        allele_hist = self.histogram(levels)
+                    carriers = [level for level in levels if level > 0]
+                    if carriers and not allele_hist:
+                        allele_hist = self.histogram(carriers)
                     if levels and max_hl is None:
                         max_hl = max(levels)
+                    if levels and not has_cohort_metrics:
+                        # MT frequencies count observed samples, not diploid GT alleles.
+                        allele_an = len(levels)
+                        ac_hom = sum(level >= HOMOPLASMY_THRESHOLD for level in levels)
+                        ac_het = sum(0 < level < HOMOPLASMY_THRESHOLD for level in levels)
+                        af_hom = ac_hom / allele_an
+                        af_het = ac_het / allele_an
                 rows.append({
                     'variant': variant,
-                    'an': an,
-                    'ac_hom': number("AC_hom", int, allele_index),
-                    'ac_het': number("AC_het", int, allele_index),
-                    'af_hom': number("AF_hom", float, allele_index),
-                    'af_het': number("AF_het", float, allele_index),
+                    'an': allele_an,
+                    'ac_hom': ac_hom,
+                    'ac_het': ac_het,
+                    'af_hom': af_hom,
+                    'af_het': af_het,
                     'hl_hist': allele_hist,
                     'max_hl': max_hl
                 })

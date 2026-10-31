@@ -603,6 +603,11 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.assertEqual([row["hl_hist"] for row in rows],
                          ["1,0,0,0,0,0,0,0,0,0", "0,0,0,0,0,0,0,0,0,1"])
         self.assertEqual([row["max_hl"] for row in rows], [0.01, 0.997])
+        self.assertEqual([row["an"] for row in rows], [1, 1])
+        self.assertEqual([row["ac_hom"] for row in rows], [0, 1])
+        self.assertEqual([row["ac_het"] for row in rows], [1, 0])
+        self.assertEqual([row["af_hom"] for row in rows], [0, 1])
+        self.assertEqual([row["af_het"] for row in rows], [1, 0])
         for call, af in zip(record.calls, ([0.05], [0.1], [0.95])):
             call.data["AF"] = af
         record.ALT = record.ALT[:1]
@@ -610,6 +615,36 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
             row = instance.getTableRows()[0]
         self.assertEqual(row["hl_hist"], "1,1,0,0,0,0,0,0,0,1")
         self.assertEqual(row["max_hl"], 0.95)
+        self.assertEqual(row["an"], 3)
+        self.assertEqual((row["ac_hom"], row["ac_het"]), (1, 2))
+        self.assertAlmostEqual(row["af_hom"], 1 / 3)
+        self.assertAlmostEqual(row["af_het"], 2 / 3)
+
+    def test_sample_denominator_includes_zero_and_excludes_missing_af(self):
+        instance = MtBvlFrequenciesCallFilter(
+            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"), SETTINGS,
+        )
+        record = next(record for record in instance.vcf_record_stream() if record.POS == 8860)
+        record.INFO.pop("AN")
+        for call, af in zip(record.calls, ([0], [0.5], [None])):
+            call.data["AF"] = af
+        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+            row = instance.getTableRows()[0]
+        self.assertEqual(row["an"], 2)
+        self.assertEqual((row["ac_hom"], row["ac_het"]), (0, 1))
+        self.assertEqual((row["af_hom"], row["af_het"]), (0, 0.5))
+
+    def test_invalid_sample_af_is_reported_not_counted(self):
+        instance = MtBvlFrequenciesCallFilter(
+            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"), SETTINGS,
+        )
+        record = next(record for record in instance.vcf_record_stream() if record.POS == 8860)
+        for invalid in (-0.1, 1.1, float("nan"), float("inf")):
+            with self.subTest(af=invalid):
+                record.calls[0].data["AF"] = [invalid]
+                with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+                    with self.assertRaisesRegex(ValueError, "Invalid FORMAT/AF"):
+                        instance.getTableRows()
 
 
 class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):
