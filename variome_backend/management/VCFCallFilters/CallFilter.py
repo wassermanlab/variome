@@ -28,6 +28,9 @@ def wait_with_sleep(retry_state):
 logger = logging.getLogger(__name__)
 
 class CallFilter(ABC):
+    # Restrict records read from the file: None (all), "nuclear" or "mt"
+    record_scope = None
+
     def __init__(self, vcf_file_path: str, settings):
         self.csq_fields = []
         self.csq_index_map = {}
@@ -113,10 +116,20 @@ class CallFilter(ABC):
                 QUAL=None, FILTER=row.get("filters", "PASS").split(";"), INFO=info,
             )
 
+    def in_scope(self, record):
+        if self.record_scope is None:
+            return True
+        return self.is_mitochondrial(record) == (self.record_scope == "mt")
+
     def vcf_record_stream(self):
         """
         Generator that yields VCF records one at a time from the file.
         """
+        for record in self._all_vcf_records():
+            if self.in_scope(record):
+                yield record
+
+    def _all_vcf_records(self):
         RANGES = self.settings.RANGES
         ranges = RANGES.split(",") if RANGES else []
         range_map = {}

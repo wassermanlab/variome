@@ -1,5 +1,6 @@
 import gzip
 import io
+import logging
 import tempfile
 from pathlib import Path
 
@@ -25,6 +26,7 @@ class MitochondrialImportTests(TransactionTestCase):
         call_command(
             "import_bvl_vcf",
             vcf_file=str(filename),
+            mt_vcf_file=str(filename),
             input_tsv_dir=str(ROOT / "data" / "fixtures"),
             out_chr=False,
             out_hyphens=True,
@@ -57,6 +59,46 @@ class MitochondrialImportTests(TransactionTestCase):
                 self.assertFalse(VariantTranscript.objects.exists())
                 self.assertFalse(SNV.objects.exists())
                 self.assertFalse(GenomicVariomeFrequency.objects.exists())
+
+    def test_default_run_imports_nuclear_and_mt_vcfs(self):
+        call_command("import_bvl_vcf", progress=False, stdout=io.StringIO(), stderr=io.StringIO())
+        self.assertEqual(Variant.objects.filter(var_type="M").count(), 158)
+        self.assertEqual(Variant.objects.exclude(var_type="M").count(), 73)
+        self.assertEqual(MT.objects.count(), 158)
+        self.assertEqual(MtVariomeFrequency.objects.count(), 158)
+        self.assertEqual(SNV.objects.count(), 73)
+        self.assertTrue(Variant.objects.filter(variant_id="chrM-9055-G-A").exists())
+
+    def test_separate_files_ignore_records_of_the_other_genome(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "mixed.vcf"
+            path.write_text(
+                "##fileformat=VCFv4.2\n"
+                "##contig=<ID=chr1>\n##contig=<ID=chrM>\n"
+                "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+                "chr1\t100\t.\tA\tG\t.\tPASS\t.\n"
+                "chrM\t200\t.\tA\tG\t.\tPASS\t.\n",
+                encoding="utf-8",
+            )
+            for args, expected in (
+                ({"vcf_file": str(path), "mt_vcf_file": ""}, ["1-100-A-G"]),
+                ({"vcf_file": "", "mt_vcf_file": str(path)}, ["M-200-A-G"]),
+                ({"vcf_file": str(path), "mt_vcf_file": str(path)}, ["1-100-A-G", "M-200-A-G"]),
+            ):
+                with self.subTest(**args):
+                    Variant.objects.all().delete()
+                    with self.assertLogs("management", level="WARNING") as logs:
+                        logging.getLogger("management").warning("sentinel")
+                        call_command(
+                            "import_bvl_vcf", out_chr=False, progress=False,
+                            stdout=io.StringIO(), stderr=io.StringIO(), **args,
+                        )
+                    self.assertEqual(
+                        sorted(Variant.objects.values_list("variant_id", flat=True)), expected
+                    )
+                    self.assertEqual(MT.objects.count(), expected.count("M-200-A-G"))
+                    ignored = [line for line in logs.output if "Ignoring 1 " in line]
+                    self.assertEqual(len(ignored), 0 if len(expected) == 2 else 1)
 
     def test_supplied_mt_gzipped_conversion_without_csq(self):
         with tempfile.TemporaryDirectory() as directory:

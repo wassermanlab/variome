@@ -1,6 +1,8 @@
 import argparse
 import hashlib
+import itertools
 import json
+import os
 import logging
 import pprint
 import sys
@@ -77,19 +79,27 @@ def quiet_output():
         logging.disable(previous)
 
 
-def check_vcf(vcf_path, settings):
-    """Check a VCF file (gzipped or plain) for read errors. Logs warnings on failure."""
+def check_vcf(vcf_path, settings, scope=None):
+    """Check a VCF file (gzipped or plain) for read errors. Logs warnings on failure.
+
+    With *scope* ("nuclear" or "mt"), warns about records that will be ignored
+    because they belong to the other genome.
+    """
     log.info("Checking VCF file: %s", vcf_path)
     n = 0
+    out_of_scope = 0
     last_record = None
     try:
         call_filter = VariantsCallFilter(vcf_path, settings)
+        call_filter.record_scope = scope
         info_fields = " ".join(call_filter.vcf_header.info_ids())
         log.info("VCF INFO fields:\n%s", info_fields)
         log.info("VCF CSQ fields:\n%s", " ".join(call_filter.csq_fields))
-        for record in call_filter.vcf_record_stream():
+        for record in call_filter._all_vcf_records():
             n += 1
             last_record = record
+            if not call_filter.in_scope(record):
+                out_of_scope += 1
     except Exception as e:
         log.warning("Error reading VCF file %s: %s", vcf_path, e)
         if last_record is not None:
@@ -101,6 +111,18 @@ def check_vcf(vcf_path, settings):
         else:
             log.warning("No records were successfully read from the VCF file.")
             sys.exit(1)
+    if out_of_scope:
+        if scope == "mt":
+            log.warning(
+                "Ignoring %d non-mitochondrial records in --mt-vcf %s; supply them via --vcf",
+                out_of_scope, vcf_path,
+            )
+        else:
+            log.warning(
+                "Ignoring %d mitochondrial records in --vcf %s; supply them via --mt-vcf "
+                "(or pass the same file to both --vcf and --mt-vcf)",
+                out_of_scope, vcf_path,
+            )
 
 
 def _write_to_tsv(row_iter, table_name, output_dir, batch_size=10000):
@@ -191,7 +213,17 @@ class Command(BaseCommand):
             "--vcf",
             dest="vcf_file",
             default="data/fixtures/vcf/variome-tiny.vcf",
-            help="Path to input VCF file (plain or gzipped)",
+            help="Path to the nuclear (chromosomal) VCF file (plain or gzipped); "
+            "mitochondrial records in it are ignored unless it is also given as --mt-vcf. "
+            "Pass '' to skip",
+        )
+        parser.add_argument(
+            "--mt-vcf",
+            dest="mt_vcf_file",
+            default="data/fixtures/vcf/mt.vcf",
+            help="Path to the mitochondrial VCF file (plain or gzipped) used for the MT "
+            "tables and MT variants; non-mitochondrial records in it are ignored. "
+            "Pass '' (or --no-mts) to skip",
         )
 
         # --- VCF interpretation settings ---
@@ -371,9 +403,10 @@ class Command(BaseCommand):
         start_time = time()
         self.log_all_errors = options["log_all_errors"]
 
-        vcf_file = options["vcf_file"]
+        vcf_file = options["vcf_file"] or None
+        mt_vcf_file = (options["mt_vcf_file"] or None) if options["mts"] else None
         settings = VcfImportSettings(
-            VCF_FILE=vcf_file,
+            VCF_FILE=vcf_file or mt_vcf_file,
             NA=options["na"],
             OUT_CHR=options["out_chr"],
             OUT_HYPHENS=options["out_hyphens"],
@@ -386,13 +419,33 @@ class Command(BaseCommand):
 
         convert_to_tsv = options["convert_to_tsv"]
 
-        check_vcf(vcf_file, settings)
+        # Sources are (path, record scope). The same file for both is read once, unscoped.
+        if vcf_file and mt_vcf_file and os.path.realpath(vcf_file) == os.path.realpath(mt_vcf_file):
+            nuclear_source = mt_source = (vcf_file, None)
+        else:
+            nuclear_source = (vcf_file, "nuclear") if vcf_file else None
+            mt_source = (mt_vcf_file, "mt") if mt_vcf_file else None
+        if nuclear_source is None and mt_source is None:
+            self.stderr.write("No input VCF: both --vcf and --mt-vcf are empty")
+            sys.exit(1)
+        all_sources = [nuclear_source] if nuclear_source == mt_source else [
+            source for source in (nuclear_source, mt_source) if source is not None
+        ]
+        for path, scope in all_sources:
+            check_vcf(path, settings, scope)
 
-        # Helper that returns a row generator for the given filter class
-        def make_row_iter(filter_cls, **filter_kwargs):
+        # Helper that returns a row generator for the given filter class and source
+        def make_row_iter(filter_cls, source):
+            path, scope = source
+            filter_kwargs = {}
             if filter_cls is MtGnomadFrequenciesCallFilter:
                 filter_kwargs["tsv_path"] = options["mt_gnomad_tsv"]
-            return filter_cls(vcf_file, settings, **filter_kwargs).getTableRows()
+            call_filter = filter_cls(path, settings, **filter_kwargs)
+            call_filter.record_scope = scope
+            return call_filter.getTableRows()
+
+        nuclear_sources = [nuclear_source] if nuclear_source else []
+        mt_sources = [mt_source] if mt_source else []
 
         if not options["delete"]:
             first_existing_variant = bvltools.VariantImporter.model.objects.first()
@@ -414,36 +467,39 @@ class Command(BaseCommand):
         # Table selection flags and corresponding filter / importer pairs
         table_specs = []
         if options["genes"]:
-            table_specs.append(("Gene", "genes", GenesCallFilter, bvltools.GeneImporter))
+            table_specs.append(("Gene", "genes", GenesCallFilter, bvltools.GeneImporter, all_sources))
         if options["variants"]:
-            table_specs.append(("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter))
+            table_specs.append(("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter, all_sources))
         if options["transcripts"]:
-            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter))
+            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter, all_sources))
         if options["snvs"]:
-            table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
+            table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter, nuclear_sources))
         if options["gvfs"]:
-            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
+            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter, nuclear_sources))
         if options["mts"]:
-            table_specs.append(("MT", "mts", MtsCallFilter, bvltools.MTImporter))
-            table_specs.append(("MT frequency", "mt_variome_frequencies", MtBvlFrequenciesCallFilter, bvltools.MtVariomeFrequencyImporter))
+            table_specs.append(("MT", "mts", MtsCallFilter, bvltools.MTImporter, mt_sources))
+            table_specs.append(("MT frequency", "mt_variome_frequencies", MtBvlFrequenciesCallFilter, bvltools.MtVariomeFrequencyImporter, mt_sources))
             if options["mt_gnomad_tsv"]:
-                table_specs.append(("MT gnomAD frequency", "mt_gnomad_frequencies", MtGnomadFrequenciesCallFilter, bvltools.MtGnomadFrequencyImporter))
+                table_specs.append(("MT gnomAD frequency", "mt_gnomad_frequencies", MtGnomadFrequenciesCallFilter, bvltools.MtGnomadFrequencyImporter, mt_sources))
         if options["vts"]:
-            table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter))
+            table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter, all_sources))
         if options["annotations"]:
-            table_specs.append(("Annotation", "variants_annotations", VariantsAnnotationsCallFilter, bvltools.AnnotationImporter))
+            table_specs.append(("Annotation", "variants_annotations", VariantsAnnotationsCallFilter, bvltools.AnnotationImporter, all_sources))
         if options["consequences"]:
-            table_specs.append(("Consequence", "variants_consequences", VariantsConsequencesCallFilter, bvltools.ConsequenceImporter))
+            table_specs.append(("Consequence", "variants_consequences", VariantsConsequencesCallFilter, bvltools.ConsequenceImporter, all_sources))
 
         if convert_to_tsv:
             # TSV-only mode: write one TSV file per table, do not touch the database.
             tsv_output_dir = Path(options["tsv_output_dir"])
             tsv_output_dir.mkdir(parents=True, exist_ok=True)
 
-            for _label, table_name, filter_cls, _importer_cls in table_specs:
+            for _label, table_name, filter_cls, _importer_cls, sources in table_specs:
                 table_dir = Path(tsv_output_dir, table_name)
                 table_dir.mkdir(parents=True, exist_ok=True)
-                _write_to_tsv(make_row_iter(filter_cls), table_name, table_dir)
+                rows = itertools.chain.from_iterable(
+                    make_row_iter(filter_cls, source) for source in sources
+                )
+                _write_to_tsv(rows, table_name, table_dir)
 
             # Copy the severities file to the output dir if it exists
             import shutil
@@ -499,11 +555,16 @@ class Command(BaseCommand):
             errors_map["Severity"] = errors
             warnings_map["Severity"] = warnings
             counts_map["Severity"] = counts
-        for label, _table_name, filter_cls, importer_cls in table_specs:
+        for label, _table_name, filter_cls, importer_cls, sources in table_specs:
             try:
-                data = make_row_iter(filter_cls)
-                importer = importer_cls(importer_options)
-                errors_map[label], warnings_map[label], counts_map[label] = importer.import_data(data)
+                errors_map[label], warnings_map[label] = [], []
+                counts_map[label] = bvltools.ImportCounts()
+                for source in sources:
+                    importer = importer_cls(importer_options)
+                    errors, warnings, counts = importer.import_data(make_row_iter(filter_cls, source))
+                    errors_map[label] += errors
+                    warnings_map[label] += warnings
+                    counts_map[label] += counts
             except Exception as e:
                 log.exception("Import failed for %s", label)
                 errors_map[label], warnings_map[label], counts_map[label] = (

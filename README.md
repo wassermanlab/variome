@@ -152,7 +152,12 @@ PUBLIC_BVL - opens the database for public access, as a demonstration app. For t
 
 # Importing from a VCF file
 
-Use the `import_bvl_vcf` management command to import data directly from a VCF file into the database.
+Use the `import_bvl_vcf` management command to import data directly from VCF files into the database.
+Nuclear variants are read from `--vcf` and mitochondrial variants from
+`--mt-vcf`; one run imports both. With no arguments the development fixtures
+`data/fixtures/vcf/variome-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
+Mitochondrial records in `--vcf` (and non-mitochondrial records in `--mt-vcf`)
+are ignored with a warning; to import a combined VCF, pass the same file to both.
 
 Mitochondrial records (`M`, `MT`, `chrM` or `chrMT`) are imported into separate
 metadata and frequency tables. Both the IBVL tabular MT export and standard
@@ -174,7 +179,7 @@ on the home page.
 ## Quickstart
 
 ```
-python manage.py import_bvl_vcf --vcf /path/to/joint.vcf
+python manage.py import_bvl_vcf --vcf /path/to/joint.vcf --mt-vcf /path/to/mt.vcf
 python manage.py create_indices
 ```
 
@@ -185,7 +190,8 @@ explanation of the import summary.
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--vcf` | *(required)* | Path to the input VCF file (plain text or `.gz`) |
+| `--vcf` | `data/fixtures/vcf/variome-tiny.vcf` | Nuclear VCF file (plain text or `.gz`); `''` skips it |
+| `--mt-vcf` | `data/fixtures/vcf/mt.vcf` | Mitochondrial VCF file (plain text or `.gz`); `''` or `--no-mts` skips it |
 | `--input-tsv-dir` | `data/fixtures` | Path to the dir containing severities.tsv |
 | `--mts` / `--no-mts` | enabled | Import mitochondrial metadata and cohort frequencies |
 | `--mt-gnomad-tsv` | *(none)* | gnomAD mitochondrial frequency TSV to intersect with imported variants |
@@ -211,6 +217,7 @@ match a previously known-good set ( this is useful for development of this proje
 ```
 python manage.py import_bvl_vcf \
   --vcf /path/to/joint.vcf \
+  --mt-vcf '' \
   --convert-to-tsv \
   --tsv-output-dir data/vcf_output \
   --hash-compare data/reference_tsvs

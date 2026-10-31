@@ -68,6 +68,12 @@ class ImportCounts:
     failed: int = 0
     deleted: int = 0
 
+    def __add__(self, other):
+        return ImportCounts(*(
+            getattr(self, field) + getattr(other, field)
+            for field in ("processed", "created", "updated", "skipped", "failed", "deleted")
+        ))
+
     def __str__(self):
         return (
             f"processed={self.processed}, created={self.created}, "

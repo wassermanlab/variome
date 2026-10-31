@@ -200,7 +200,7 @@ class ImportSummaryTests(TransactionTestCase):
         output = io.StringIO()
         errors = io.StringIO()
         call_command(
-            "import_bvl_vcf", vcf_file="data/fixtures/vcf/mt.vcf",
+            "import_bvl_vcf", vcf_file="", mt_vcf_file="data/fixtures/vcf/mt.vcf",
             progress=False, out_chr=False, stdout=output, stderr=errors,
             **options,
         )
