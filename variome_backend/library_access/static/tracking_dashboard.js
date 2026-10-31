@@ -108,9 +108,11 @@ function SearchQueryDashboard({ url }) {
         <button type="submit" className="btn" disabled={loading}>Apply search filters</button>
       </div>
     </form>
-    {loading && <p role="status">Loading searches…</p>}
+    <p role="status" className="search-status">{loading ? "Loading searches…" : "\u00a0"}</p>
     {error && <p role="alert">{error}</p>}
-    {!loading && !error && data && <>
+    {/* Keep previous rows mounted while loading so the page height (and scroll position) doesn't collapse. */}
+    <div className="search-results" aria-busy={loading}>
+    {!error && data && <>
       <p>{data.count} searches</p>
       <div className="search-table-scroll">
       <table className="search-queries-table">
@@ -131,12 +133,13 @@ function SearchQueryDashboard({ url }) {
         </tbody>
       </table>
       </div>
-      <button type="button" disabled={data.page <= 1}
+      <button type="button" disabled={loading || data.page <= 1}
         onClick={() => setRequest({ ...request, page: data.page - 1 })}>Previous</button>
       <span> Page {data.page} of {data.pages} </span>
-      <button type="button" disabled={data.page >= data.pages}
+      <button type="button" disabled={loading || data.page >= data.pages}
         onClick={() => setRequest({ ...request, page: data.page + 1 })}>Next</button>
     </>}
+    </div>
   </div>;
 }
 
