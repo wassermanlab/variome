@@ -220,6 +220,79 @@ class SearchQueryAnalytics(TestCase):
         ).json()
         self.assertEqual([row["query"] for row in data["results"]], ["invalid today"])
 
+    def test_chromosome_query_and_result_filters_combine(self):
+        self.grant_dashboard_access()
+        for chromosome, query, result_count in [
+            ("1", "chr1-1000-A-T", 2),
+            ("1", "CHR1-2000-A-T", 4),
+            ("1", "chr1-3000-A-T", 6),
+            ("1", "chr1-4000-A-G", 3),
+            ("2", "chr2-1000-A-T", 3),
+        ]:
+            SearchQueryAction.objects.create(
+                chromosome=chromosome, query=query, result_count=result_count,
+                is_valid=True,
+            )
+        SearchQueryAction.objects.create(query="legacy-A-T", is_valid=True)
+        SearchQueryAction.objects.create(query="invalid-A-T", is_valid=False)
+
+        data = self.client.get(
+            self.url,
+            {
+                "chromosome": "1", "query": "a-t", "min_results": 2,
+                "max_results": 4, "is_valid": "true", "sort": "oldest",
+                "page_size": 1,
+            },
+        ).json()
+        self.assertEqual(data["count"], 2)
+        self.assertEqual(data["pages"], 2)
+        self.assertEqual(data["results"][0]["query"], "chr1-1000-A-T")
+
+    def test_result_count_limits_are_inclusive_and_optional(self):
+        self.grant_dashboard_access()
+        for result_count in [0, 1, 5]:
+            SearchQueryAction.objects.create(
+                query=f"results-{result_count}", result_count=result_count,
+                is_valid=True,
+            )
+        for filters, expected in [
+            ({"min_results": 0, "max_results": 0}, [0]),
+            ({"min_results": 1}, [1, 5]),
+            ({"max_results": 1}, [0, 1]),
+            ({"min_results": 1, "max_results": 5}, [1, 5]),
+            ({"min_results": "", "max_results": ""}, [0, 1, 5]),
+        ]:
+            with self.subTest(filters=filters):
+                data = self.client.get(self.url, filters).json()
+                self.assertEqual(
+                    sorted(row["result_count"] for row in data["results"]), expected
+                )
+
+    def test_query_filter_is_a_literal_case_insensitive_substring(self):
+        self.grant_dashboard_access()
+        for query in ["prefix a%_T suffix", "aXXXT", " a%_t "]:
+            SearchQueryAction.objects.create(query=query, is_valid=False)
+        data = self.client.get(self.url, {"query": " a%_T "}).json()
+        self.assertEqual(data["count"], 2)
+        self.assertEqual(
+            {row["query"] for row in data["results"]},
+            {"prefix a%_T suffix", " a%_t "},
+        )
+
+    def test_chromosome_filter_includes_sex_and_mitochondrial_chromosomes(self):
+        self.grant_dashboard_access()
+        for chromosome in ["1", "22", "X", "Y", "M"]:
+            SearchQueryAction.objects.create(
+                query=f"chr{chromosome}-1000", chromosome=chromosome, is_valid=True
+            )
+        SearchQueryAction.objects.create(query="legacy", is_valid=True)
+        for chromosome in ["1", "22", "X", "Y", "M"]:
+            with self.subTest(chromosome=chromosome):
+                data = self.client.get(self.url, {"chromosome": chromosome}).json()
+                self.assertEqual(data["count"], 1)
+                self.assertEqual(data["results"][0]["chromosome"], chromosome)
+        self.assertEqual(self.client.get(self.url, {"chromosome": ""}).json()["count"], 6)
+
     def test_bad_filters_return_bad_request(self):
         self.grant_dashboard_access()
         for filters in [
@@ -234,6 +307,13 @@ class SearchQueryAnalytics(TestCase):
             {"page_size": "201"},
             {"page_size": "two"},
             {"sort": "query"},
+            {"chromosome": "23"},
+            {"chromosome": "chr1"},
+            {"min_results": "-1"},
+            {"max_results": "-1"},
+            {"min_results": "1.5"},
+            {"max_results": "many"},
+            {"min_results": "5", "max_results": "4"},
         ]:
             with self.subTest(filters=filters):
                 self.assertEqual(self.client.get(self.url, filters).status_code, 400)

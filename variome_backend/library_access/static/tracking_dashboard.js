@@ -6,7 +6,8 @@ const useState = React.useState;
 
 function SearchQueryDashboard({ url }) {
   const [filters, setFilters] = useState({
-    start: "", end: "", is_valid: "", page_size: "50", sort: "newest"
+    start: "", end: "", is_valid: "", chromosome: "", query: "",
+    min_results: "", max_results: "", page_size: "50", sort: "newest"
   });
   const [request, setRequest] = useState({ page: 1, page_size: "50", sort: "newest" });
   const [data, setData] = useState(null);
@@ -23,13 +24,21 @@ function SearchQueryDashboard({ url }) {
       signal: controller.signal,
       headers: { Accept: "application/json" }
     })
-      .then(response => {
-        if (!response.ok) throw new Error("Unable to load searches. Check your filters and dashboard access.");
+      .then(async response => {
+        if (!response.ok) {
+          if (response.status === 400) {
+            const body = await response.json();
+            throw new Error(Object.values(body.errors).flat().join(" "));
+          }
+          throw new Error("Unable to load searches. Check your dashboard access.");
+        }
         return response.json();
       })
-      .then(setData)
+      .then(data => {
+        if (!controller.signal.aborted) setData(data);
+      })
       .catch(error => {
-        if (error.name !== "AbortError") setError(error.message);
+        if (!controller.signal.aborted) setError(error.message);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -38,7 +47,8 @@ function SearchQueryDashboard({ url }) {
   }, [url, request]);
 
   const updateFilter = event => {
-    setFilters({ ...filters, [event.target.name]: event.target.value });
+    const { name, value } = event.target;
+    setFilters(current => ({ ...current, [name]: value }));
   };
 
   return <div>
@@ -64,6 +74,24 @@ function SearchQueryDashboard({ url }) {
           <option value="false">Invalid</option>
         </select>
         </td></tr>
+        <tr><th><label htmlFor="search-chromosome">chr</label></th><td>
+          <select id="search-chromosome" className="browser-default" name="chromosome" value={filters.chromosome} onChange={updateFilter}>
+            <option value="">All chromosomes</option>
+            {[...Array.from({ length: 22 }, (_, index) => String(index + 1)), "X", "Y", "M"].map(chromosome =>
+              <option key={chromosome} value={chromosome}>{chromosome}</option>)}
+          </select>
+        </td></tr>
+        <tr><th><label htmlFor="search-query">Query contains</label></th><td>
+          <input id="search-query" type="text" name="query" value={filters.query} onChange={updateFilter} />
+        </td></tr>
+        <tr><th># Results</th><td className="result-count-range">
+          <label htmlFor="search-min-results">Minimum</label>
+          <input id="search-min-results" type="number" min="0" step="1" name="min_results" value={filters.min_results} onChange={updateFilter} />
+          <label htmlFor="search-max-results">Maximum</label>
+          <input id="search-max-results" type="number" min="0" step="1" name="max_results" value={filters.max_results} onChange={updateFilter} />
+        </td></tr>
+      </tbody></table>
+      <table><tbody>
         <tr><th><label htmlFor="search-page-size">Page size</label></th><td>
           <select id="search-page-size" className="browser-default" name="page_size" value={filters.page_size} onChange={updateFilter}>
             {[25, 50, 100, 200].map(size => <option key={size} value={size}>{size}</option>)}
@@ -87,19 +115,19 @@ function SearchQueryDashboard({ url }) {
       <div className="search-table-scroll">
       <table className="search-queries-table">
         <thead><tr>
-          <th>Date and time</th><th>Query</th><th>Chromosome and position</th><th>Reference genome</th><th>Results</th><th>Valid</th>
+          <th>Date and time</th><th>Query</th><th>chr</th><th>pos</th><th>Reference genome</th><th>Results</th><th>Valid</th>
         </tr></thead>
         <tbody>
           {data.results.map((action, index) => <tr key={index}>
             <td>{new Date(action.created_at).toLocaleString()}</td>
             <td style={{ overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>{action.query}</td>
-            <td>{action.is_valid && action.chromosome && action.position != null
-              ? `${action.chromosome}:${action.position}` : ""}</td>
+            <td>{action.is_valid ? action.chromosome : ""}</td>
+            <td>{action.is_valid ? action.position : ""}</td>
             <td>{action.reference_genome}</td>
             <td>{action.result_count}</td>
             <td>{action.is_valid ? "Yes" : "No"}</td>
           </tr>)}
-          {!data.results.length && <tr><td colSpan="6">No searches found.</td></tr>}
+          {!data.results.length && <tr><td colSpan="7">No searches found.</td></tr>}
         </tbody>
       </table>
       </div>

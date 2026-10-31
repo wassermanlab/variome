@@ -199,6 +199,18 @@ python manage.py import_bvl_vcf \
 
 Per-file hash differences are reported in the log output.
 
+## Tracking dashboard
+
+The tracking dashboard requires the `library_access.view_tracking_dashboard` permission.
+The active tab is stored in the URL (`?tab=variant` or `?tab=search`),
+so refresh and browser back/forward navigation preserve the selected view.
+
+Search queries have separate `chr` and `pos` columns. Filter by dates, validity,
+chromosome, case-insensitive query substring, and inclusive minimum/maximum result
+counts (including zero). Blank limits are unbounded. Click **Apply search filters**
+to apply the selected filters and reset pagination. Page size and date sorting
+are grouped separately from the search filters.
+
 ## Running backend tests
 
 All backend tests (middleware and VCF import filters) live in `test/backend/variome_backend/`.

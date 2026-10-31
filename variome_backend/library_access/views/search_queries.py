@@ -32,6 +32,15 @@ class SearchQueryFilterForm(forms.Form):
     is_valid = forms.ChoiceField(
         required=False, choices=[("", "All"), ("true", "Valid"), ("false", "Invalid")]
     )
+    chromosome = forms.ChoiceField(
+        required=False,
+        choices=[("", "All")]
+        + [(str(chromosome), str(chromosome)) for chromosome in range(1, 23)]
+        + [("X", "X"), ("Y", "Y"), ("M", "M")],
+    )
+    query = forms.CharField(required=False, strip=False)
+    min_results = forms.IntegerField(required=False, min_value=0)
+    max_results = forms.IntegerField(required=False, min_value=0)
     page = forms.IntegerField(required=False, min_value=1)
     page_size = forms.IntegerField(required=False, min_value=1, max_value=200)
     sort = forms.ChoiceField(
@@ -42,6 +51,12 @@ class SearchQueryFilterForm(forms.Form):
         data = super().clean()
         if data.get("start") and data.get("end") and data["start"] > data["end"]:
             raise forms.ValidationError("Start date must not be after end date.")
+        if (
+            data.get("min_results") is not None
+            and data.get("max_results") is not None
+            and data["min_results"] > data["max_results"]
+        ):
+            raise forms.ValidationError("Minimum results must not exceed maximum results.")
         return data
 
 
@@ -61,6 +76,14 @@ def search_query_actions(request):
         actions = actions.filter(created_at__date__lte=filters["end"])
     if filters["is_valid"]:
         actions = actions.filter(is_valid=filters["is_valid"] == "true")
+    if filters["chromosome"]:
+        actions = actions.filter(chromosome=filters["chromosome"])
+    if filters["query"]:
+        actions = actions.filter(query__icontains=filters["query"])
+    if filters["min_results"] is not None:
+        actions = actions.filter(result_count__gte=filters["min_results"])
+    if filters["max_results"] is not None:
+        actions = actions.filter(result_count__lte=filters["max_results"])
     ordering = (
         ("created_at", "id") if filters["sort"] == "oldest" else ("-created_at", "-id")
     )
