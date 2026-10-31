@@ -113,21 +113,38 @@ function SearchQueryDashboard({ url }) {
 }
 
 let searchQueryRoot;
+function selectTrackingTab(name) {
+  ["variant", "search"].forEach(panel => {
+    const selected = panel === name;
+    document.getElementById(`${panel}-tracking`).hidden = !selected;
+    document.getElementById(`${panel}-tab`).setAttribute("aria-selected", String(selected));
+    document.getElementById(`${panel}-tab`).tabIndex = selected ? 0 : -1;
+  });
+  document.getElementById("tracking-tab").value = name;
+  if (name === "search" && !searchQueryRoot) {
+    const element = document.getElementById("search-query-root");
+    searchQueryRoot = ReactDOM.createRoot(element);
+    searchQueryRoot.render(<SearchQueryDashboard url={element.dataset.url} />);
+  }
+}
+
+function restoreTrackingTab() {
+  const name = new URLSearchParams(window.location.search).get("tab");
+  selectTrackingTab(name === "search" ? "search" : "variant");
+}
+
 ["variant", "search"].forEach(name => {
   const tab = document.getElementById(`${name}-tab`);
   tab.addEventListener("click", () => {
-    ["variant", "search"].forEach(panel => {
-      const selected = panel === name;
-      document.getElementById(`${panel}-tracking`).hidden = !selected;
-      document.getElementById(`${panel}-tab`).setAttribute("aria-selected", String(selected));
-      document.getElementById(`${panel}-tab`).tabIndex = selected ? 0 : -1;
-    });
-    if (name === "search" && !searchQueryRoot) {
-      const element = document.getElementById("search-query-root");
-      searchQueryRoot = ReactDOM.createRoot(element);
-      searchQueryRoot.render(<SearchQueryDashboard url={element.dataset.url} />);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") !== name) {
+      url.searchParams.set("tab", name);
+      window.history.pushState(null, "", url);
     }
+    selectTrackingTab(name);
   });
+  window.addEventListener("popstate", restoreTrackingTab);
+  restoreTrackingTab();
   tab.addEventListener("keydown", event => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();

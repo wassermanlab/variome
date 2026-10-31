@@ -247,3 +247,22 @@ class SearchQueryAnalytics(TestCase):
         response = self.client.get(reverse("tracking_dashboard"))
         self.assertContains(response, 'id="search-tab"')
         self.assertContains(response, f'data-url="{self.url}"')
+
+    def test_tab_only_links_use_default_dashboard_filters(self):
+        self.grant_dashboard_access()
+        for tab in ["search", "variant", "unknown"]:
+            with self.subTest(tab=tab):
+                response = self.client.get(reverse("tracking_dashboard"), {"tab": tab})
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context["form"].is_valid())
+                self.assertContains(response, 'name="tab" id="tracking-tab"')
+
+    def test_tab_parameter_preserves_dashboard_date_filters(self):
+        self.grant_dashboard_access()
+        response = self.client.get(
+            reverse("tracking_dashboard"),
+            {"tab": "search", "start": "2026-10-01", "end": "2026-10-31"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["form"]["start"].value(), "2026-10-01")
+        self.assertEqual(response.context["form"]["end"].value(), "2026-10-31")
