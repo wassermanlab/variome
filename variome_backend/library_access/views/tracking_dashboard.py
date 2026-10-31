@@ -55,7 +55,9 @@ def tracking_dashboard(request):
         id = url.split("/")[-1]
         return Variant.objects.filter(id=id).first()
 
-    form = DashboardForm(data=request.GET or defaults)
+    filter_data = request.GET.copy()
+    filter_data.pop("tab", None)
+    form = DashboardForm(data=filter_data or defaults)
     if form.is_valid():
         start_time = form.cleaned_data["start"]
         end_time = form.cleaned_data["end"]

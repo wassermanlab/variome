@@ -63,7 +63,7 @@ function cachedFetch(
 
   var key = url;
 
-  if (!map[key]) {
+  if (method !== 'GET' || !map[key]) {
     var options = {
       credentials: includeCredentials ? 'include' : 'omit',
       method,
@@ -123,6 +123,7 @@ function getFetch(url, query=null, localStorageKey){
 }
 
 const Api = {
+  post: (path, data) => cachedFetch(API_URL_BASE + path, null, 'POST', data),
   get: async (path, query) => {
     var json;
     try {

@@ -27,6 +27,7 @@ from .views import backend_home_page, get_site_settings
 api_urls = [
     path("variant/<str:id>", library.variant, name="variant"),
     path("search", library.snv_search, name="search"),
+    path("search/invalid", access.invalid_search_query, name="invalid_search_query"),
     path("user/", access.profile_view_json, name="profile"),
     path("settings", get_site_settings, name="settings"),
 ]
@@ -34,6 +35,7 @@ api_urls = [
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("tracking/", access.tracking_dashboard, name="tracking_dashboard"),
+    path("tracking/searches/", access.search_query_actions, name="search_query_actions"),
     path("accounts/profile/", access.profile_view_redirect, name="profile"),
     path("api/", include(api_urls)),
 ]

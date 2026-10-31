@@ -140,6 +140,10 @@ function SearchProvider({ children }) {
       setMatchPairs([]);
       setErrorMessage("Query format is not recognized.");
       setResultsMessage("--")
+      Api.post("search/invalid", {
+        query,
+        selectedAssembly: ASSEMBLY_LABEL
+      }).catch(() => console.warn("Could not track invalid search."));
     } else {
       
       var cleanGroups = _.omitBy(_.get(parameters, "groups", []), _.isEmpty);

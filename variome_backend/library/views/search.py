@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal, InvalidOperation
 
 from rest_framework.permissions import IsAuthenticated
@@ -13,6 +14,7 @@ from datetime import datetime
 from variome_backend.settings import IS_DEVELOPMENT
 
 from ..models import Variant
+from variome_backend.library_access.models import SearchQueryAction
 
 
 v_pos_limit = 10
@@ -163,7 +165,18 @@ def snv_search(request):
         out_error = "Query is null"
     elif "position" in in_result_sets:
         out_error = standard_validate(in_chr, in_pos, in_ref, in_alt)
+    if not out_error and "clinvar" in in_result_sets:
+        try:
+            if not Decimal(in_query).is_finite():
+                out_error = f"Invalid ClinVar ID: {in_query}"
+        except InvalidOperation:
+            out_error = f"Invalid ClinVar ID: {in_query}"
     if out_error:
+        SearchQueryAction.objects.create(
+            query=in_query or "",
+            reference_genome=request.GET.get("selectedAssembly", "GRCh38")[:32],
+            is_valid=False,
+        )
         print(f"Error: {out_error}")
         if IS_DEVELOPMENT:
             return Response(
@@ -173,6 +186,8 @@ def snv_search(request):
             return Response({"errors": [out_error]}, status=400)
 
     in_chr = normalize_chromosome(in_chr)
+    if "position" in in_result_sets and in_chr not in ("X", "Y", "M"):
+        in_chr = str(int(in_chr))
     in_ref = in_ref.upper() if in_ref else None
     in_alt = in_alt.upper() if in_alt else None
 
@@ -215,6 +230,15 @@ def snv_search(request):
             )
             response_data["results"]["clinvar"].extend(clinvar_results)
     #        print(f"ClinVar results: {response_data['results']['clinvar']}")
+
+    SearchQueryAction.objects.create(
+        query=in_query,
+        reference_genome=request.GET.get("selectedAssembly", "GRCh38")[:32],
+        result_count=sum(len(results) for results in response_data["results"].values()),
+        is_valid=True,
+        chromosome=in_chr if "position" in in_result_sets else None,
+        position=int(in_pos) if "position" in in_result_sets else None,
+    )
 
     duration = datetime.now() - now
     response_data["duration_ms"] = int(duration.total_seconds() * 1000)

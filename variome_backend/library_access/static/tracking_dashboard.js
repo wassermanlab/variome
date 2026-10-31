@@ -4,6 +4,189 @@ import { useState } from "react";
 */
 const useState = React.useState;
 
+function SearchQueryDashboard({ url }) {
+  const [filters, setFilters] = useState({
+    start: "", end: "", is_valid: "", chromosome: "", query: "",
+    min_results: "", max_results: "", page_size: "50", sort: "newest"
+  });
+  const [request, setRequest] = useState({ page: 1, page_size: "50", sort: "newest" });
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+    fetch(`${url}?${new URLSearchParams(request)}`, {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" }
+    })
+      .then(async response => {
+        if (!response.ok) {
+          if (response.status === 400) {
+            const body = await response.json();
+            throw new Error(Object.values(body.errors).flat().join(" "));
+          }
+          throw new Error("Unable to load searches. Check your dashboard access.");
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (!controller.signal.aborted) setData(data);
+      })
+      .catch(error => {
+        if (!controller.signal.aborted) setError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [url, request]);
+
+  const updateFilter = event => {
+    const { name, value } = event.target;
+    setFilters(current => ({ ...current, [name]: value }));
+  };
+
+  return <div>
+    <h5>Search queries</h5>
+    <p>Anonymous searches. Result counts include nearby variants.
+      Times are shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.
+      Coordinates are recorded for valid positional searches; older records may have no coordinates.</p>
+    <form className="search-filters" onSubmit={event => {
+      event.preventDefault();
+      setRequest({ ...filters, page: 1 });
+    }}>
+      <table><tbody>
+        <tr><th><label htmlFor="search-start">Start date</label></th><td>
+          <input id="search-start" type="date" name="start" value={filters.start} onChange={updateFilter} />
+        </td></tr>
+        <tr><th><label htmlFor="search-end">End date</label></th><td>
+          <input id="search-end" type="date" name="end" value={filters.end} onChange={updateFilter} />
+        </td></tr>
+        <tr><th><label htmlFor="search-validity">Validity</label></th><td>
+        <select id="search-validity" className="browser-default" name="is_valid" value={filters.is_valid} onChange={updateFilter}>
+          <option value="">All searches</option>
+          <option value="true">Valid</option>
+          <option value="false">Invalid</option>
+        </select>
+        </td></tr>
+        <tr><th><label htmlFor="search-chromosome">chr</label></th><td>
+          <select id="search-chromosome" className="browser-default" name="chromosome" value={filters.chromosome} onChange={updateFilter}>
+            <option value="">All chromosomes</option>
+            {[...Array.from({ length: 22 }, (_, index) => String(index + 1)), "X", "Y", "M"].map(chromosome =>
+              <option key={chromosome} value={chromosome}>{chromosome}</option>)}
+          </select>
+        </td></tr>
+        <tr><th><label htmlFor="search-query">Query contains</label></th><td>
+          <input id="search-query" type="text" name="query" value={filters.query} onChange={updateFilter} />
+        </td></tr>
+        <tr><th># Results</th><td className="result-count-range">
+          <label htmlFor="search-min-results">Minimum</label>
+          <input id="search-min-results" type="number" min="0" step="1" name="min_results" value={filters.min_results} onChange={updateFilter} />
+          <label htmlFor="search-max-results">Maximum</label>
+          <input id="search-max-results" type="number" min="0" step="1" name="max_results" value={filters.max_results} onChange={updateFilter} />
+        </td></tr>
+      </tbody></table>
+      <table><tbody>
+        <tr><th><label htmlFor="search-page-size">Page size</label></th><td>
+          <select id="search-page-size" className="browser-default" name="page_size" value={filters.page_size} onChange={updateFilter}>
+            {[25, 50, 100, 200].map(size => <option key={size} value={size}>{size}</option>)}
+          </select>
+        </td></tr>
+        <tr><th><label htmlFor="search-sort">Date sorting</label></th><td>
+          <select id="search-sort" className="browser-default" name="sort" value={filters.sort} onChange={updateFilter}>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </td></tr>
+      </tbody></table>
+      <div className="filter-actions">
+        <button type="submit" className="btn" disabled={loading}>Apply search filters</button>
+      </div>
+    </form>
+    <p role="status" className="search-status">{loading ? "Loading searches…" : "\u00a0"}</p>
+    {error && <p role="alert">{error}</p>}
+    {/* Keep previous rows mounted while loading so the page height (and scroll position) doesn't collapse. */}
+    <div className="search-results" aria-busy={loading}>
+    {!error && data && <>
+      <p>{data.count} searches</p>
+      <div className="search-table-scroll">
+      <table className="search-queries-table">
+        <thead><tr>
+          <th>Date and time</th><th>Query</th><th>chr</th><th>pos</th><th>Reference genome</th><th>Results</th><th>Valid</th>
+        </tr></thead>
+        <tbody>
+          {data.results.map((action, index) => <tr key={index}>
+            <td>{new Date(action.created_at).toLocaleString()}</td>
+            <td style={{ overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>{action.query}</td>
+            <td>{action.is_valid ? action.chromosome : ""}</td>
+            <td>{action.is_valid ? action.position : ""}</td>
+            <td>{action.reference_genome}</td>
+            <td>{action.result_count}</td>
+            <td>{action.is_valid ? "Yes" : "No"}</td>
+          </tr>)}
+          {!data.results.length && <tr><td colSpan="7">No searches found.</td></tr>}
+        </tbody>
+      </table>
+      </div>
+      <button type="button" disabled={loading || data.page <= 1}
+        onClick={() => setRequest({ ...request, page: data.page - 1 })}>Previous</button>
+      <span> Page {data.page} of {data.pages} </span>
+      <button type="button" disabled={loading || data.page >= data.pages}
+        onClick={() => setRequest({ ...request, page: data.page + 1 })}>Next</button>
+    </>}
+    </div>
+  </div>;
+}
+
+let searchQueryRoot;
+function selectTrackingTab(name) {
+  ["variant", "search"].forEach(panel => {
+    const selected = panel === name;
+    document.getElementById(`${panel}-tracking`).hidden = !selected;
+    document.getElementById(`${panel}-tab`).setAttribute("aria-selected", String(selected));
+    document.getElementById(`${panel}-tab`).tabIndex = selected ? 0 : -1;
+  });
+  document.getElementById("tracking-tab").value = name;
+  if (name === "search" && !searchQueryRoot) {
+    const element = document.getElementById("search-query-root");
+    searchQueryRoot = ReactDOM.createRoot(element);
+    searchQueryRoot.render(<SearchQueryDashboard url={element.dataset.url} />);
+  }
+}
+
+function restoreTrackingTab() {
+  const name = new URLSearchParams(window.location.search).get("tab");
+  selectTrackingTab(name === "search" ? "search" : "variant");
+}
+
+["variant", "search"].forEach(name => {
+  const tab = document.getElementById(`${name}-tab`);
+  tab.addEventListener("click", () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") !== name) {
+      url.searchParams.set("tab", name);
+      window.history.pushState(null, "", url);
+    }
+    selectTrackingTab(name);
+  });
+  window.addEventListener("popstate", restoreTrackingTab);
+  restoreTrackingTab();
+  tab.addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const target = event.key === "Home" ? "variant" : event.key === "End" ? "search"
+      : name === "variant" ? "search" : "variant";
+    const targetTab = document.getElementById(`${target}-tab`);
+    targetTab.focus();
+    targetTab.click();
+  });
+});
+
 // for truncating text when names get too big
 function truncateText(text, maxLength) {
   if (text.length > maxLength) {
