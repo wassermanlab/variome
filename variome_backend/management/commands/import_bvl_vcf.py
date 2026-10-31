@@ -4,6 +4,8 @@ import json
 import logging
 import pprint
 import sys
+import warnings as pywarnings
+from contextlib import contextmanager
 from pathlib import Path
 from time import time
 
@@ -25,6 +27,53 @@ from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import
 from variome_backend.management.VCFCallFilters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
 
 log = logging.getLogger("management")
+
+DEFAULT_VERBOSITY = 2
+MAX_VERBOSITY = 3
+
+HELP_EPILOG = """\
+verbosity:
+  -v     summary only: the final Import summary and duration; logging,
+         warnings, error/warning listings and progress are suppressed
+  -vv    (default) normal output: logging, error/warning listings and
+         progress, without chromosome caching messages or step timings
+  -vvv   everything, including "Caching chromosome ..." messages and
+         per-table / per-1000-row timings
+
+import summary:
+  Counts are for this run, not whole-table database totals.
+    Processed  input rows read for the table
+    Created    new rows inserted (bulk creates count only after the insert
+               succeeds)
+    Updated    existing rows updated; includes rows whose values were
+               already identical (not a count of changed fields)
+    Skipped    ignored existing rows, rejected rows, or pending inserts
+               abandoned on an early stop
+    Failed     rows that failed to import
+    Deleted    existing rows deleted by --delete (excludes cascaded
+               deletions of related tables)
+  Each row is marked \u2705 when the table imported without failures and \u274c
+  when it had failed rows or import errors (or the whole table failed and
+  was rolled back). Dry-run and rollback summaries are labelled as not
+  committed. Duration is the wall-clock time of the whole command.
+"""
+
+
+class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    pass
+
+
+@contextmanager
+def quiet_output():
+    """Silence logging and Python warnings (used for -v)."""
+    previous = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        with pywarnings.catch_warnings():
+            pywarnings.simplefilter("ignore")
+            yield
+    finally:
+        logging.disable(previous)
 
 
 def check_vcf(vcf_path, settings):
@@ -98,19 +147,43 @@ class Command(BaseCommand):
     help = "Import bvl data directly from a VCF file"
 
     def log_errors(self, entity_type, errors):
-        if errors:
+        if errors and self.verbosity >= 2:
             sys.stderr.write(f"\nERRORS ({len(errors)}) in {entity_type} load:\n")
             for line in bvltools.format_errors(errors, log_all=self.log_all_errors):
                 sys.stderr.write(line + "\n")
 
     def log_warnings(self, entity_type, warnings):
-        if warnings:
+        if warnings and self.verbosity >= 2:
             sys.stderr.write(f"\nWARNINGS ({len(warnings)}) in {entity_type} load:\n")
             for line in bvltools.format_messages(warnings, log_all=self.log_all_errors):
                 sys.stderr.write(line + "\n")
 
     def add_arguments(self, parser):
-        parser.formatter_class = argparse.ArgumentDefaultsHelpFormatter
+        parser.formatter_class = HelpFormatter
+        parser.epilog = HELP_EPILOG
+
+        # Replace Django's "-v {0,1,2,3}" with a counted -v / -vv / -vvv flag
+        for action in list(parser._actions):
+            if action.dest == "verbosity":
+                parser._handle_conflict_resolve(
+                    None, [(opt, action) for opt in action.option_strings]
+                )
+        parser.add_argument(
+            "-v",
+            action="count",
+            dest="verbosity",
+            default=argparse.SUPPRESS,
+            help="Output verbosity: -v summary only, -vv normal (default), "
+            "-vvv adds chromosome caching messages and timings",
+        )
+        parser.add_argument(
+            "--verbosity",
+            type=int,
+            choices=[1, 2, 3],
+            dest="verbosity",
+            default=argparse.SUPPRESS,
+            help="Same as -v/-vv/-vvv (default: 2)",
+        )
 
         # --- VCF source ---
         parser.add_argument(
@@ -282,8 +355,17 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
-    @transaction.atomic
     def handle(self, **options):
+        verbosity = options.get("verbosity") or DEFAULT_VERBOSITY
+        self.verbosity = max(1, min(verbosity, MAX_VERBOSITY))
+        options["verbosity"] = self.verbosity
+        if self.verbosity == 1:
+            with quiet_output():
+                return self._handle(**options)
+        return self._handle(**options)
+
+    @transaction.atomic
+    def _handle(self, **options):
         log.debug("import_bvl_vcf got options:\n%s", pprint.pformat(options))
         start_time = time()
         self.log_all_errors = options["log_all_errors"]
@@ -313,7 +395,8 @@ class Command(BaseCommand):
 
         if not options["delete"]:
             first_existing_variant = bvltools.VariantImporter.model.objects.first()
-            print(first_existing_variant)
+            if self.verbosity >= 3:
+                self.stderr.write(f"First existing variant: {first_existing_variant}")
             check_fail_reason = False
             if first_existing_variant is not None:
                 if "-" in first_existing_variant.variant_id and not options["out_hyphens"]:
@@ -384,18 +467,16 @@ class Command(BaseCommand):
                     else:
                         log.warning("File %s hashes don't match ❌", fname)
 
-            end_time = time()
-            elapsed = end_time - start_time
-            sys.stdout.write(
-                f"\n\nElapsed time: {elapsed // 3600:.0f} hours "
-                f"{(elapsed % 3600) // 60:.0f} minutes "
-                f"{elapsed % 60:.1f} seconds\n"
-            )
+            self.stdout.write(f"\nDuration: {bvltools.format_duration(time() - start_time)}")
             return
 
         # DB import mode
         importer_options = options
         importer_options["path"] = options["input_tsv_dir"]
+        importer_options["show_timings"] = self.verbosity >= 3
+        importer_options["show_cache_messages"] = self.verbosity >= 3
+        if self.verbosity == 1:
+            importer_options["progress"] = False
 
         errors_map = {}
         warnings_map = {}
@@ -405,11 +486,8 @@ class Command(BaseCommand):
 
         def log_timing(name):
             nonlocal last_step_time
-            duration = time() - last_step_time
-            hours = int(duration // 3600)
-            minutes = int((duration % 3600) // 60)
-            seconds = duration % 60
-            log.info("%s took %dh %dm %.1fs", name, hours, minutes, seconds)
+            if self.verbosity >= 3:
+                self.stderr.write(f"{name} took {bvltools.format_duration(time() - last_step_time)}")
             last_step_time = time()
 
         if options["severities"]:
@@ -441,11 +519,13 @@ class Command(BaseCommand):
             self.log_warnings(entity_type, warns)
 
         if options["rollback-on-error"] and any(errors_map.values()):
-            self.stderr.write("\nNot committing transaction (errors)")
+            if self.verbosity >= 2:
+                self.stderr.write("\nNot committing transaction (errors)")
             transaction.set_rollback(True)
             status = "ROLLED BACK: operations below were not committed"
         elif options["dry-run"]:
-            sys.stderr.write("\nNot committing transaction (dry-run)\n")
+            if self.verbosity >= 2:
+                self.stderr.write("\nNot committing transaction (dry-run)")
             transaction.set_rollback(True)
             status = "DRY RUN: operations below were not committed"
         else:
@@ -454,11 +534,4 @@ class Command(BaseCommand):
         self.stdout.write(f"\nImport summary ({status})")
         for line in bvltools.format_import_counts(counts_map, errors_map):
             self.stdout.write(line)
-
-        end_time = time()
-        elapsed = end_time - start_time
-        sys.stdout.write(
-            f"\n\nElapsed time: {elapsed // 3600:.0f} hours "
-            f"{(elapsed % 3600) // 60:.0f} minutes "
-            f"{elapsed % 60:.1f} seconds\n"
-        )
+        self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

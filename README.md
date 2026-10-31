@@ -178,19 +178,8 @@ python manage.py import_bvl_vcf --vcf /path/to/joint.vcf
 python manage.py create_indices
 ```
 
-Run `python manage.py import_bvl_vcf --help` for a full list of options.
-
-The final summary reports per-table input rows processed, rows created,
-existing rows updated, rows skipped (ignored existing rows, rejected data, or
-pending inserts abandoned on an early stop),
-rows failed, and existing rows deleted by `--delete`. These are counts for this
-run, not whole-table database totals. "Updated" includes existing rows whose
-values were already identical; it is not a count of changed field values.
-Counts are right-aligned in a table, with a ✅ for tables without failures and
-a ❌ for tables with failed rows or import errors.
-Bulk creates count only after the insert succeeds. Dry-run and rollback
-summaries explicitly mark operations as not committed. Deleted counts exclude
-cascaded deletions of related tables.
+Run `python manage.py import_bvl_vcf --help` for a full list of options and an
+explanation of the import summary.
 
 ## Key options
 
@@ -211,6 +200,7 @@ cascaded deletions of related tables.
 | `--hash-compare` | *(none)* | Directory of an existing TSV set to compare output hashes against (requires `--convert-to-tsv`) |
 | `--dry-run` / `-n` | disabled | Parse and validate without writing to the database |
 | `--delete` | disabled | Delete all existing data before importing |
+| `-v` / `-vv` / `-vvv` | `-vv` | Output verbosity: summary only / normal / adds chromosome caching messages and timings |
 | `--no-genes`, `--no-variants`, etc. | *(all enabled)* | Skip specific tables |
 
 ## Comparing output against a reference TSV set

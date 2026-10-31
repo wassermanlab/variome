@@ -76,6 +76,12 @@ class ImportCounts:
         )
 
 
+def format_duration(seconds):
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    return f"{hours}h {minutes}m {seconds % 60:.1f}s"
+
+
 def format_import_counts(counts_map, errors_map):
     """Format per-run counts with right-aligned numeric columns."""
     if not counts_map:
@@ -188,6 +194,8 @@ class Importer:
 
         # Whether to show progress indication
         self.progress = options["progress"]
+        self.show_timings = options.get("show_timings", True)
+        self.show_cache_messages = options.get("show_cache_messages", True)
 
         # Whether to bail out after first error
         self.failfast = options["failfast"]
@@ -300,9 +308,11 @@ class Importer:
                     self._row_num = self.counts.processed + 1
                 if self.progress and self._row_num % 1000 == 0:
                     now_time2 = datetime.now()
-                    sys.stderr.write(
-                        f"{self.object_name} {self._row_num} (took {(now_time2 - now_time).total_seconds()} seconds)...\n"
+                    timing = (
+                        f" (took {(now_time2 - now_time).total_seconds()} seconds)"
+                        if self.show_timings else ""
                     )
+                    sys.stderr.write(f"{self.object_name} {self._row_num}{timing}...\n")
                     now_time = datetime.now()
                 if self.limit is not None and self.limit < self._row_num:
                     warnings.append(ImportMessage(
@@ -1375,9 +1385,10 @@ class AnnotationImporter(Importer):
         self.vts = {}
 
     def cache_chromosome(self, chromosome, position):
-        sys.stderr.write(
-            f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
-        )
+        if self.show_cache_messages:
+            sys.stderr.write(
+                f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
+            )
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
             qs = self.model.objects.filter(q).values(
@@ -1554,9 +1565,10 @@ class ConsequenceImporter(Importer):
         }
 
     def cache_chromosome(self, chromosome, position):
-        sys.stderr.write(
-            f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
-        )
+        if self.show_cache_messages:
+            sys.stderr.write(
+                f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
+            )
         if not self.noexisting:
             q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
             qs = self.model.objects.filter(q).values(

@@ -348,6 +348,4 @@ class Command(BaseCommand):
         for line in bvltools.format_import_counts(counts_map, errors_map):
             self.stdout.write(line)
 
-        end_time = time()
-        elapsed_time = end_time - start_time
-        sys.stdout.write(f"\n\nElapsed time: {elapsed_time // 3600} hours {(elapsed_time % 3600) // 60} minutes {elapsed_time % 60} seconds\n")
+        self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

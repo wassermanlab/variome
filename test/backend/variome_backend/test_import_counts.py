@@ -251,3 +251,57 @@ class ImportSummaryTests(TransactionTestCase):
                 )
                 self.assert_summary_row(output.getvalue(), "Variant", [1, 1, 0, 0, 0, 0])
                 self.assertEqual(Variant.objects.exists(), not dry_run)
+
+
+class ImportVerbosityTests(TransactionTestCase):
+    def run_import(self, **options):
+        output = io.StringIO()
+        errors = io.StringIO()
+        call_command(
+            "import_bvl_vcf", vcf_file="data/fixtures/vcf/variome-tiny.vcf",
+            progress=True, stdout=output, stderr=errors, **{"dry-run": True}, **options,
+        )
+        return output.getvalue(), errors.getvalue()
+
+    def test_default_is_level_two_without_caching_or_timings(self):
+        with self.assertLogs("management", level="INFO") as logs, \
+                patch("sys.stderr", new_callable=io.StringIO) as sys_stderr:
+            output, errors = self.run_import()
+        stderr = sys_stderr.getvalue() + errors
+        self.assertIn("Import summary (DRY RUN", output)
+        self.assertRegex(output, r"Duration: \d+h \d+m \d+\.\ds")
+        self.assertIn("variant consequence 1000...", stderr)
+        self.assertIn("WARNINGS (1) in Transcript load", stderr)
+        self.assertNotIn("Caching chromosome", stderr)
+        self.assertNotIn(" took ", stderr)
+        self.assertTrue(any("Checking VCF file" in line for line in logs.output))
+
+    def test_level_three_adds_caching_and_timings(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as sys_stderr:
+            output, errors = self.run_import(verbosity=3)
+        stderr = sys_stderr.getvalue() + errors
+        self.assertIn("Caching chromosome chr22 from positions", stderr)
+        self.assertRegex(stderr, r"variant consequence 1000 \(took [\d.]+ seconds\)")
+        self.assertRegex(errors, r"Consequence took \d+h \d+m \d+\.\ds")
+        self.assertIn("Duration:", output)
+
+    def test_level_one_shows_only_summary(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as sys_stderr, \
+                patch("logging.Handler.handle") as handle:
+            output, errors = self.run_import(verbosity=1)
+        self.assertEqual(sys_stderr.getvalue() + errors, "")
+        handle.assert_not_called()
+        lines = [line for line in output.splitlines() if line]
+        self.assertTrue(lines[0].startswith("Import summary (DRY RUN"))
+        self.assertTrue(lines[-1].startswith("Duration: "))
+
+    def test_counted_v_flags_and_help(self):
+        from variome_backend.management.commands.import_bvl_vcf import Command
+
+        parser = Command().create_parser("manage.py", "import_bvl_vcf")
+        self.assertFalse(hasattr(parser.parse_args([]), "verbosity"))
+        for flag, level in (("-v", 1), ("-vv", 2), ("-vvv", 3)):
+            self.assertEqual(parser.parse_args([flag]).verbosity, level)
+        help_text = parser.format_help()
+        for text in ("-vv    (default)", "Updated    existing rows updated", "✅", "❌"):
+            self.assertIn(text, help_text)
