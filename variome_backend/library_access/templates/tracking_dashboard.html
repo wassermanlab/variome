@@ -28,6 +28,32 @@
       .btn {
         background-color: #71a7b0;
       }
+      .tracking-tabs {
+        display: flex;
+        border-bottom: 1px solid #b0bec5;
+        margin-bottom: 1.5em;
+      }
+      .tracking-tabs [role="tab"] {
+        padding: 0.9em 1.5em;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        background: transparent;
+        color: #455a64;
+        font: inherit;
+        cursor: pointer;
+      }
+      .tracking-tabs [role="tab"][aria-selected="true"] {
+        border-bottom-color: #163647;
+        color: #163647;
+        font-weight: bold;
+      }
+      .tracking-tabs [role="tab"]:hover {
+        background: #e0eeee;
+      }
+      .tracking-tabs [role="tab"]:focus-visible {
+        outline: 2px solid #163647;
+        outline-offset: -2px;
+      }
       .filters {
         position:absolute;
         padding:1em;
@@ -35,7 +61,7 @@
         min-width:300px;
         height: var(--top-section-height);
       }
-      .filters table {
+      .filters table, .search-filters table {
         width: 100%;
         height: 100%;
         margin-bottom: 1.2em;
@@ -47,8 +73,54 @@
         padding: 1em;
         text-align: right;
       }
-      .filters th {
+      .filters th, .search-filters th {
         background-color: #163647;
+        color: white;
+      }
+      .filters th label, .search-filters th label {
+        color: inherit;
+      }
+      .search-filters {
+        box-sizing: border-box;
+        width: 40vw;
+        min-width: 300px;
+        max-width: 100%;
+        padding: 1em;
+        margin-bottom: 1em;
+      }
+      .search-filters th, .search-filters td {
+        padding: 1em;
+        text-align: left;
+      }
+      .search-filters input, .search-filters select {
+        box-sizing: border-box;
+        width: 100%;
+      }
+      .search-filters .filter-actions {
+        text-align: right;
+      }
+      .search-table-scroll {
+        overflow-x: auto;
+      }
+      .search-results {
+        min-height: 100vh;
+      }
+      .search-results[aria-busy="true"] {
+        opacity: 0.6;
+      }
+      .search-queries-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+      }
+      .search-queries-table th, .search-queries-table td {
+        border: 1px solid #808080;
+        padding: 0.75em;
+        text-align: left;
+        vertical-align: top;
+      }
+      .search-queries-table th {
+        background: #163647;
         color: white;
       }
       .filters td ul {
@@ -76,6 +148,10 @@
 
         .filters {
           width:100%;
+        }
+        .search-filters {
+          width: 100%;
+          min-width: 0;
         }
         .views-table {
           display:none;
@@ -176,9 +252,14 @@
   <body>
     <div style="padding:1em;">
       <h4>Tracking Dashboard</h4>
-        
+      <div class="tracking-tabs" role="tablist" aria-label="Tracking views">
+        <button type="button" role="tab" id="variant-tab" aria-controls="variant-tracking" aria-selected="true" tabindex="0">Variant views</button>
+        <button type="button" role="tab" id="search-tab" aria-controls="search-tracking" aria-selected="false" tabindex="-1">Search queries</button>
+      </div>
+      <section id="variant-tracking" role="tabpanel" aria-labelledby="variant-tab">
       <div name="tracking-filters" class="filters">
         <form method="get">
+          <input type="hidden" name="tab" id="tracking-tab" value="variant" />
           <table>
             <tr>
               <th>
@@ -237,7 +318,11 @@
         </form>
       </div>
 
-      <div id="react-root" />
+      <div id="react-root"></div>
+      </section>
+      <section id="search-tracking" role="tabpanel" aria-labelledby="search-tab" hidden>
+        <div id="search-query-root" data-url="{% url 'search_query_actions' %}"></div>
+      </section>
     </div>
     &nbsp;
 

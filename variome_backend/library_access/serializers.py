@@ -12,3 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return obj.get_full_name()
+
+
+class InvalidSearchQuerySerializer(serializers.Serializer):
+    query = serializers.CharField(allow_blank=True, trim_whitespace=False)
+    selectedAssembly = serializers.CharField(max_length=32, default="GRCh38")
