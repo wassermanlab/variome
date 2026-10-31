@@ -592,6 +592,25 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.assertEqual([row["af_het"] for row in rows], [0.3, 0.4])
         self.assertEqual([row["max_hl"] for row in rows], [0.8, 0.9])
 
+    def test_histogram_and_max_hl_derived_per_alt_from_sample_af(self):
+        instance = MtBvlFrequenciesCallFilter(
+            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),
+            SETTINGS,
+        )
+        record = next(record for record in instance.vcf_record_stream() if record.POS == 9055)
+        with patch.object(instance, "vcf_record_stream", return_value=iter([copy.deepcopy(record)])):
+            rows = instance.getTableRows()
+        self.assertEqual([row["hl_hist"] for row in rows],
+                         ["1,0,0,0,0,0,0,0,0,0", "0,0,0,0,0,0,0,0,0,1"])
+        self.assertEqual([row["max_hl"] for row in rows], [0.01, 0.997])
+        for call, af in zip(record.calls, ([0.05], [0.1], [0.95])):
+            call.data["AF"] = af
+        record.ALT = record.ALT[:1]
+        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+            row = instance.getTableRows()[0]
+        self.assertEqual(row["hl_hist"], "1,1,0,0,0,0,0,0,0,1")
+        self.assertEqual(row["max_hl"], 0.95)
+
 
 class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):
     def test_intersection_and_chromosome_alias(self):

@@ -166,9 +166,11 @@ The supplied `data/fixtures/vcf/mt.vcf` Mutect2 example is also supported,
 including sites with multiple alternate alleles. VEP `CSQ` annotations are
 optional; without them, gene/transcript annotations and CSQ-derived identifiers
 remain absent. `INFO/AN` is retained as supplied. Missing MT-specific cohort
-metrics remain null: sample `FORMAT/AF` values are allele fractions, not cohort
-frequencies, and are not converted into homoplasmic/heteroplasmic counts or
-frequencies.
+metrics remain null, except that when the VCF has no `heteroplasmy_histogram`
+or `max_observed_heteroplasmy`, they are derived per ALT allele from the sample
+`FORMAT/AF` heteroplasmy levels of carriers (10 bins of 0.1; the top bin
+includes 1.0). Sample `FORMAT/AF` values are not converted into
+homoplasmic/heteroplasmic counts or frequencies.
 An optional preprocessed gnomAD mitochondrial TSV can be supplied with
 `--mt-gnomad-tsv /path/to/gnomad_mt.tsv`; only variants present in the VCF are
 imported. Its columns are `chromosome`, `position`, `ref`, `alt`, `AN`, `AC_hom`,

@@ -51,9 +51,13 @@ class MitochondrialImportTests(TransactionTestCase):
                 self.assertIsNone(metadata.clinvar_vcv)
                 frequency = MtVariomeFrequency.objects.get(variant=variant)
                 self.assertEqual(frequency.an, 2)
-                for field in ("ac_hom", "ac_het", "af_hom", "af_het", "max_hl"):
+                for field in ("ac_hom", "ac_het", "af_hom", "af_het"):
                     self.assertIsNone(getattr(frequency, field))
-                self.assertEqual(frequency.hl_hist, "")
+                self.assertAlmostEqual(float(frequency.max_hl), 0.009923)
+                self.assertEqual(frequency.hl_hist, "1,0,0,0,0,0,0,0,0,0")
+                frequency = MtVariomeFrequency.objects.get(variant__variant_id="M-8860-A-G")
+                self.assertEqual(frequency.hl_hist, "0,0,0,0,0,0,0,0,0,3")
+                self.assertAlmostEqual(float(frequency.max_hl), 0.997)
                 self.assertTrue(MT.objects.filter(variant__variant_id="M-9055-G-T").exists())
                 self.assertTrue(MT.objects.filter(variant__variant_id="M-9055-G-A").exists())
                 self.assertFalse(VariantTranscript.objects.exists())
