@@ -15,10 +15,6 @@ class VariantsCallFilter(CallFilter):
         """
         seen = set()
         for record in self.vcf_record_stream():
-            variant_id = self.make_variant_id(record)
-            if variant_id in seen:
-                continue
-            seen.add(variant_id)
             filter_val = ";".join(record.FILTER)
             type_info = record.INFO.get("TYPE")
             if isinstance(type_info, list) and type_info:
@@ -28,12 +24,18 @@ class VariantsCallFilter(CallFilter):
                 #IBVL vcf dialect uses VARIANT_CLASS in CSQ for variant type
                 var_classes = self.get_csq_values(record, "VARIANT_CLASS")
                 var_type = var_classes[0] if isinstance(var_classes, list) and var_classes else None
-            if var_type not in ["SNV", "SNP"] and var_type is not None:
+            if self.is_mitochondrial(record):
+                var_type = "M"
+            elif var_type not in ["SNV", "SNP"] and var_type is not None:
                 var_type = "INDEL"
             elif var_type is None:
                 var_type = self.settings.NA
-            yield {
-                'variant_id': variant_id,
-                'var_type': var_type,
-                'filter': filter_val if filter_val != "" else self.settings.NA
-            }
+            for variant_id in self.make_variant_ids(record):
+                if variant_id in seen:
+                    continue
+                seen.add(variant_id)
+                yield {
+                    'variant_id': variant_id,
+                    'var_type': var_type,
+                    'filter': filter_val if filter_val != "" else self.settings.NA
+                }

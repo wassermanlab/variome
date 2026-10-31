@@ -14,3 +14,4 @@ from .genomic_variome_frequency import GenomicVariomeFrequencyAdmin
 
 from .variant import VariantAdmin
 from .snv import SNVAdmin
+from .mt import MTAdmin, MtVariomeFrequencyAdmin, MtGnomadFrequencyAdmin

@@ -22,7 +22,7 @@ export default function VariantDetails({ variantMetadata, bvlFrequencies, varian
     const variantDetailsList = [
         {
             title: 'Type',
-            val: _.get(variant,"var_type", "-"),
+            val: variant.var_type === "M" ? "Mitochondrial" : _.get(variant,"var_type", "-"),
         },
         {
             title: 'Site Quality',

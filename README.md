@@ -154,7 +154,22 @@ PUBLIC_BVL - opens the database for public access, as a demonstration app. For t
 
 Use the `import_bvl_vcf` management command to import data directly from a VCF file into the database.
 
-Mitochondrial tables are omitted because these are not part of the currently used VCF reference files.
+Mitochondrial records (`M`, `MT`, `chrM` or `chrMT`) are imported into separate
+metadata and frequency tables. Both the IBVL tabular MT export and standard
+Variome VCF INFO/FORMAT metrics are supported. IDs use `M` consistently.
+The supplied `data/fixtures/vcf/mt.vcf` Mutect2 example is also supported,
+including sites with multiple alternate alleles. VEP `CSQ` annotations are
+optional; without them, gene/transcript annotations and CSQ-derived identifiers
+remain absent. `INFO/AN` is retained as supplied. Missing MT-specific cohort
+metrics remain null: sample `FORMAT/AF` values are allele fractions, not cohort
+frequencies, and are not converted into homoplasmic/heteroplasmic counts or
+frequencies.
+An optional preprocessed gnomAD mitochondrial TSV can be supplied with
+`--mt-gnomad-tsv /path/to/gnomad_mt.tsv`; only variants present in the VCF are
+imported. Its columns are `chromosome`, `position`, `ref`, `alt`, `AN`, `AC_hom`,
+`AC_het`, `AF_hom`, `AF_het` and `max_observed_heteroplasmy`.
+Select an **Example mt** variant in the admin Settings editor to show its link
+on the home page.
 
 ## Quickstart
 
@@ -165,12 +180,26 @@ python manage.py create_indices
 
 Run `python manage.py import_bvl_vcf --help` for a full list of options.
 
+The final summary reports per-table input rows processed, rows created,
+existing rows updated, rows skipped (ignored existing rows, rejected data, or
+pending inserts abandoned on an early stop),
+rows failed, and existing rows deleted by `--delete`. These are counts for this
+run, not whole-table database totals. "Updated" includes existing rows whose
+values were already identical; it is not a count of changed field values.
+Counts are right-aligned in a table, with a ✅ for tables without failures and
+a ❌ for tables with failed rows or import errors.
+Bulk creates count only after the insert succeeds. Dry-run and rollback
+summaries explicitly mark operations as not committed. Deleted counts exclude
+cascaded deletions of related tables.
+
 ## Key options
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--vcf` | *(required)* | Path to the input VCF file (plain text or `.gz`) |
 | `--input-tsv-dir` | `data/fixtures` | Path to the dir containing severities.tsv |
+| `--mts` / `--no-mts` | enabled | Import mitochondrial metadata and cohort frequencies |
+| `--mt-gnomad-tsv` | *(none)* | gnomAD mitochondrial frequency TSV to intersect with imported variants |
 | `--na` | `.` | Value used to represent missing/null data |
 | `--out-chr` | enabled | Prefix chromosome names with `chr` |
 | `--out-hyphens` | enabled | Use hyphens in variant IDs (e.g. `1-100-A-G`) if false, uses underscores instead |

@@ -2,7 +2,10 @@ from ..models import (
     Variant,
     SNV,
     GenomicGnomadFrequency,
-    GenomicVariomeFrequency
+    GenomicVariomeFrequency,
+    MT,
+    MtGnomadFrequency,
+    MtVariomeFrequency,
 )
 from datetime import datetime
 
@@ -11,6 +14,9 @@ from ..serializers import (
     GenomicGnomadFrequencySerializer,
     GenomicVariomeFrequencySerializer,
     SNVSerializer,
+    MTSerializer,
+    MtGnomadFrequencySerializer,
+    MtVariomeFrequencySerializer,
 )
 
 from .snv_annotations import snv_annotations
@@ -53,16 +59,22 @@ def variant(request, id):
     #    print(f"variant_type: {variant.var_type}")
 
     snv = None
+    mt = None
     gnomadFrequences = None
     bvlFrequencies = None
     annotations = None
 
+    is_mt = variant.var_type == "M"
+    variant_model = MT if is_mt else SNV
+    variant_serializer = MTSerializer if is_mt else SNVSerializer
     try:
-        snv = SNV.objects.get(variant=variant)
-        snv = SNVSerializer(snv).data
-    except SNV.DoesNotExist:
-        errors.append(f"SNV for variant {variant} not found")
-        snv = None
+        detail = variant_serializer(variant_model.objects.get(variant=variant)).data
+        if is_mt:
+            mt = detail
+        else:
+            snv = detail
+    except variant_model.DoesNotExist:
+        errors.append(f"{'MT' if is_mt else 'SNV'} for variant {variant} not found")
     try:
         annotationsResult = snv_annotations(variant.variant_id)
         annotations = annotationsResult["annotations"]
@@ -71,31 +83,45 @@ def variant(request, id):
     except Exception:
         errors.append("Error getting annotations")
 
-    try:
-        gnomadFrequenciesObject = GenomicGnomadFrequency.objects.get(
-            variant_id=variant.id
-        )
-        gnomadFrequences = GenomicGnomadFrequencySerializer(
-            gnomadFrequenciesObject
-        ).data
-    except GenomicGnomadFrequency.DoesNotExist:
-        errors.append("genomic gnomad frequency not found for this variant")
+    gnomad_model = MtGnomadFrequency if is_mt else GenomicGnomadFrequency
+    gnomad_serializer = (
+        MtGnomadFrequencySerializer if is_mt else GenomicGnomadFrequencySerializer
+    )
+    variome_model = MtVariomeFrequency if is_mt else GenomicVariomeFrequency
+    variome_serializer = (
+        MtVariomeFrequencySerializer if is_mt else GenomicVariomeFrequencySerializer
+    )
 
     try:
-        variomeFrequenciesObject = GenomicVariomeFrequency.objects.get(
+        gnomadFrequenciesObject = gnomad_model.objects.get(
             variant_id=variant.id
         )
-        bvlFrequencies = GenomicVariomeFrequencySerializer(
+        gnomadFrequences = gnomad_serializer(
+            gnomadFrequenciesObject
+        ).data
+    except gnomad_model.DoesNotExist:
+        errors.append(
+            f"{'mitochondrial' if is_mt else 'genomic'} gnomad frequency not found for this variant"
+        )
+
+    try:
+        variomeFrequenciesObject = variome_model.objects.get(
+            variant_id=variant.id
+        )
+        bvlFrequencies = variome_serializer(
             variomeFrequenciesObject
         ).data
-    except GenomicVariomeFrequency.DoesNotExist:
-        errors.append("genomic variome frequency not found for this variant")
+    except variome_model.DoesNotExist:
+        errors.append(
+            f"{'mitochondrial' if is_mt else 'genomic'} variome frequency not found for this variant"
+        )
 
     duration = datetime.now() - now
     return Response(
         {
             "variant": VariantSerializer(variant).data,
             "snv": snv,
+            "mt": mt,
             "gnomadFrequencies": gnomadFrequences,
             "bvlFrequencies": bvlFrequencies,
             "annotations": annotations,

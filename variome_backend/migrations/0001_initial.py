@@ -12,17 +12,12 @@ class Migration(migrations.Migration):
     ]
 
     def create_singleton_instance(apps, schema_editor):
-        from variome_backend.models.variome_settings import VariomeSettings
-
-        VariomeSettings().save()
+        VariomeSettings = apps.get_model("variome_backend", "VariomeSettings")
+        VariomeSettings.objects.using(schema_editor.connection.alias).get_or_create(pk=1)
 
     def remove(apps, schema_editor):
-        try:
-            from variome_backend.models.variome_settings import VariomeSettings
-
-            VariomeSettings.objects.all().delete()
-        except:
-            pass
+        VariomeSettings = apps.get_model("variome_backend", "VariomeSettings")
+        VariomeSettings.objects.using(schema_editor.connection.alias).all().delete()
 
     operations = [
         migrations.CreateModel(

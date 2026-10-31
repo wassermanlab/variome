@@ -15,40 +15,49 @@ class MtsCallFilter(CallFilter):
         mts = {}
         NA = self.settings.NA
         for record in self.vcf_record_stream():
-            variant = self.make_variant_id(record)
+            if not self.is_mitochondrial(record):
+                continue
             pos = record.POS
             ref = record.REF
-            alt = record.ALT[0].value  # assuming single ALT allele
 
             # Extract CSQ values
-            existing_variation_list = self.get_csq_values(record, "Existing_variation")
+            existing_variation_list = [
+                value for entry in self.get_csq_values(record, "Existing_variation")
+                for value in entry.split("&")
+            ]
             dbsnp_id = NA
             clinvar_vcv = NA
             for ev in existing_variation_list:
                 if ev.startswith("rs"):
                     dbsnp_id = ev
                 if ev.startswith("VCV"):
-                    clinvar_vcv = ev
+                    clinvar_vcv = ev[3:]
 
-            # URLs (placeholders, adjust as needed)
+            if clinvar_vcv == NA:
+                # Variome dialect supplies ClinVar IDs in INFO; IBVL uses CSQ.
+                clinvar_info = record.INFO.get("ClinVar_Variation_ID")
+                if isinstance(clinvar_info, list):
+                    clinvar_info = clinvar_info[0] if clinvar_info else None
+                clinvar_vcv = clinvar_info or NA
+
             ucsc_url = f"https://genome.ucsc.edu/cgi-bin/hgTracks?db={self.assembly or 'hg38'}&position=chrM%3A{pos}-{pos}"
-            mitomap_url = f"https://www.mitomap.org/foswiki/bin/view/MITOMAP/MutationsCodingControl#{pos}"
-            gnomad_url = f"https://gnomad.broadinstitute.org/variant/M-{pos}-{ref}-{alt}?dataset=gnomad_r3"
             dbsnp_url = f"https://www.ncbi.nlm.nih.gov/snp/{dbsnp_id}" if dbsnp_id != NA else ""
-            clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_vcv[3:]}" if clinvar_vcv != NA else ""
+            clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_vcv}/" if clinvar_vcv != NA else ""
 
-            if variant not in mts:
-                mts[variant] = {
-                    'variant': variant,
-                    'pos': pos,
-                    'ref': ref,
-                    'alt': alt,
-                    'ucsc_url': ucsc_url,
-                    'mitomap_url': mitomap_url,
-                    'gnomad_url': gnomad_url,
-                    'dbsnp_id': dbsnp_id,
-                    'dbsnp_url': dbsnp_url,
-                    'clinvar_url': clinvar_url,
-                    'clinvar_vcv': clinvar_vcv
-                }
+            for allele, variant in zip(record.ALT, self.make_variant_ids(record)):
+                alt = allele.value
+                if variant not in mts:
+                    mts[variant] = {
+                        'variant': variant,
+                        'pos': pos,
+                        'ref': ref,
+                        'alt': alt,
+                        'ucsc_url': ucsc_url,
+                        'mitomap_url': f"https://mitomap.org/cgi-bin/search_allele?variant={pos}{ref}%3E{alt}",
+                        'gnomad_url': f"https://gnomad.broadinstitute.org/variant/M-{pos}-{ref}-{alt}?dataset=gnomad_r3",
+                        'dbsnp_id': dbsnp_id,
+                        'dbsnp_url': dbsnp_url,
+                        'clinvar_url': clinvar_url,
+                        'clinvar_vcv': clinvar_vcv
+                    }
         return list(mts.values())

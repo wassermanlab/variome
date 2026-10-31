@@ -34,6 +34,10 @@ from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFil
 from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
 from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
 from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
 from variome_backend.management.vcf_import_settings import VcfImportSettings
 
@@ -136,6 +140,13 @@ class TestBaseFilter(FocusableTestCase):
         records = list(self.testInstance.vcf_record_stream())
         csq_values = self.testInstance.get_csq_values(records[1], 'SYMBOL')
         self.assertEqual(csq_values, ['LA16c-60H5.7', 'NBEAP3'])
+
+    def test_csq_without_description(self):
+        with patch("vcfpy.Header.get_info_field_info") as get_info:
+            get_info.return_value.description = None
+            instance = self.MockFilter(get_fixture_path("mock_snv.vcf"), SETTINGS)
+        self.assertEqual(instance.csq_fields, [])
+        self.assertEqual(instance.csq_index_map, {})
 
     def test_range_parameters(self):
         test_settings = copy.deepcopy(SETTINGS)
@@ -421,7 +432,6 @@ class TestMtsCallFilter(FocusableTestCase):
     vcf_files = None
 
     def setUp(self):
-        self.skipTest("MtsCallFilter.getTableRows() not yet implemented")
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_mt.vcf')
         self.filter = MtsCallFilter(
@@ -444,6 +454,37 @@ class TestMtsCallFilter(FocusableTestCase):
         self.assertIn('ref', result[0])
         self.assertIn('alt', result[0])
 
+    def test_ibvl_metadata(self):
+        row = self.filter.getTableRows()[0]
+        self.assertEqual(row["variant"], "chrM_8602_T_C")
+        self.assertEqual(row["dbsnp_id"], "rs879029014")
+        self.assertIn("variant=8602T%3EC", row["mitomap_url"])
+
+    def test_variome_metadata_and_indel_ids(self):
+        rows = MtsCallFilter(get_fixture_path("mock_mt_variome.vcf"), SETTINGS).getTableRows()
+        self.assertEqual(rows[0]["variant"], "chrM_8602_T_C")
+        self.assertEqual(rows[0]["clinvar_vcv"], "123")
+        self.assertEqual(rows[1]["variant"], "chrM_8603_TA_T")
+        self.assertEqual(rows[1]["clinvar_vcv"], "000456")
+        self.assertIn("/000456/", rows[1]["clinvar_url"])
+
+    def test_mt_variants_do_not_populate_nuclear_tables(self):
+        for fixture in ("mock_mt.vcf", "mock_mt_variome.vcf"):
+            path = get_fixture_path(fixture)
+            self.assertEqual(list(SnvsCallFilter(path, SETTINGS).getTableRows()), [])
+            self.assertEqual(list(GenomicBvlFrequenciesCallFilter(path, SETTINGS).getTableRows()), [])
+            self.assertTrue(all(
+                row["var_type"] == "M"
+                for row in VariantsCallFilter(path, SETTINGS).getTableRows()
+            ))
+
+    def test_mt_range_aliases(self):
+        for chrom in ("M", "MT", "chrM", "chrMT"):
+            settings = copy.copy(SETTINGS)
+            settings.RANGES = f"{chrom}:8602-8602"
+            rows = MtsCallFilter(get_fixture_path("mock_mt_variome.vcf"), settings).getTableRows()
+            self.assertEqual(len(rows), 1)
+
 class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
     """Test MtBvlFrequenciesCallFilter."""
 
@@ -452,7 +493,6 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
     vcf_files = None
 
     def setUp(self):
-        self.skipTest("MtBvlFrequenciesCallFilter.getTableRows() not yet implemented")
         """Set up test fixtures."""
         self.vcf_files = get_fixture_path('mock_mt.vcf')
         self.filter = MtBvlFrequenciesCallFilter(
@@ -473,6 +513,104 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.assertIn('an', result[0])
         self.assertIn('ac_hom', result[0])
         self.assertIn('ac_het', result[0])
+
+    def test_ibvl_metrics_and_histogram(self):
+        row = self.filter.getTableRows()[0]
+        self.assertEqual(row["an"], 100)
+        self.assertEqual(row["ac_hom"], 5)
+        self.assertEqual(row["ac_het"], 10)
+        self.assertEqual(row["af_hom"], 0.05)
+        self.assertEqual(row["max_hl"], 0.95)
+        self.assertEqual(row["hl_hist"], "5,10,15,8,6,4,3,2,1,1")
+
+    def test_variome_info_and_format_metrics(self):
+        rows = MtBvlFrequenciesCallFilter(
+            get_fixture_path("mock_mt_variome.vcf"), SETTINGS
+        ).getTableRows()
+        self.assertEqual(len(rows), 2)  # AN=0 is not an observed frequency.
+        self.assertEqual(rows[0]["an"], 100)
+        self.assertEqual(rows[0]["hl_hist"], self.filter.getTableRows()[0]["hl_hist"])
+        self.assertEqual(rows[1]["ac_hom"], 0)
+        self.assertEqual(rows[1]["af_hom"], 0)
+        self.assertEqual(rows[1]["ac_het"], 1)
+        self.assertEqual(rows[1]["hl_hist"], "1,0,0,0,0,0,0,0,0,0")
+
+    def test_missing_metrics_are_not_reported_as_zero(self):
+        record = next(self.filter.vcf_record_stream())
+        record.INFO = {"AN": 100}
+        with patch.object(self.filter, "vcf_record_stream", return_value=iter([record])):
+            row = self.filter.getTableRows()[0]
+        self.assertIsNone(row["ac_hom"])
+        self.assertIsNone(row["ac_het"])
+        self.assertIsNone(row["af_hom"])
+        self.assertIsNone(row["max_hl"])
+        self.assertEqual(row["hl_hist"], "")
+
+    def test_duplicate_mt_metrics_are_emitted_once(self):
+        record = next(self.filter.vcf_record_stream())
+        with patch.object(self.filter, "vcf_record_stream", return_value=iter([record, record])):
+            self.assertEqual(len(self.filter.getTableRows()), 1)
+
+    def test_unobserved_duplicate_does_not_hide_valid_metrics(self):
+        record = next(self.filter.vcf_record_stream())
+        unobserved = copy.deepcopy(record)
+        unobserved.INFO["AN"] = 0
+        with patch.object(self.filter, "vcf_record_stream", return_value=iter([unobserved, record])):
+            rows = self.filter.getTableRows()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["an"], 100)
+
+    def test_missing_info_an_falls_back_to_format(self):
+        instance = MtBvlFrequenciesCallFilter(
+            get_fixture_path("mock_mt_variome.vcf"), SETTINGS
+        )
+        record = list(instance.vcf_record_stream())[1]
+        record.INFO["AN"] = None
+        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+            row = instance.getTableRows()[0]
+        self.assertEqual(row["an"], 100)
+        self.assertEqual(row["ac_het"], 1)
+
+    def test_multiallelic_cohort_metrics_are_selected_per_alt(self):
+        instance = MtBvlFrequenciesCallFilter(
+            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),
+            SETTINGS,
+        )
+        record = next(record for record in instance.vcf_record_stream() if record.POS == 9055)
+        record.INFO.update({
+            "AC_hom": [1, 2], "AC_het": [3, 4],
+            "AF_hom": [0.1, 0.2], "AF_het": [0.3, 0.4],
+            "max_observed_heteroplasmy": [0.8, 0.9],
+        })
+        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
+            rows = instance.getTableRows()
+        self.assertEqual([row["variant"] for row in rows], ["chrM_9055_G_T", "chrM_9055_G_A"])
+        self.assertEqual([row["an"] for row in rows], [4, 4])
+        self.assertEqual([row["ac_hom"] for row in rows], [1, 2])
+        self.assertEqual([row["ac_het"] for row in rows], [3, 4])
+        self.assertEqual([row["af_hom"] for row in rows], [0.1, 0.2])
+        self.assertEqual([row["af_het"] for row in rows], [0.3, 0.4])
+        self.assertEqual([row["max_hl"] for row in rows], [0.8, 0.9])
+
+
+class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):
+    def test_intersection_and_chromosome_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "gnomad.tsv"
+            path.write_text(
+                "chromosome\tposition\tref\talt\tAN\tAC_hom\tAC_het\tAF_hom\tAF_het\tmax_observed_heteroplasmy\n"
+                "chrMT\t8602\tT\tC\t1000\t0\t10\t0\t0.01\t0.9\n"
+                "M\t8603\tTA\tT\t1000\t1\t0\t0.001\t0\t1\n"
+                "M\t9999\tA\tC\t1000\t1\t1\t0.001\t0.001\t1\n",
+                encoding="utf-8",
+            )
+            rows = list(MtGnomadFrequenciesCallFilter(
+                get_fixture_path("mock_mt_variome.vcf"), SETTINGS, path
+            ).getTableRows())
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["variant"], "chrM_8602_T_C")
+        self.assertEqual(rows[0]["ac_hom"], 0)
+        self.assertEqual(rows[1]["variant"], "chrM_8603_TA_T")
 
 if __name__ == '__main__':
     unittest.main()

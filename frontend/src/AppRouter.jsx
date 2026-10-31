@@ -71,6 +71,7 @@ function AppRouter() {
       Api.get('settings').then((data) => {
         console.log(data);
         setExampleSnv(_.get(data, 'settings.example_snv'));
+        setExampleMt(_.get(data, 'settings.example_mt'));
         //              setPageTitle(_.get(data,'settings.site_title'));
         setHomePageMessage(_.get(data, 'settings.home_page_message'));
         setSettingsFetched(true);
@@ -151,7 +152,7 @@ function AppRouter() {
             <AppLayoutWithNavigation user={user} pageTitle={pageTitle}>
               <ErrorBoundary fallback={<p>Something went wrong</p>}>
                 <Routes>
-                  <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{ snv: exampleSnv }} message={homePageMessage} />} />
+                  <Route path="/" exact element={<Home user={user} pageTitle={pageTitle} setPageTitle={setPageTitle} examples={{ snv: exampleSnv, mt: exampleMt }} message={homePageMessage} />} />
                   {
                     Content.map(({ name, urlPath, content }) => {
                       return (

@@ -18,22 +18,24 @@ export default function References({variant, variantMetadata}) {
         {
             ref: 'UCSC',
             val: _.isEmpty(variantMetadata.ucsc_url) ? 'Search UCSC': <LinkIcon/>,
-            link: _.isEmpty(variantMetadata.ucsc_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ucsc_url,
+            link: _.isEmpty(variantMetadata.ucsc_url) ? (variant?.var_type === 'M' ? "https://genome.ucsc.edu/" : "https://asia.ensembl.org/Homo_sapiens/Info/Index") : variantMetadata.ucsc_url,
         },
         {
-            ref: 'Ensembl',
-            val: _.isEmpty(variantMetadata.ensembl_url) ? '(Search)' : <LinkIcon/>,
-            link: _.isEmpty(variantMetadata.ensembl_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ensembl_url,
+            ref: variant?.var_type === 'M' ? 'MITOMAP' : 'Ensembl',
+            val: _.isEmpty(variant?.var_type === 'M' ? variantMetadata.mitomap_url : variantMetadata.ensembl_url) ? '(Search)' : <LinkIcon/>,
+            link: variant?.var_type === 'M'
+                ? (variantMetadata.mitomap_url || "https://www.mitomap.org/")
+                : (variantMetadata.ensembl_url || "https://asia.ensembl.org/Homo_sapiens/Info/Index"),
         },
         {
             ref: 'ClinVar',
-            val: _.isEmpty(variantMetadata.clinvar_vcv) ? "(Search)" : <><LinkIcon/> {_.round(variantMetadata.clinvar_vcv)}</>,
+            val: variantMetadata.clinvar_vcv == null || variantMetadata.clinvar_vcv === "" ? "(Search)" : <><LinkIcon/> {_.round(variantMetadata.clinvar_vcv)}</>,
             link: _.isEmpty(variantMetadata.clinvar_url) ?  "https://www.ncbi.nlm.nih.gov/clinvar/" : variantMetadata.clinvar_url,
         },
         {
             ref: 'gnomAD',
-            val: _.isEmpty(variantMetadata.gnomad_url) ? "(Search)" : <><LinkIcon/> {variantMetadata.variant.variant_id} </>,
-            link: (variantMetadata.gnomad_url === "nan" || typeof variantMetadata.gnomad_url == 'undefined') ?  "https://gnomad.broadinstitute.org/" : variantMetadata.gnomad_url,
+            val: _.isEmpty(variantMetadata.gnomad_url) ? "(Search)" : <><LinkIcon/> {variant?.variant_id} </>,
+            link: (!variantMetadata.gnomad_url || variantMetadata.gnomad_url === "nan") ?  "https://gnomad.broadinstitute.org/" : variantMetadata.gnomad_url,
         }
     ] : [];
     if (_.isArray(referencesList) && _.size(referencesList) > 0){

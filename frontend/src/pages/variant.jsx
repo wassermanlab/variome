@@ -24,6 +24,7 @@ import VariantDetails from "../components/VariantDetails";
 import References from "../components/References";
 import PopFrequencies from "../components/PopFrequencies";
 import Annotations from "../components/Annotations";
+import MitochondrialVariant from "./mitochondrial";
 
 import Api from "../Api";
 
@@ -42,6 +43,7 @@ export default function Variant({pageTitle}) {
 
   // Get Variant metadata
   useEffect(() => {
+    let active = true;
     setError(null);
     setVariant(null);
     setVariantMetadata(null);
@@ -51,16 +53,20 @@ export default function Variant({pageTitle}) {
     setLoading(true);
 
     Api.get("variant/" + varId)
-      .then(({ variant, snv, bvlFrequencies, annotations }) => {
+      .then(({ variant, snv, mt, bvlFrequencies, gnomadFrequencies, annotations }) => {
+        if (!active) return;
 //        console.log("variant", variant);
         setVariant(variant);
-        setVariantMetadata(snv);
-        //          setGnomadFrequencies(gnomadFrequencies);
+        setVariantMetadata(variant.var_type === "M" ? mt : snv);
+        if (variant.var_type === "M") {
+          setGnomadFrequencies(gnomadFrequencies);
+        }
         setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
         setLoading(false);
       })
       .catch((r) => {
+        if (!active) return;
         if (r.status == 429) {
           setError(
             "Variant requests are limited on a 24-hour basis. Please try again later"
@@ -74,11 +80,17 @@ export default function Variant({pageTitle}) {
         }
         setLoading(false);
       });
+    return () => { active = false; };
   }, [varId]);
 
   useEffect(() => {
 
+    if (variant?.var_type === "M") {
+      setGnomadLoading(false);
+      return;
+    }
     setGnomadLoading(true);
+    let active = true;
     if (variant && variant.variant_id) {
       var QUERY = `
     query getVariant($variantId: String!) {
@@ -107,6 +119,7 @@ export default function Variant({pageTitle}) {
       }
       Api.gnomadGraphQLRequest(QUERY, { variantId: variant.variant_id })
         .then((data) => {
+          if (!active) return;
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);
           var ac_tot =
@@ -123,11 +136,13 @@ export default function Variant({pageTitle}) {
             setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot, hemi_tot });
             setGnomadLoading(false);
         }).catch(e =>{
+            if (!active) return;
             console.error(e.message);
             setGnomadLoading(false);
             setGnomadFrequencies({ ac_tot:"gnomAD connection error"})
         });
     }
+    return () => { active = false; };
   }, [variant]);
 
   return (
@@ -158,6 +173,16 @@ export default function Variant({pageTitle}) {
             <CircularProgress />
           </DialogContent>
         </Dialog>
+      ) : variant?.var_type === "M" ? (
+        <MitochondrialVariant
+          variant={variant}
+          variantMetadata={variantMetadata}
+          bvlFrequencies={bvlFrequencies}
+          gnomadFrequencies={gnomadFrequencies}
+          variantAnnotations={variantAnnotations}
+          pageTitle={pageTitle}
+          varId={varId}
+        />
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           <Grid container spacing={2} className="flex-container">

@@ -18,6 +18,8 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
         Generator that yields genomic BVL frequency rows one at a time.
         """
         for record in self.vcf_record_stream():
+            if self.is_mitochondrial(record):
+                continue
             variant = self.make_variant_id(record)
             qual = record.QUAL
             info = record.INFO

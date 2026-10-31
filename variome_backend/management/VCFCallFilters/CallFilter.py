@@ -12,6 +12,8 @@ import logging
 
 import gzip
 import io
+import csv
+import json
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type, before_sleep_log
@@ -59,24 +61,57 @@ class CallFilter(ABC):
 
         child_class_name = self.__class__.__name__
         logger.info(f"scanning {self._vcf_file_path} using {child_class_name}...")
-        # Only read header and csq fields, not all records
-        if self._vcf_file_path.endswith('.gz'):
-            with gzip.open(self._vcf_file_path, 'rb') as gz:
-                with io.TextIOWrapper(gz, encoding='utf-8', errors='replace') as f:
-                    vcf_reader = vcfpy.Reader(stream=f)
-                    self.vcf_header = vcf_reader.header
-                    csq = vcf_reader.header.get_info_field_info("CSQ")
-                    csq_elements = csq.description.split("Format: ")[1]
-                    self.csq_fields = csq_elements.split("|")
-                    self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
-        else:
-            with io.TextIOWrapper(open(self._vcf_file_path, 'rb'), encoding='utf-8', errors='replace') as f:
-                vcf_reader = vcfpy.Reader(stream=f)
-                self.vcf_header = vcf_reader.header
-                csq = vcf_reader.header.get_info_field_info("CSQ")
-                csq_elements = csq.description.split("Format: ")[1]
-                self.csq_fields = csq_elements.split("|")
+        self.mt_columns = None
+        with self.stream_with_retries(self._vcf_file_path) as stream:
+            header_lines = []
+            for line in stream:
+                if line.startswith("#CHROM"):
+                    columns = line.rstrip("\r\n").split("\t")
+                    if "INFO" not in columns:
+                        # IBVL MT dialect exports cohort metrics as tabular columns.
+                        self.mt_columns = columns
+                        line = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+                    # Variome dialect uses a standard VCF header and INFO/FORMAT.
+                    header_lines.append(line)
+                    break
+                header_lines.append(line)
+            self.vcf_header = vcfpy.Reader(
+                stream=io.StringIO("".join(header_lines))
+            ).header
+        if "CSQ" in self.vcf_header.info_ids():
+            csq = self.vcf_header.get_info_field_info("CSQ")
+            if csq.description and "Format: " in csq.description:
+                self.csq_fields = csq.description.split("Format: ")[1].split("|")
                 self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+
+    @staticmethod
+    def is_mitochondrial(record):
+        return record.CHROM.removeprefix("chr").upper() in ("M", "MT")
+
+    def _ibvl_mt_records(self, stream):
+        for line in stream:
+            if line.startswith("#CHROM"):
+                break
+        for values in csv.reader(stream, delimiter="\t", quoting=csv.QUOTE_NONE):
+            if not values:
+                continue
+            row = dict(zip(self.mt_columns, values))
+            info = {}
+            for field, value in row.items():
+                value, sep, csq = value.partition(";CSQ=")
+                if sep:
+                    info["CSQ"] = csq.split(",")
+                if field in ("AC_hom", "AC_het", "AN"):
+                    info[field] = int(float(value)) if value not in ("", ".") else None
+                elif field in ("AF_hom", "AF_het", "max_observed_heteroplasmy"):
+                    info[field] = float(value) if value not in ("", ".") else None
+                elif field == "heteroplasmy_histogram":
+                    info[field] = json.loads(value) if value not in ("", ".") else None
+            yield vcfpy.Record(
+                CHROM=row["#CHROM"], POS=int(row["POS"]), ID=[row["ID"]],
+                REF=row["REF"], ALT=[vcfpy.Substitution("SNV", row["ALT"])],
+                QUAL=None, FILTER=row.get("filters", "PASS").split(";"), INFO=info,
+            )
 
     def vcf_record_stream(self):
         """
@@ -88,12 +123,14 @@ class CallFilter(ABC):
         for r in ranges:
             chrom, pos_range = r.split(":")
             start, end = map(int, pos_range.split("-"))
-            range_map[str.replace(chrom, "chr", "")] = (start, end)
+            chrom = chrom.removeprefix("chr").upper()
+            range_map["M" if chrom == "MT" else chrom] = (start, end)
 
         def yield_records_in_ranges(reader):
             if RANGES:
                 for record in reader:
-                    chrom_key = record.CHROM
+                    chrom_key = record.CHROM.removeprefix("chr").upper()
+                    chrom_key = "M" if chrom_key == "MT" else chrom_key
                     # Try all possible chrom representations
                     keys = [chrom_key, chrom_key.replace("chr", ""), "chr"+chrom_key]
                     found = False
@@ -109,7 +146,13 @@ class CallFilter(ABC):
                     yield record
 
         with self.stream_with_retries(self._vcf_file_path) as stream:
-            yield from yield_records_in_ranges(vcfpy.Reader(stream=stream))
+            if self.mt_columns:
+                # IBVL MT dialect is tabular rather than a standard VCF.
+                records = self._ibvl_mt_records(stream)
+            else:
+                # Variome dialect (and genomic IBVL) is parsed as standard VCF.
+                records = vcfpy.Reader(stream=stream)
+            yield from yield_records_in_ranges(records)
 
 
 
@@ -163,7 +206,12 @@ class CallFilter(ABC):
         """
         return record.INFO.get(field_name, fallback)
 
-    def make_variant_id(self, record: vcfpy.Record) -> str:
+    def make_variant_ids(self, record: vcfpy.Record) -> List[str]:
+        # Preserve the existing genomic import behavior; MT sites may have multiple ALTs.
+        alleles = record.ALT if self.is_mitochondrial(record) else record.ALT[:1]
+        return [self.make_variant_id(record, alt.value) for alt in alleles]
+
+    def make_variant_id(self, record: vcfpy.Record, alt: Optional[str] = None) -> str:
         OUT_HYPHENS = self.settings.OUT_HYPHENS
         OUT_CHR = self.settings.OUT_CHR
 
@@ -173,13 +221,15 @@ class CallFilter(ABC):
         Args:
             record: VCF record object
         """
+        chrom = record.CHROM.removeprefix("chr")
+        if self.is_mitochondrial(record):
+            chrom = "M"
         if OUT_CHR:
-            chrom = "chr"+ record.CHROM.replace("chr", "")
-        else:
-            chrom = record.CHROM.replace("chr", "")
+            chrom = "chr" + chrom
         pos = record.POS
         ref = record.REF
-        alt = record.ALT[0].value  # assuming single ALT allele
+        if alt is None:
+            alt = record.ALT[0].value
         if OUT_HYPHENS:
             # variome prefers
             variant_id = f"{chrom}-{pos}-{ref}-{alt}"

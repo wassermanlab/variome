@@ -160,12 +160,14 @@ export default function Home({
                                   variant="body1"
                                   sx={{ fontWeight: "bold" }}
                                 >
-                                  Mt:
+                                  MT:
                                 </Typography>
                               </Grid>
                               <Grid item xs={10}>
                                 <Typography variant="body1">
-                                  Mt example
+                                  <Link to={`/variant/${examples.mt.id}`} color="primary">
+                                    {examples.mt.var_id}
+                                  </Link>
                                 </Typography>
                               </Grid>
                             </>

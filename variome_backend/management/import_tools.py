@@ -59,6 +59,54 @@ class ImportMessage:
         return self.detail
 
 
+@dataclass
+class ImportCounts:
+    processed: int = 0
+    created: int = 0
+    updated: int = 0
+    skipped: int = 0
+    failed: int = 0
+    deleted: int = 0
+
+    def __str__(self):
+        return (
+            f"processed={self.processed}, created={self.created}, "
+            f"updated={self.updated}, skipped={self.skipped}, "
+            f"failed={self.failed}, deleted={self.deleted}"
+        )
+
+
+def format_import_counts(counts_map, errors_map):
+    """Format per-run counts with right-aligned numeric columns."""
+    if not counts_map:
+        return []
+    fields = ("processed", "created", "updated", "skipped", "failed", "deleted")
+    name_width = max(len("Table"), *(len(name) for name in counts_map))
+    values = {
+        name: [f"{getattr(counts, field):,}" if counts is not None else "-"
+               for field in fields]
+        for name, counts in counts_map.items()
+    }
+    widths = [
+        max(len(field.title()), *(len(row[index]) for row in values.values()))
+        for index, field in enumerate(fields)
+    ]
+    lines = [
+        f"   {'Table':<{name_width}}  "
+        + "  ".join(f"{field.title():>{width}}" for field, width in zip(fields, widths))
+    ]
+    for name, counts in counts_map.items():
+        failed = counts is None or counts.failed > 0 or bool(errors_map.get(name))
+        icon = "❌" if failed else "✅"
+        line = f"{icon} {name:<{name_width}}  " + "  ".join(
+            f"{value:>{width}}" for value, width in zip(values[name], widths)
+        )
+        if counts is None:
+            line += "  FAILED; table rolled back, counts unavailable"
+        lines.append(line)
+    return lines
+
+
 # Number of example messages shown per group before truncating
 _MESSAGES_SHOWN_PER_GROUP = 10
 
@@ -154,6 +202,7 @@ class Importer:
         self.delete = options["delete"]
 
         self.delimiter = "-" if options["out_hyphens"] else "_"
+        self.counts = ImportCounts()
 
     def get_input_path(self):
         """Get input path for this data type. May use self.path_component to
@@ -173,6 +222,11 @@ class Importer:
         Default implementation returns input row as-is"""
         return True, row
 
+    def upsert(self, **kwargs):
+        if self.update_existing:
+            return self.model.objects.update_or_create(**kwargs)
+        return self.model.objects.get_or_create(**kwargs)
+
     @transaction.atomic
     def import_data(self, row_iter=None):
         """Load objects from a row iterator or from the TSV file for this importer.
@@ -182,9 +236,14 @@ class Importer:
                       the TSV file is not read; rows come directly from the caller
                       (e.g. a VCF CallFilter's getTableRows() generator). When
                       omitted, the importer reads from its configured TSV file path.
+
+        Returns:
+            Errors, warnings, and per-run ImportCounts (before any caller rollback).
         """
+        self.counts = ImportCounts()
         if self.delete:
-            self.model.objects.all().delete()
+            _, deleted = self.model.objects.all().delete()
+            self.counts.deleted = deleted.get(self.model._meta.label, 0)
             sequence_sql = connection.ops.sequence_reset_sql(no_style(), [self.model])
             with connection.cursor() as cursor:
                 for sql in sequence_sql:
@@ -192,54 +251,53 @@ class Importer:
         errors = []
         warnings = []
         self.populate_caches()
-        n_count = 0
         self._row_num = 0
 
         if row_iter is None:
             input_file = self.get_input_path()
             with open(input_file, newline="") as f:
                 self.reader = csv.DictReader(f, dialect=self.csv_dialect)
-                errors, warnings, n_count = self._process_rows(
+                errors, warnings, _ = self._process_rows(
                     self.reader, errors, warnings, use_csv_reader=True
                 )
-#                print("222222 after process_rows", errors)
         else:
-            errors, warnings, n_count = self._process_rows(
+            errors, warnings, _ = self._process_rows(
                 row_iter, errors, warnings, use_csv_reader=False
             )
-#            print("333333 after process_rows", errors)
 
-        if not self.failfast:
-            # errors in middle of transaction get swallowed without try / except here
-            try:
-                n_success = self.model.objects.count()
-            except Exception as e:
-                errors.append(ImportMessage(
-                    ImportCode.COUNT_ERROR,
-                    f"error counting {self.object_name_plural}: {e}",
-                ))
-                n_success = 0
-        else:
-            n_success = self.model.objects.count()
-#        print("44444 returning ", errors)
-        return errors, warnings, (n_count, n_success)
+        return errors, warnings, self.counts
 
     def _process_rows(self, row_iter, errors, warnings, use_csv_reader=False):
         """Process rows from the given iterator, writing to the database.
 
         Returns (errors, warnings, n_count).
         """
-        n_count = 0
         bulk_create = []
         now_time = datetime.now()
-        batch_num = 1
+
+        def flush_creates():
+            try:
+                with transaction.atomic():
+                    self.model.objects.bulk_create(bulk_create)
+                self.counts.created += len(bulk_create)
+                return True
+            except Exception as e:
+                self.counts.failed += len(bulk_create)
+                errors.append(ImportMessage(
+                    ImportCode.BULK_CREATE_FAILED,
+                    f"error in bulk create of {self.object_name_plural} "
+                    f"({len(bulk_create)} rows, ending at input row {self._row_num}): {e}",
+                ))
+                return False
+            finally:
+                bulk_create.clear()
+
         try:
             for row in row_iter:
-                n_count += 1
                 if use_csv_reader:
                     self._row_num = self.reader.line_num
                 else:
-                    self._row_num = n_count
+                    self._row_num = self.counts.processed + 1
                 if self.progress and self._row_num % 1000 == 0:
                     now_time2 = datetime.now()
                     sys.stderr.write(
@@ -252,10 +310,12 @@ class Importer:
                         f"stopped processing after limit ({self.limit}) hit",
                     ))
                     break
+                self.counts.processed += 1
                 success, obj = self.clean_data(row)
                 if success:
                     row = obj
                 else:
+                    self.counts.skipped += 1
                     for msg in obj:
                         warnings.append(ImportMessage(
                             ImportCode.UNCLEANABLE_ROW,
@@ -268,65 +328,58 @@ class Importer:
                         if success:
                             bulk_create.append(obj)
                         else:
+                            self.counts.failed += 1
                             errors.append(obj)
                             if self.failfast:
-                                return errors, warnings, n_count
+                                return errors, warnings, self.counts.processed
                     elif self.update_existing:
-                        success, obj = self.update(row)
+                        with transaction.atomic():
+                            success, obj = self.update(row)
+                            if not success:
+                                transaction.set_rollback(True)
+                        if success:
+                            self.counts.updated += 1
                         if not success:
+                            self.counts.failed += 1
                             errors.append(obj)
                             if self.failfast:
-                                return errors, warnings, n_count
+                                return errors, warnings, self.counts.processed
+                    else:
+                        self.counts.skipped += 1
                 else:
-                    success, obj = self.update_or_create(row)
+                    with transaction.atomic():
+                        success, obj = self.update_or_create(row)
+                        if not success:
+                            transaction.set_rollback(True)
+                    if success:
+                        _, created = obj
+                        if created:
+                            self.counts.created += 1
+                        elif self.update_existing:
+                            self.counts.updated += 1
+                        else:
+                            self.counts.skipped += 1
                     if not success:
+                        self.counts.failed += 1
                         errors.append(obj)
                         if self.failfast:
-                            return errors, warnings, n_count
+                            return errors, warnings, self.counts.processed
 
                 if len(bulk_create) >= self.batch_size:
-                    batch_num = batch_num + 1
-                    try:
-                        self.model.objects.bulk_create(bulk_create)
-                        bulk_create = []
-                    except Exception as e:
-                        msg = ImportMessage(
-                            ImportCode.BULK_CREATE_FAILED,
-                            f"error in bulk create of {self.object_name_plural} "
-                            f"batch number {batch_num} - "
-                            f"between rows {(batch_num - 1)*self.batch_size} and {batch_num*self.batch_size}. self._row_num is {self._row_num}"
-                        )
-#                        print(msg)
-                        errors.append(msg)
-                        bulk_create = [] #<---- FIXES issue of batch size suddenly going to 1 after a DB exception
-                        if self.failfast:
-                            return errors, warnings, n_count
+                    if not flush_creates() and self.failfast:
+                        return errors, warnings, self.counts.processed
             # Run out of input rows, tidy up outstanding create/updates
-            if len(bulk_create):
-                try:
-                    self.model.objects.bulk_create(bulk_create)
-                except Exception as e:
-                    msg = ImportMessage(
-                        ImportCode.BULK_CREATE_FAILED,
-                        f"error in bulk create of {self.object_name_plural} "
-                        f"after end of input: row {self._row_num}\nrow: {row}",
-                    )
-#                    print(msg)
-                    errors.append(msg)
-                    if self.failfast:
-                        return errors, warnings, n_count
+            if bulk_create:
+                flush_creates()
         except csv.Error as e:
             errors.append(ImportMessage(
                 ImportCode.CSV_READ_ERROR,
                 f"error reading row {self._row_num}: {e}",
             ))
-            if self.failfast:
-                return errors, warnings, n_count
-#        print("END END END END")
-#        print("errors at end", errors)
-#        print("Warnings at end", warnings)
-#        print("n count at end", n_count)
-        return errors, warnings, n_count
+        finally:
+            # Fail-fast can leave accepted rows that never reached a bulk insert.
+            self.counts.skipped += len(bulk_create)
+        return errors, warnings, self.counts.processed
 
 
 class SeverityImporter(Importer):
@@ -394,16 +447,16 @@ class SeverityImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 severity_number=row["severity_number"],
                 defaults={
                     "consequence": row["consequence"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -454,13 +507,13 @@ class GeneImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 short_name=row["short_name"],
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -541,17 +594,17 @@ class VariantImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_id=row["variant_id"],
                 defaults={
                     "var_type": row["var_type"],
                     "filter": row["filter"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -663,10 +716,10 @@ class TranscriptImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 transcript_id=row["transcript_id"],
                 defaults={
                     "gene_id": self.genes[row["gene"]],
@@ -675,7 +728,7 @@ class TranscriptImporter(Importer):
                     "biotype": row["biotype"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -803,10 +856,10 @@ class SNVImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_id=self.variants[row["variant"]],
                 defaults={
                     "type": row["type"],
@@ -827,13 +880,83 @@ class SNVImporter(Importer):
                     "splice_ai": row["splice_ai"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
                 f"error creating/updating {self.object_name} for variant "
                 f"{row['variant']} from line {self._row_num}: {e}",
             )
+
+
+class MTImporter(SNVImporter):
+    """Import mitochondrial metadata using the shared variant lookup machinery."""
+
+    model = bvlmodels.MT
+    path_component = "mts"
+
+    def clean_data(self, row):
+        row = dict(row)
+        for field in self.model._meta.fields:
+            if field.name in row and row[field.name] == ".":
+                row[field.name] = None if field.null else ""
+        if row.get("clinvar_vcv") not in (None, ""):
+            row["clinvar_vcv"] = str(row["clinvar_vcv"]).removeprefix("VCV")
+        return True, row
+
+    def _values(self, row):
+        return {key: value for key, value in row.items() if key != "variant"}
+
+    def created_row_object(self, row):
+        try:
+            return True, self.model(
+                variant_id=self.variants[row["variant"]], **self._values(row)
+            )
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_CREATE_FAILED,
+                f"error creating {self.object_name} for {row['variant']}: {e}",
+            )
+
+    def update(self, row):
+        try:
+            count = self.model.objects.filter(
+                variant_id=self.variants[row["variant"]]
+            ).update(**self._values(row))
+            if count != 1:
+                return False, ImportMessage(
+                    ImportCode.UNEXPECTED_UPDATE_COUNT,
+                    f"expected one {self.object_name} for {row['variant']}, found {count}",
+                )
+            return True, count
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_UPDATE_FAILED,
+                f"error updating {self.object_name} for {row['variant']}: {e}",
+            )
+
+    def update_or_create(self, row):
+        try:
+            obj, created = self.upsert(
+                variant_id=self.variants[row["variant"]],
+                defaults=self._values(row),
+            )
+            return True, (obj, created)
+        except Exception as e:
+            return False, ImportMessage(
+                ImportCode.OBJECT_UPSERT_FAILED,
+                f"error saving {self.object_name} for {row['variant']}: {e}",
+            )
+
+
+class MtVariomeFrequencyImporter(MTImporter):
+    model = bvlmodels.MtVariomeFrequency
+    path_component = "mt_variome_frequencies"
+
+
+class MtGnomadFrequencyImporter(MTImporter):
+    model = bvlmodels.MtGnomadFrequency
+    path_component = "mt_gnomad_frequencies"
 
 
 class GVFImporter(Importer):
@@ -952,10 +1075,10 @@ class GVFImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_id=self.variants[row["variant"]],
                 defaults={
                     "af_tot": row["af_tot"],
@@ -970,7 +1093,7 @@ class GVFImporter(Importer):
                     "quality": row["quality"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -1064,10 +1187,10 @@ class GGFImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_id=self.variants[row["variant"]],
                 defaults={
                     "af_tot": row["af_tot"],
@@ -1077,7 +1200,7 @@ class GGFImporter(Importer):
                     "hemi_tot": row["hemi_tot"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -1217,17 +1340,17 @@ class VariantTranscriptImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_id=self.variants[row["variant"]],
                 transcript_id=self.transcripts.get(row["transcript"]),
                 defaults={
                     "hgvsc": row["hgvsc"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -1390,10 +1513,10 @@ class AnnotationImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
                 defaults={
                     "hgvsp": row["hgvsp"],
@@ -1402,7 +1525,7 @@ class AnnotationImporter(Importer):
                     "impact": row["impact"],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
@@ -1567,16 +1690,16 @@ class ConsequenceImporter(Importer):
     def update_or_create(self, row):
         """Use foo.objects.update_or_create() to update or create the entry for
         the supplied row in DB.
-        Return True, obj on success or False, ImportMessage on failure"""
+        Return True, (obj, created) on success or False, ImportMessage on failure"""
         # int(float(foo)) to convert possible scientific notation to int.
         try:
-            obj, created = self.model.objects.update_or_create(
+            obj, created = self.upsert(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
                 defaults={
                     "severity_id": self.severities[row["severity"]],
                 },
             )
-            return True, obj
+            return True, (obj, created)
         except Exception as e:
             return False, ImportMessage(
                 ImportCode.OBJECT_UPSERT_FAILED,
