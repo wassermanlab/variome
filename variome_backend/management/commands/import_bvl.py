@@ -177,9 +177,12 @@ class Command(BaseCommand):
 
         last_step_time = time()
 
+        durations_map = {}
+
         def log_timing(name):
             nonlocal last_step_time
             duration = time() - last_step_time
+            durations_map[name] = duration
             hours = int(duration // 3600)
             minutes = int((duration % 3600) // 60)
             seconds = duration % 60
@@ -332,20 +335,21 @@ class Command(BaseCommand):
         self.stdout.write(f"\nImport summary ({status})")
 
         results = [
-            ("Severity", sev_counts, sev_errors),
-            ("Gene", gen_counts, gen_errors),
-            ("Variant", var_counts, var_errors),
-            ("Transcript", tra_counts, tra_errors),
-            ("SNV", snv_counts, snv_errors),
-            ("GVF", gvf_counts, gvf_errors),
-            ("GGF", ggf_counts, ggf_errors),
-            ("Variant Transcript", vts_counts, vts_errors),
-            ("Annotation", ann_counts, ann_errors),
-            ("Consequence", con_counts, con_errors),
+            ("Severity", "severities", sev_counts, sev_errors),
+            ("Gene", "genes", gen_counts, gen_errors),
+            ("Variant", "variants", var_counts, var_errors),
+            ("Transcript", "transcripts", tra_counts, tra_errors),
+            ("SNV", "snvs", snv_counts, snv_errors),
+            ("GVF", "gvfs", gvf_counts, gvf_errors),
+            ("GGF", "ggfs", ggf_counts, ggf_errors),
+            ("Variant Transcript", "variant transcripts", vts_counts, vts_errors),
+            ("Annotation", "annotations", ann_counts, ann_errors),
+            ("Consequence", "consequences", con_counts, con_errors),
         ]
-        counts_map = {name: counts for name, counts, _ in results if counts is not None}
-        errors_map = {name: errors for name, _, errors in results}
-        for line in bvltools.format_import_counts(counts_map, errors_map):
+        counts_map = {name: counts for name, _, counts, _ in results if counts is not None}
+        errors_map = {name: errors for name, _, _, errors in results}
+        durations = {name: durations_map.get(step) for name, step, _, _ in results}
+        for line in bvltools.format_import_counts(counts_map, errors_map, durations):
             self.stdout.write(line)
 
         self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

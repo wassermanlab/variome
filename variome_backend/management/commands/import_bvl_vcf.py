@@ -52,10 +52,11 @@ import summary:
     Failed     rows that failed to import
     Deleted    existing rows deleted by --delete (excludes cascaded
                deletions of related tables)
+    Duration   wall-clock time spent importing the table
   Each row is marked \u2705 when the table imported without failures and \u274c
   when it had failed rows or import errors (or the whole table failed and
   was rolled back). Dry-run and rollback summaries are labelled as not
-  committed. Duration is the wall-clock time of the whole command.
+  committed. The final Duration line is the time of the whole command.
 """
 
 
@@ -483,16 +484,18 @@ class Command(BaseCommand):
         counts_map = {}
 
         last_step_time = time()
+        durations_map = {}
 
         def log_timing(name):
             nonlocal last_step_time
+            durations_map[name] = time() - last_step_time
             if self.verbosity >= 3:
                 self.stderr.write(f"{name} took {bvltools.format_duration(time() - last_step_time)}")
             last_step_time = time()
 
         if options["severities"]:
             errors, warnings, counts = bvltools.SeverityImporter(importer_options).import_data()
-            log_timing("severities")
+            log_timing("Severity")
             errors_map["Severity"] = errors
             warnings_map["Severity"] = warnings
             counts_map["Severity"] = counts
@@ -532,6 +535,6 @@ class Command(BaseCommand):
             status = "COMMITTED"
 
         self.stdout.write(f"\nImport summary ({status})")
-        for line in bvltools.format_import_counts(counts_map, errors_map):
+        for line in bvltools.format_import_counts(counts_map, errors_map, durations_map):
             self.stdout.write(line)
         self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

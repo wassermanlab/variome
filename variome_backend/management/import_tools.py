@@ -82,8 +82,12 @@ def format_duration(seconds):
     return f"{hours}h {minutes}m {seconds % 60:.1f}s"
 
 
-def format_import_counts(counts_map, errors_map):
-    """Format per-run counts with right-aligned numeric columns."""
+def format_import_counts(counts_map, errors_map, durations_map=None):
+    """Format per-run counts with right-aligned numeric columns.
+
+    If *durations_map* (table name -> seconds) is given, a Duration column is
+    appended.
+    """
     if not counts_map:
         return []
     fields = ("processed", "created", "updated", "skipped", "failed", "deleted")
@@ -93,6 +97,11 @@ def format_import_counts(counts_map, errors_map):
                for field in fields]
         for name, counts in counts_map.items()
     }
+    if durations_map is not None:
+        fields += ("duration",)
+        for name, row in values.items():
+            seconds = durations_map.get(name)
+            row.append(format_duration(seconds) if seconds is not None else "-")
     widths = [
         max(len(field.title()), *(len(row[index]) for row in values.values()))
         for index, field in enumerate(fields)

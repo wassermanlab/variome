@@ -178,11 +178,23 @@ class ImportCountFormattingTests(TestCase):
                     self.assertEqual(line[end:end + 2], "  ")
         self.assertEqual(format_import_counts({}, {}), [])
 
+    def test_duration_column(self):
+        counts = {"Gene": ImportCounts(processed=1, created=1), "Variant": ImportCounts()}
+        lines = format_import_counts(counts, {}, {"Gene": 3725.25})
+        self.assertTrue(lines[0].endswith("Duration"))
+        self.assertTrue(lines[1].endswith("1h 2m 5.2s"))
+        self.assertTrue(lines[2].endswith(" -"))
+        display = [line.replace("✅", "  ") for line in lines]
+        self.assertEqual({len(line) for line in display}, {len(display[0])})
+        self.assertNotIn("Duration", format_import_counts(counts, {})[0])
+
 
 class ImportSummaryTests(TransactionTestCase):
     def assert_summary_row(self, output, name, values, icon="✅"):
         row = next(line for line in output.splitlines() if line.startswith(f"{icon} {name} "))
-        self.assertEqual(row.split(), [icon, *name.split(), *map(str, values)])
+        expected = [icon, *name.split(), *map(str, values)]
+        self.assertEqual(row.split()[:len(expected)], expected)
+        self.assertRegex(row, r"\d+h \d+m \d+\.\ds$|counts unavailable$")
 
     def run_import(self, **options):
         output = io.StringIO()
@@ -303,5 +315,6 @@ class ImportVerbosityTests(TransactionTestCase):
         for flag, level in (("-v", 1), ("-vv", 2), ("-vvv", 3)):
             self.assertEqual(parser.parse_args([flag]).verbosity, level)
         help_text = parser.format_help()
-        for text in ("-vv    (default)", "Updated    existing rows updated", "✅", "❌"):
+        for text in ("-vv    (default)", "Updated    existing rows updated",
+                     "Duration   wall-clock time", "✅", "❌"):
             self.assertIn(text, help_text)
