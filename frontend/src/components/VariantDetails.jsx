@@ -7,6 +7,12 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 
 const DECIMALS = 4;
+const VARIANT_TYPE_LABELS = {
+    M: "Mitochondrial",
+    SNV: "SNV",
+    SV: "SV",
+    INDEL: "INDEL",
+};
 
 export default function VariantDetails({ variantMetadata, bvlFrequencies, variant }) {
     //    console.log({variantMetadata, bvlFrequencies, varId})
@@ -22,7 +28,7 @@ export default function VariantDetails({ variantMetadata, bvlFrequencies, varian
     const variantDetailsList = [
         {
             title: 'Type',
-            val: variant.var_type === "M" ? "Mitochondrial" : _.get(variant,"var_type", "-"),
+            val: VARIANT_TYPE_LABELS[variant.var_type] ?? _.get(variant, "var_type", "-"),
         },
         {
             title: 'Site Quality',

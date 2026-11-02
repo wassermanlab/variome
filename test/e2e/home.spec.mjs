@@ -39,7 +39,7 @@ async function mockMtApi(page, variant = mtVariant) {
       response = variant;
     } else if (path.endsWith("/search")) {
       response = { results: { position: [{
-        ...mtVariant.variant, snv__chr: "MT", snv__pos: 3243, snv__ref: "A", snv__alt: "G",
+        ...mtVariant.variant, snv__chr: "M", snv__pos: 3243, snv__ref: "A", snv__alt: "G",
       }] } };
     }
     await route.fulfill({ json: response });
@@ -96,31 +96,35 @@ test("MT all-zero histogram remains available", async ({ page }) => {
   await expect(page.getByRole("row", { name: "Maximum heteroplasmy level 0 0.5", exact: true })).toBeVisible();
 });
 
-test("SNV continues using nuclear frequencies and external gnomAD", async ({ page }) => {
-  await mockMtApi(page, {
-    variant: { id: 42, variant_id: "1-123-A-G", var_type: "S", filter: "PASS" },
-    snv: { chr: "1", pos: 123, ref: "A", alt: "G" },
-    bvlFrequencies: {
-      an_tot: 100, an_xx: 50, an_xy: 50,
-      ac_tot: 2, ac_xx: 1, ac_xy: 1,
-      af_tot: 0.02, af_xx: 0.02, af_xy: 0.02,
-      hom_tot: 0, hom_xx: 0, hom_xy: 0,
-    },
-    annotations: [],
+for (const varType of ["SNV", "SV", "INDEL", "S"]) {
+  test(`${varType} continues using nuclear frequencies and external gnomAD`, async ({ page }) => {
+    await mockMtApi(page, {
+      variant: { id: 42, variant_id: "1-123-A-G", var_type: varType, filter: "PASS" },
+      snv: { chr: "1", pos: 123, ref: "A", alt: "G" },
+      bvlFrequencies: {
+        an_tot: 100, an_xx: 50, an_xy: 50,
+        ac_tot: 2, ac_xx: 1, ac_xy: 1,
+        af_tot: 0.02, af_xx: 0.02, af_xy: 0.02,
+        hom_tot: 0, hom_xx: 0, hom_xy: 0,
+      },
+      annotations: [],
+    });
+    let nuclearRequests = 0;
+    await page.route("https://gnomad.broadinstitute.org/api", route => {
+      nuclearRequests++;
+      return route.fulfill({ json: { data: { variant: { joint: { ac: 1, an: 1000, homozygote_count: 0 } } } } });
+    });
+    await page.goto("/");
+    await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
+    await expect(page.getByText("1-123-A-G (hg38)", { exact: true })).toBeVisible();
+    await expect(page.getByText(varType, { exact: true })).toBeVisible();
+    await expect(page.getByText("Ensembl", { exact: true })).toBeVisible();
+    await expect(page.getByRole("table", { name: "simple table" })).toBeVisible();
+    await expect(page.getByRole("row", { name: "Allele Count 2 1 1 1", exact: true })).toBeVisible();
+    await expect(page.getByRole("table", { name: "Mitochondrial frequencies", exact: true })).toHaveCount(0);
+    expect(nuclearRequests).toBe(1);
   });
-  let nuclearRequests = 0;
-  await page.route("https://gnomad.broadinstitute.org/api", route => {
-    nuclearRequests++;
-    return route.fulfill({ json: { data: { variant: { joint: { ac: 1, an: 1000, homozygote_count: 0 } } } } });
-  });
-  await page.goto("/");
-  await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
-  await expect(page.getByText("1-123-A-G (hg38)", { exact: true })).toBeVisible();
-  await expect(page.getByRole("table", { name: "simple table" })).toBeVisible();
-  await expect(page.getByRole("row", { name: "Allele Count 2 1 1 1", exact: true })).toBeVisible();
-  await expect(page.getByRole("table", { name: "Mitochondrial frequencies", exact: true })).toHaveCount(0);
-  expect(nuclearRequests).toBe(1);
-});
+}
 
 for (const query of ["M-3243-A-G", "MT-3243-A-G", "chrMT:3,243:A:G", "chrM:3243:A:G"]) {
   test(`search normalizes mitochondrial alias ${query}`, async ({ page }) => {

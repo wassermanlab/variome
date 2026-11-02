@@ -20,8 +20,7 @@ export default function SearchResults({ sx, overlay }) {
     var is = _.isObject(result) && _.size(searchContext.matchPairs) === 4;
     _.each(searchContext.groups, (val, key) => {
       const actual = _.get(result, `snv__${key}`);
-      const normalize = value => key === "chr" && /^(M|MT)$/i.test(value) ? "M" : value;
-      if (normalize(actual) != normalize(val)){
+      if (actual != val){
         is = false;
       }
     });

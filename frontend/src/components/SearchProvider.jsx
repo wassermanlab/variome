@@ -28,6 +28,7 @@ const parseParameters = (query) => {
     groups.chr = "M";
   }
   if (groups.pos) {
+    // Remove comma, period and space thousands separators (e.g. "1,234" -> "1234").
     groups.pos = groups.pos.replace(/[,. ]/g, "");
   }
 

@@ -7,8 +7,27 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { OpenInNew as LinkIcon } from '@mui/icons-material';
 
+const GENOMIC_REFERENCE = {
+    label: 'Ensembl',
+    urlKey: 'ensembl_url',
+    fallbackUrl: 'https://asia.ensembl.org/Homo_sapiens/Info/Index',
+    ucscFallbackUrl: 'https://asia.ensembl.org/Homo_sapiens/Info/Index',
+};
+const REFERENCES_BY_TYPE = {
+    M: {
+        label: 'MITOMAP',
+        urlKey: 'mitomap_url',
+        fallbackUrl: 'https://www.mitomap.org/',
+        ucscFallbackUrl: 'https://genome.ucsc.edu/',
+    },
+    SNV: GENOMIC_REFERENCE,
+    SV: GENOMIC_REFERENCE,
+    INDEL: GENOMIC_REFERENCE,
+};
 
 export default function References({variant, variantMetadata}) {
+    const reference = REFERENCES_BY_TYPE[variant?.var_type] ?? GENOMIC_REFERENCE;
+    const referenceUrl = variantMetadata?.[reference.urlKey];
     const referencesList = variantMetadata ? [
         {
             ref: 'dbSNP',
@@ -18,14 +37,12 @@ export default function References({variant, variantMetadata}) {
         {
             ref: 'UCSC',
             val: _.isEmpty(variantMetadata.ucsc_url) ? 'Search UCSC': <LinkIcon/>,
-            link: _.isEmpty(variantMetadata.ucsc_url) ? (variant?.var_type === 'M' ? "https://genome.ucsc.edu/" : "https://asia.ensembl.org/Homo_sapiens/Info/Index") : variantMetadata.ucsc_url,
+            link: _.isEmpty(variantMetadata.ucsc_url) ? reference.ucscFallbackUrl : variantMetadata.ucsc_url,
         },
         {
-            ref: variant?.var_type === 'M' ? 'MITOMAP' : 'Ensembl',
-            val: _.isEmpty(variant?.var_type === 'M' ? variantMetadata.mitomap_url : variantMetadata.ensembl_url) ? '(Search)' : <LinkIcon/>,
-            link: variant?.var_type === 'M'
-                ? (variantMetadata.mitomap_url || "https://www.mitomap.org/")
-                : (variantMetadata.ensembl_url || "https://asia.ensembl.org/Homo_sapiens/Info/Index"),
+            ref: reference.label,
+            val: _.isEmpty(referenceUrl) ? '(Search)' : <LinkIcon/>,
+            link: referenceUrl || reference.fallbackUrl,
         },
         {
             ref: 'ClinVar',

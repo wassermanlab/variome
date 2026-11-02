@@ -28,6 +28,44 @@ import MitochondrialVariant from "./mitochondrial";
 
 import Api from "../Api";
 
+function NuclearVariant({
+  variant, variantMetadata, bvlFrequencies, gnomadFrequencies,
+  variantAnnotations, pageTitle, varId, gnomadLoading
+}) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column" }}>
+      <Grid container spacing={2} className="flex-container">
+        <Grid item xs={12} md={6} className="flex-item ">
+          <VariantDetails variant={variant} variantMetadata={variantMetadata}
+            bvlFrequencies={bvlFrequencies} />
+        </Grid>
+        <Grid item xs={12} md={6} className="flex-item">
+          <References variant={variant} variantMetadata={variantMetadata} />
+        </Grid>
+        <Grid item xs={12} className="gridItem">
+          <PopFrequencies varId={varId} bvlFrequencies={bvlFrequencies}
+            gnomadFrequencies={gnomadFrequencies} pageTitle={pageTitle}
+            gnomadLoading={gnomadLoading} variantMetadata={variantMetadata} />
+        </Grid>
+        <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+      </Grid>
+    </Box>
+  );
+}
+
+const VARIANT_TEMPLATES = {
+  M: MitochondrialVariant,
+  SNV: NuclearVariant,
+  SV: NuclearVariant,
+  INDEL: NuclearVariant,
+};
+const METADATA_KEYS = {
+  M: "mt",
+  SNV: "snv",
+  SV: "snv",
+  INDEL: "snv",
+};
+
 export default function Variant({pageTitle}) {
   let params = useParams();
   const varId = params.varId;
@@ -57,7 +95,8 @@ export default function Variant({pageTitle}) {
         if (!active) return;
 //        console.log("variant", variant);
         setVariant(variant);
-        setVariantMetadata(variant.var_type === "M" ? mt : snv);
+        const metadata = { mt, snv };
+        setVariantMetadata(metadata[METADATA_KEYS[variant.var_type] ?? "snv"]);
         if (variant.var_type === "M") {
           setGnomadFrequencies(gnomadFrequencies);
         }
@@ -145,6 +184,8 @@ export default function Variant({pageTitle}) {
     return () => { active = false; };
   }, [variant]);
 
+  const VariantTemplate = VARIANT_TEMPLATES[variant?.var_type] ?? NuclearVariant;
+
   return (
     <Container maxWidth="xl">
       {error && (
@@ -173,8 +214,8 @@ export default function Variant({pageTitle}) {
             <CircularProgress />
           </DialogContent>
         </Dialog>
-      ) : variant?.var_type === "M" ? (
-        <MitochondrialVariant
+      ) : (
+        <VariantTemplate
           variant={variant}
           variantMetadata={variantMetadata}
           bvlFrequencies={bvlFrequencies}
@@ -182,44 +223,8 @@ export default function Variant({pageTitle}) {
           variantAnnotations={variantAnnotations}
           pageTitle={pageTitle}
           varId={varId}
+          gnomadLoading={gnomadLoading}
         />
-      ) : (
-        <Box sx={{ display: "flex", flexDirection: "column" }}>
-          <Grid container spacing={2} className="flex-container">
-            {/* Variant ID Block */}
-            <Grid item xs={12} md={6} className="flex-item ">
-              <VariantDetails
-                variant={variant}
-                variantMetadata={variantMetadata}
-                bvlFrequencies={bvlFrequencies}
-              />
-            </Grid>
-
-            {/* Reference Box */}
-            <Grid item xs={12} md={6} className="flex-item">
-              <References variant={variant} variantMetadata={variantMetadata} />
-            </Grid>
-
-            {/* Pop Frequencies Box */}
-            <Grid item xs={12} className="gridItem">
-              <PopFrequencies
-                varId={varId}
-                bvlFrequencies={bvlFrequencies}
-                gnomadFrequencies={gnomadFrequencies}
-                pageTitle={pageTitle}
-                gnomadLoading={gnomadLoading}
-                variantMetadata={variantMetadata}
-              />
-            </Grid>
-
-            {/* Annotations Box */}
-
-            <Annotations
-              varId={varId}
-              variantAnnotations={variantAnnotations}
-            />
-          </Grid>
-        </Box>
       )}
     </Container>
   );
