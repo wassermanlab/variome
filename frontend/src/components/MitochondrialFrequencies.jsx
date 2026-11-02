@@ -1,8 +1,9 @@
 import React, { useId } from "react";
 import {
   Alert, Box, Card, CardContent, CircularProgress, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Typography
+  TableContainer, TableHead, TableRow, Typography, useTheme
 } from "@mui/material";
+import { alpha } from "@mui/system";
 
 function displayNumber(value) {
   const numeric = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
@@ -60,6 +61,7 @@ function HeteroplasmyHistogram({ histogram }) {
 export default function MitochondrialFrequencies({
   bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading
 }) {
+  const { palette } = useTheme();
   const rows = [
     ["Allele Number", "an", "an"],
     ["Allele Count", "ac_hom", "ac_het"],
@@ -77,15 +79,21 @@ export default function MitochondrialFrequencies({
           <Table aria-label="Mitochondrial frequencies">
             <TableHead>
               <TableRow>
-                <TableCell scope="col" rowSpan={2}>Metric</TableCell>
-                <TableCell align="center" colSpan={2} scope="colgroup">{pageTitle || "Local cohort"}</TableCell>
-                <TableCell align="center" colSpan={2} scope="colgroup">gnomAD mitochondrial</TableCell>
+                <TableCell scope="col" rowSpan={2} sx={{ borderBottom: "none" }}>Metric</TableCell>
+                <TableCell align="center" colSpan={2} scope="colgroup"
+                  sx={{ borderBottom: "none", backgroundColor: alpha(palette.highlight.main, 0.25) }}>
+                  {pageTitle || "Local cohort"}
+                </TableCell>
+                <TableCell align="center" colSpan={2} scope="colgroup"
+                  sx={{ borderBottom: "none", backgroundColor: alpha("#ffbcbc", 0.25) }}>
+                  gnomAD mitochondrial
+                </TableCell>
               </TableRow>
               <TableRow>
                 {[0, 1].map(source => (
                   <React.Fragment key={source}>
-                    <TableCell align="center" scope="col">Homoplasmic</TableCell>
-                    <TableCell align="center" scope="col">Heteroplasmic</TableCell>
+                    <TableCell align="center" scope="col" sx={{ borderBottom: "none", fontWeight: "bold" }}>Homoplasmic</TableCell>
+                    <TableCell align="center" scope="col" sx={{ borderBottom: "none", fontWeight: "bold" }}>Heteroplasmic</TableCell>
                   </React.Fragment>
                 ))}
               </TableRow>

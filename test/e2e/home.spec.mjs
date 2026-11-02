@@ -68,6 +68,10 @@ test("MT example loads live gnomAD frequencies and keeps the local histogram", a
   await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
   await expect(page.getByText("Mitochondrial", { exact: true })).toBeVisible();
   const table = page.getByRole("table", { name: "Mitochondrial frequencies", exact: true });
+  const headers = table.locator("thead tr").first().locator("th");
+  await expect(headers.nth(1)).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(headers.nth(2)).toHaveCSS("background-color", "rgba(255, 188, 188, 0.25)");
+  await expect(headers.nth(2)).toHaveText("gnomAD mitochondrial");
   await expect(table.getByRole("columnheader", { name: "Homoplasmic", exact: true })).toHaveCount(2);
   const count = table.getByRole("row", { name: "Allele Count 0 2 2 4", exact: true });
   await expect(count).toBeVisible();
