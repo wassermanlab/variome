@@ -177,36 +177,36 @@ class MitochondrialImportTests(TransactionTestCase):
         self.assertFalse(GenomicVariomeFrequency.objects.exists())
 
     def test_variome_import_update_and_nonbatch(self):
-        path = FIXTURES / "mock_mt_variome.vcf"
+        path = SUPPLIED_MT
         self.import_vcf(path)
-        self.assertEqual(MT.objects.count(), 3)
-        self.assertEqual(MtVariomeFrequency.objects.count(), 2)
-        variant = Variant.objects.get(variant_id="M-8603-TA-T")
-        self.assertEqual(MT.objects.get(variant=variant).clinvar_vcv, 456)
+        self.assertEqual(MT.objects.count(), 158)
+        self.assertEqual(MtVariomeFrequency.objects.count(), 158)
+        variant = Variant.objects.get(variant_id="M-4440-G-T")
+        self.assertIsNone(MT.objects.get(variant=variant).clinvar_vcv)
         self.assertEqual(MtVariomeFrequency.objects.get(variant=variant).ac_hom, 0)
         MtVariomeFrequency.objects.filter(variant=variant).update(ac_hom=99)
         self.import_vcf(path)
         self.assertEqual(MtVariomeFrequency.objects.get(variant=variant).ac_hom, 0)
         self.import_vcf(path, batch=False)
-        self.assertEqual(MT.objects.count(), 3)
-        self.assertEqual(MtVariomeFrequency.objects.count(), 2)
+        self.assertEqual(MT.objects.count(), 158)
+        self.assertEqual(MtVariomeFrequency.objects.count(), 158)
         self.assertFalse(SNV.objects.exists())
 
     def test_gzipped_import_and_gnomad_intersection(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "mt.vcf.gz"
             with gzip.open(path, "wb") as stream:
-                stream.write((FIXTURES / "mock_mt_variome.vcf").read_bytes())
+                stream.write(SUPPLIED_MT.read_bytes())
             gnomad = Path(directory) / "gnomad.tsv"
             gnomad.write_text(
                 "chromosome\tposition\tref\talt\tAN\tAC_hom\tAC_het\tAF_hom\tAF_het\tmax_observed_heteroplasmy\n"
-                "MT\t8602\tT\tC\t1000\t0\t10\t0\t0.01\t0.9\n"
+                "MT\t4440\tG\tT\t1000\t0\t10\t0\t0.01\t0.9\n"
                 "MT\t9999\tA\tC\t1000\t0\t10\t0\t0.01\t0.9\n",
                 encoding="utf-8",
             )
             self.import_vcf(path, mt_gnomad_tsv=str(gnomad))
         frequency = MtGnomadFrequency.objects.get()
-        self.assertEqual(frequency.variant.variant_id, "M-8602-T-C")
+        self.assertEqual(frequency.variant.variant_id, "M-4440-G-T")
         self.assertEqual(frequency.an, 1000)
         self.assertEqual(frequency.ac_hom, 0)
 
