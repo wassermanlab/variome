@@ -65,6 +65,34 @@ const METADATA_KEYS = {
   SV: "snv",
   INDEL: "snv",
 };
+const GNOMAD_REQUESTS = {
+  M: {
+    query: `
+      query getMitochondrialVariant($variantId: String!) {
+        mitochondrial_variant(variant_id: $variantId, dataset: gnomad_r3) {
+          ac_hom
+          ac_het
+          an
+          max_heteroplasmy
+        }
+      }
+    `,
+    variantId: (variant, metadata) => `M-${metadata.pos}-${metadata.ref}-${metadata.alt}`,
+    frequencies: data => {
+      const frequencies = data.data?.mitochondrial_variant;
+      return {
+        ac_hom: frequencies?.ac_hom,
+        ac_het: frequencies?.ac_het,
+        an: frequencies?.an,
+        af_hom: frequencies?.an > 0 && frequencies.ac_hom != null
+          ? frequencies.ac_hom / frequencies.an : null,
+        af_het: frequencies?.an > 0 && frequencies.ac_het != null
+          ? frequencies.ac_het / frequencies.an : null,
+        max_hl: frequencies?.max_heteroplasmy,
+      };
+    },
+  },
+};
 
 export default function Variant({pageTitle}) {
   let params = useParams();
@@ -91,15 +119,12 @@ export default function Variant({pageTitle}) {
     setLoading(true);
 
     Api.get("variant/" + varId)
-      .then(({ variant, snv, mt, bvlFrequencies, gnomadFrequencies, annotations }) => {
+      .then(({ variant, snv, mt, bvlFrequencies, annotations }) => {
         if (!active) return;
 //        console.log("variant", variant);
         setVariant(variant);
         const metadata = { mt, snv };
         setVariantMetadata(metadata[METADATA_KEYS[variant.var_type] ?? "snv"]);
-        if (variant.var_type === "M") {
-          setGnomadFrequencies(gnomadFrequencies);
-        }
         setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
         setLoading(false);
@@ -124,10 +149,6 @@ export default function Variant({pageTitle}) {
 
   useEffect(() => {
 
-    if (variant?.var_type === "M") {
-      setGnomadLoading(false);
-      return;
-    }
     setGnomadLoading(true);
     let active = true;
     if (variant && variant.variant_id) {
@@ -156,9 +177,20 @@ export default function Variant({pageTitle}) {
     }
     `;
       }
-      Api.gnomadGraphQLRequest(QUERY, { variantId: variant.variant_id })
+      const request = GNOMAD_REQUESTS[variant.var_type];
+      const query = request?.query ?? QUERY;
+      const variantId = request?.variantId(variant, variantMetadata) ?? variant.variant_id;
+      Api.gnomadGraphQLRequest(query, { variantId })
         .then((data) => {
           if (!active) return;
+          if (data.errors?.length) {
+            throw new Error(data.errors.map(error => error.message).join("; "));
+          }
+          if (request) {
+            setGnomadFrequencies(request.frequencies(data));
+            setGnomadLoading(false);
+            return;
+          }
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);
           var ac_tot =
@@ -178,11 +210,11 @@ export default function Variant({pageTitle}) {
             if (!active) return;
             console.error(e.message);
             setGnomadLoading(false);
-            setGnomadFrequencies({ ac_tot:"gnomAD connection error"})
+            setGnomadFrequencies({ ac_tot:"gnomAD connection error", error: "gnomAD connection error" })
         });
     }
     return () => { active = false; };
-  }, [variant]);
+  }, [variant, variantMetadata]);
 
   const VariantTemplate = VARIANT_TEMPLATES[variant?.var_type] ?? NuclearVariant;
 

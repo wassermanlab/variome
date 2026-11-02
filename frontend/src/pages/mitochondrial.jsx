@@ -7,7 +7,7 @@ import MitochondrialFrequencies from "../components/MitochondrialFrequencies";
 
 export default function MitochondrialVariant({
   variant, variantMetadata, bvlFrequencies, gnomadFrequencies,
-  variantAnnotations, pageTitle, varId
+  variantAnnotations, pageTitle, varId, gnomadLoading
 }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column" }}>
@@ -20,7 +20,8 @@ export default function MitochondrialVariant({
         </Grid>
         <Grid item xs={12}>
           <MitochondrialFrequencies bvlFrequencies={bvlFrequencies}
-            gnomadFrequencies={gnomadFrequencies} pageTitle={pageTitle} />
+            gnomadFrequencies={gnomadFrequencies} pageTitle={pageTitle}
+            gnomadLoading={gnomadLoading} />
         </Grid>
         <Annotations varId={varId} variantAnnotations={variantAnnotations} />
       </Grid>

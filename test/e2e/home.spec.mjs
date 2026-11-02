@@ -27,6 +27,11 @@ const mtVariant = {
 };
 
 async function mockMtApi(page, variant = mtVariant) {
+  await page.route("https://gnomad.broadinstitute.org/api", route => route.fulfill({
+    json: { data: { mitochondrial_variant: {
+      an: 1000, ac_hom: 0, ac_het: 3, max_heteroplasmy: 0.5,
+    } } },
+  }));
   await page.route("**/api/**", async route => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace(/\/$/, "");
@@ -46,26 +51,32 @@ async function mockMtApi(page, variant = mtVariant) {
   });
 }
 
-test("MT example renders stored frequencies and an accessible histogram without nuclear gnomAD", async ({ page }) => {
-  let nuclearRequests = 0;
-  await page.route("https://gnomad.broadinstitute.org/api", route => {
-    nuclearRequests++;
-    return route.fulfill({ json: {} });
-  });
+test("MT example loads live gnomAD frequencies and keeps the local histogram", async ({ page }) => {
   await mockMtApi(page);
+  let gnomadRequests = 0;
+  await page.route("https://gnomad.broadinstitute.org/api", route => {
+    gnomadRequests++;
+    const request = route.request().postDataJSON();
+    expect(request.query).toContain("mitochondrial_variant");
+    expect(request.query).toContain("dataset: gnomad_r3");
+    expect(request.variables.variantId).toBe("M-3243-A-G");
+    return route.fulfill({ json: { data: { mitochondrial_variant: {
+      an: 2000, ac_hom: 2, ac_het: 4, max_heteroplasmy: 0.9,
+    } } } });
+  });
   await page.goto("/");
   await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
   await expect(page.getByText("Mitochondrial", { exact: true })).toBeVisible();
   const table = page.getByRole("table", { name: "Mitochondrial frequencies", exact: true });
   await expect(table.getByRole("columnheader", { name: "Homoplasmic", exact: true })).toHaveCount(2);
-  const count = table.getByRole("row", { name: "Allele Count 0 2 0 3", exact: true });
+  const count = table.getByRole("row", { name: "Allele Count 0 2 2 4", exact: true });
   await expect(count).toBeVisible();
-  await expect(table.getByRole("row", { name: "Allele Frequency 0 0.02 0 0.003", exact: true })).toBeVisible();
+  await expect(table.getByRole("row", { name: "Allele Frequency 0 0.02 0.001 0.002", exact: true })).toBeVisible();
   await expect(page.getByRole("img", { name: /Heteroplasmy histogram/ })).toBeVisible();
   await expect(page.getByRole("img", { name: /Heteroplasmy histogram/ })).toHaveAccessibleDescription(/0–10%: 0; 10–20%: 2/);
   await expect(page.getByRole("link", { name: "M-3243-A-G", exact: false })).toHaveAttribute("href", mtVariant.mt.gnomad_url);
   await expect(page.locator(`a[href="${mtVariant.mt.mitomap_url}"]`)).toBeVisible();
-  expect(nuclearRequests).toBe(0);
+  expect(gnomadRequests).toBe(1);
 });
 
 for (const histogram of [null, "", "0,,2", "0,-1,2"]) {
@@ -75,6 +86,9 @@ for (const histogram of [null, "", "0,,2", "0,-1,2"]) {
       bvlFrequencies: { hl_hist: histogram },
       gnomadFrequencies: null,
     });
+    await page.route("https://gnomad.broadinstitute.org/api", route => route.fulfill({
+      json: { data: { mitochondrial_variant: null } },
+    }));
     await page.goto("/");
     await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
     const table = page.getByRole("table", { name: "Mitochondrial frequencies", exact: true });
@@ -94,6 +108,49 @@ test("MT all-zero histogram remains available", async ({ page }) => {
   await page.getByRole("link", { name: "M-3243-A-G", exact: true }).click();
   await expect(page.getByRole("img", { name: /Heteroplasmy histogram/ })).toBeVisible();
   await expect(page.getByRole("row", { name: "Maximum heteroplasmy level 0 0.5", exact: true })).toBeVisible();
+});
+
+test("MT shows loading while live gnomAD data is pending", async ({ page }) => {
+  await mockMtApi(page);
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await page.route("https://gnomad.broadinstitute.org/api", async route => {
+    await pending;
+    await route.fulfill({ json: { data: { mitochondrial_variant: {
+      an: 200, ac_hom: 0, ac_het: 1, max_heteroplasmy: 0.8,
+    } } } });
+  });
+  await page.goto("/variant/42");
+  await expect(page.getByRole("progressbar", { name: "Loading gnomAD frequencies" })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Heteroplasmy histogram/ })).toBeVisible();
+  release();
+  await expect(page.getByRole("row", { name: "Allele Count 0 2 0 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
+});
+
+for (const failure of ["network", "graphql"]) {
+  test(`MT reports a gnomAD ${failure} failure instead of using stored data`, async ({ page }) => {
+    await mockMtApi(page);
+    await page.route("https://gnomad.broadinstitute.org/api", route => {
+      if (failure === "network") return route.abort();
+      return route.fulfill({ json: { errors: [{ message: "gnomAD unavailable" }] } });
+    });
+    await page.goto("/variant/42");
+    await expect(page.getByRole("alert")).toHaveText("gnomAD connection error");
+    await expect(page.getByRole("row", { name: "Allele Count 0 2 - -", exact: true })).toBeVisible();
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+  });
+}
+
+test("MT missing live counts remain unavailable rather than becoming zero frequencies", async ({ page }) => {
+  await mockMtApi(page);
+  await page.route("https://gnomad.broadinstitute.org/api", route => route.fulfill({
+    json: { data: { mitochondrial_variant: {
+      an: 200, ac_hom: null, ac_het: null, max_heteroplasmy: null,
+    } } },
+  }));
+  await page.goto("/variant/42");
+  await expect(page.getByRole("row", { name: "Allele Frequency 0 0.02 - -", exact: true })).toBeVisible();
 });
 
 for (const varType of ["SNV", "SV", "INDEL", "S"]) {

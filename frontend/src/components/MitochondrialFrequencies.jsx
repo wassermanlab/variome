@@ -1,6 +1,6 @@
 import React, { useId } from "react";
 import {
-  Box, Card, CardContent, Table, TableBody, TableCell,
+  Alert, Box, Card, CardContent, CircularProgress, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Typography
 } from "@mui/material";
 
@@ -57,7 +57,9 @@ function HeteroplasmyHistogram({ histogram }) {
   );
 }
 
-export default function MitochondrialFrequencies({ bvlFrequencies, gnomadFrequencies, pageTitle }) {
+export default function MitochondrialFrequencies({
+  bvlFrequencies, gnomadFrequencies, pageTitle, gnomadLoading
+}) {
   const rows = [
     ["Allele Number", "an", "an"],
     ["Allele Count", "ac_hom", "ac_het"],
@@ -89,22 +91,29 @@ export default function MitochondrialFrequencies({ bvlFrequencies, gnomadFrequen
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map(([label, homKey, hetKey]) => (
+              {rows.map(([label, homKey, hetKey], rowIndex) => (
                 <TableRow key={label}>
                   <TableCell component="th" scope="row">{label}</TableCell>
-                  {[bvlFrequencies, gnomadFrequencies].map((frequencies, i) =>
-                    homKey === hetKey
+                  {[bvlFrequencies, gnomadFrequencies].map((frequencies, i) => {
+                    if (i === 1 && gnomadLoading) {
+                      if (rowIndex !== 0) return null;
+                      return <TableCell key={i} colSpan={2} rowSpan={rows.length} align="center">
+                        <CircularProgress aria-label="Loading gnomAD frequencies" />
+                      </TableCell>;
+                    }
+                    return homKey === hetKey
                       ? <TableCell key={i} colSpan={2} align="center">{displayNumber(frequencies?.[homKey])}</TableCell>
                       : <React.Fragment key={i}>
                           <TableCell align="center">{displayNumber(frequencies?.[homKey])}</TableCell>
                           <TableCell align="center">{displayNumber(frequencies?.[hetKey])}</TableCell>
-                        </React.Fragment>
-                  )}
+                        </React.Fragment>;
+                  })}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+        {gnomadFrequencies?.error && <Alert severity="error">{gnomadFrequencies.error}</Alert>}
         <Typography variant="body2" sx={{ mt: 1 }}>- indicates unavailable data. Heteroplasmy levels range from 0 to 1.</Typography>
         <HeteroplasmyHistogram histogram={bvlFrequencies?.hl_hist} />
       </CardContent>

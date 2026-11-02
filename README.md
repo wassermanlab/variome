@@ -180,6 +180,8 @@ An optional preprocessed gnomAD mitochondrial TSV can be supplied with
 `--mt-gnomad-tsv /path/to/gnomad_mt.tsv`; only variants present in the VCF are
 imported. Its columns are `chromosome`, `position`, `ref`, `alt`, `AN`, `AC_hom`,
 `AC_het`, `AF_hom`, `AF_het` and `max_observed_heteroplasmy`.
+The variant page loads gnomAD frequencies dynamically for both nuclear and
+mitochondrial variants; it does not display the stored mitochondrial TSV values.
 Select an **Example mt** variant in the admin Settings editor to show its link
 on the home page.
 
