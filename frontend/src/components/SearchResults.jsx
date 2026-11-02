@@ -81,7 +81,7 @@ export default function SearchResults({ sx, overlay }) {
         {searchContext.loading ? <LoadingSpinner/> : <>
 
 
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", background: isExactMatch() ? alpha(palette.highlight.main, 0.25) : "transparent", padding: "8px" }}>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", background: "transparent", padding: "8px" }}>
             {searchContext.matchPairs.length > 0 && <label>Your search:</label> }
             {searchContext.matchPairs.map(([key, val]) => {
               return (
