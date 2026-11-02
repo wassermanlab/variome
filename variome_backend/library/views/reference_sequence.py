@@ -17,7 +17,8 @@ def reference_sequence(request, species, region):
         return Response({"error": "Only GRCh38 is available locally."}, status=400)
 
     match = re.fullmatch(
-        r"([A-Za-z0-9_.-]+):([0-9]{1,12})\.\.([0-9]{1,12})(?::(-?1))?", region
+        r"([A-Za-z0-9_.-]{1,100}):([0-9]{1,12})\.\.([0-9]{1,12})(?::(-?1))?",
+        region,
     )
     if not match:
         return Response(

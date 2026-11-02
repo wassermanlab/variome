@@ -82,6 +82,7 @@ class ReferenceSequenceTests(TestCase):
             "1:one..two:1",
             "1:1",
             f"1:{'1' * 100}..2:1",
+            f"{'-' * 1000}:1..2:1",
         ]:
             with self.subTest(region=region):
                 self.assertEqual(self.lookup(region).status_code, 400)
