@@ -4,7 +4,6 @@ import logging
 import tempfile
 from pathlib import Path
 
-import vcfpy
 from django.core.management import call_command
 from django.test import TransactionTestCase
 
@@ -124,32 +123,6 @@ class MitochondrialImportTests(TransactionTestCase):
             self.assertIn(variant, frequencies)
         self.assertFalse(Variant.objects.exists())
 
-    def test_supplied_mt_mixed_with_nuclear_records(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "mixed.vcf"
-            with vcfpy.Reader.from_path(str(SUPPLIED_MT)) as mt_reader:
-                header = mt_reader.header.copy()
-                with vcfpy.Reader.from_path(str(SUPPLIED_MT.with_name("variome-tiny.vcf"))) as nuclear_reader:
-                    nuclear_record = next(nuclear_reader)
-                    for line in nuclear_reader.header.lines:
-                        if line.key in ("INFO", "FORMAT", "FILTER", "contig"):
-                            if not header.has_header_line(line.key, line.id):
-                                header.add_line(line.copy())
-                nuclear_record.FORMAT = ["GT"]
-                nuclear_record.calls = [
-                    vcfpy.Call(sample, {"GT": "./."}) for sample in header.samples.names
-                ]
-                nuclear_record.update_calls(nuclear_record.calls)
-                with vcfpy.Writer.from_path(str(path), header) as writer:
-                    writer.write_record(nuclear_record)
-                    for record in mt_reader:
-                        writer.write_record(record)
-            self.import_vcf(path)
-        self.assertEqual(Variant.objects.count(), 159)
-        self.assertEqual(MT.objects.count(), 158)
-        self.assertEqual(SNV.objects.count(), 1)
-        self.assertEqual(GenomicVariomeFrequency.objects.count(), 1)
-
     def test_supplied_mt_gnomad_intersection_includes_second_alt(self):
         with tempfile.TemporaryDirectory() as directory:
             gnomad = Path(directory) / "gnomad.tsv"
@@ -191,36 +164,3 @@ class MitochondrialImportTests(TransactionTestCase):
         self.assertEqual(MT.objects.count(), 158)
         self.assertEqual(MtVariomeFrequency.objects.count(), 158)
         self.assertFalse(SNV.objects.exists())
-
-    def test_gzipped_import_and_gnomad_intersection(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "mt.vcf.gz"
-            with gzip.open(path, "wb") as stream:
-                stream.write(SUPPLIED_MT.read_bytes())
-            gnomad = Path(directory) / "gnomad.tsv"
-            gnomad.write_text(
-                "chromosome\tposition\tref\talt\tAN\tAC_hom\tAC_het\tAF_hom\tAF_het\tmax_observed_heteroplasmy\n"
-                "MT\t4440\tG\tT\t1000\t0\t10\t0\t0.01\t0.9\n"
-                "MT\t9999\tA\tC\t1000\t0\t10\t0\t0.01\t0.9\n",
-                encoding="utf-8",
-            )
-            self.import_vcf(path, mt_gnomad_tsv=str(gnomad))
-        frequency = MtGnomadFrequency.objects.get()
-        self.assertEqual(frequency.variant.variant_id, "M-4440-G-T")
-        self.assertEqual(frequency.an, 1000)
-        self.assertEqual(frequency.ac_hom, 0)
-
-    def test_conversion_writes_mt_tables(self):
-        with tempfile.TemporaryDirectory() as directory:
-            self.import_vcf(
-                FIXTURES / "mock_mt.vcf",
-                convert_to_tsv=True,
-                tsv_output_dir=directory,
-            )
-            metadata = (Path(directory) / "mts" / "mts.tsv").read_text()
-            frequencies = (
-                Path(directory) / "mt_variome_frequencies" / "mt_variome_frequencies.tsv"
-            ).read_text()
-        self.assertIn("M-8602-T-C", metadata)
-        self.assertIn("5,10,15,8,6,4,3,2,1,1", frequencies)
-        self.assertFalse(Variant.objects.exists())

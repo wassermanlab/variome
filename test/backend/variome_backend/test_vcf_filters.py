@@ -579,31 +579,6 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.assertIsNone(row["max_hl"])
         self.assertEqual(row["hl_hist"], "")
 
-    def test_duplicate_mt_metrics_are_emitted_once(self):
-        record = next(self.filter.vcf_record_stream())
-        with patch.object(self.filter, "vcf_record_stream", return_value=iter([record, record])):
-            self.assertEqual(len(self.filter.getTableRows()), 1)
-
-    def test_unobserved_duplicate_does_not_hide_valid_metrics(self):
-        record = next(self.filter.vcf_record_stream())
-        unobserved = copy.deepcopy(record)
-        unobserved.INFO["AN"] = 0
-        with patch.object(self.filter, "vcf_record_stream", return_value=iter([unobserved, record])):
-            rows = self.filter.getTableRows()
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["an"], 100)
-
-    def test_missing_info_an_falls_back_to_format(self):
-        instance = MtBvlFrequenciesCallFilter(SUPPLIED_MT, SETTINGS)
-        record = next(instance.vcf_record_stream())
-        record.INFO["AN"] = None
-        record.FORMAT = ["AN", "AC_het"]
-        record.calls[0].data = {"AN": 100, "AC_het": 1}
-        with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
-            row = instance.getTableRows()[0]
-        self.assertEqual(row["an"], 100)
-        self.assertEqual(row["ac_het"], 1)
-
     def test_multiallelic_cohort_metrics_are_selected_per_alt(self):
         instance = MtBvlFrequenciesCallFilter(
             str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),

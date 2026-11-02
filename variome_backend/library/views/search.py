@@ -1,5 +1,4 @@
 import json
-from decimal import Decimal, InvalidOperation
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
@@ -166,11 +165,16 @@ def snv_search(request):
     elif "position" in in_result_sets:
         out_error = standard_validate(in_chr, in_pos, in_ref, in_alt)
     if not out_error and "clinvar" in in_result_sets:
-        try:
-            if not Decimal(in_query).is_finite():
+        identifier = in_query.upper()
+        if identifier.startswith("VCV"):
+            identifier, separator, version = identifier[3:].partition(".")
+            # A VCV suffix is an accession version, not a fractional Variation ID.
+            if separator and (not version.isdecimal() or int(version) < 1):
                 out_error = f"Invalid ClinVar ID: {in_query}"
-        except InvalidOperation:
+        if not identifier.isascii() or not identifier.isdecimal():
             out_error = f"Invalid ClinVar ID: {in_query}"
+        elif not out_error:
+            clinvar_vcv = int(identifier)
     if out_error:
         SearchQueryAction.objects.create(
             query=in_query or "",
@@ -215,12 +219,6 @@ def snv_search(request):
 
     if "clinvar" in in_result_sets:
         #        print("Processing clinvar result set")
-        try:
-            clinvar_vcv = Decimal(in_query.upper().removeprefix("VCV"))
-            if not clinvar_vcv.is_finite():
-                raise InvalidOperation
-        except InvalidOperation:
-            return Response({"errors": ["Invalid ClinVar VCV"]}, status=400)
         response_data["results"]["clinvar"] = []
         for mitochondrial in (False, True):
             clinvar_results = search_queryset(mitochondrial, ("clinvar_vcv",)).filter(

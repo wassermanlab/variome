@@ -52,14 +52,14 @@ class SnvSearchResultsByID(TransactionTestCase):
 
     def test_clinvar_search_returns_matching_variants(self):
         response = self.client.get(
-            self.url, {"resultSets": "clinvar", "query": "12345.678"}
+            self.url, {"resultSets": "clinvar", "query": "12345"}
         )
 
         self.assertEqual(response.status_code, 200)
         results = response.json()["results"]["clinvar"]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["id"], self.match.variant.id)
-        self.assertEqual(results[0]["snv__clinvar_vcv"], 12345.678)
+        self.assertEqual(results[0]["snv__clinvar_vcv"], 12345)
         self.assertEqual(SearchQueryAction.objects.get().result_count, 1)
 
     def test_valid_search_without_results_is_tracked(self):
