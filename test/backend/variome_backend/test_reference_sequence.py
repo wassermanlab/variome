@@ -42,9 +42,19 @@ class ReferenceSequenceTests(TestCase):
             User.objects.create_user(username="reference-user")
         )
 
-    def lookup(self, region="1:1..1:1", species="human", **query):
+    def lookup(self, region="1:1..1:1", **query):
         return self.client.get(
-            reverse("reference_sequence", args=[species, region]), query
+            reverse("reference_sequence", args=[region]), query
+        )
+
+    def test_route_has_no_species_segment(self):
+        self.assertEqual(
+            reverse("reference_sequence", args=["1:1..1:1"]),
+            "/api/sequence/region/1:1..1:1",
+        )
+        self.assertEqual(
+            self.client.get("/api/sequence/region/human/1:1..1:1").status_code,
+            404,
         )
 
     def test_inclusive_coordinates_and_uppercase(self):
@@ -68,7 +78,7 @@ class ReferenceSequenceTests(TestCase):
     def test_mitochondrial_aliases(self):
         for chromosome in ["M", "MT", "chrM", "chrMT"]:
             with self.subTest(chromosome=chromosome):
-                response = self.lookup(f"{chromosome}:1..3:1", species="homo_sapiens")
+                response = self.lookup(f"{chromosome}:1..3:1")
                 self.assertEqual(response.json(), {"seq": "GAT"})
 
     def test_invalid_regions(self):
@@ -87,8 +97,7 @@ class ReferenceSequenceTests(TestCase):
             with self.subTest(region=region):
                 self.assertEqual(self.lookup(region).status_code, 400)
 
-    def test_unsupported_species_and_assembly(self):
-        self.assertEqual(self.lookup(species="mouse").status_code, 400)
+    def test_unsupported_assembly(self):
         self.assertEqual(self.lookup(coord_system_version="GRCh37").status_code, 400)
 
     def test_missing_reference_returns_service_unavailable(self):
@@ -114,7 +123,7 @@ class ReferenceSequenceTests(TestCase):
     def test_authentication_and_http_method(self):
         self.assertEqual(
             self.client.post(
-                reverse("reference_sequence", args=["human", "1:1..1:1"])
+                reverse("reference_sequence", args=["1:1..1:1"])
             ).status_code,
             405,
         )

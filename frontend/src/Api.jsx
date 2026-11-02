@@ -158,7 +158,7 @@ const Api = {
       if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
         
           json = await cachedFetch(
-            `${API_URL_BASE}sequence/region/human/${chr}:${pos}..${posEnd}:1`,
+            `${API_URL_BASE}sequence/region/${chr}:${pos}..${posEnd}:1`,
             {"content-type":"application/json",
               "coord_system_version":coordSystemVersion
             },

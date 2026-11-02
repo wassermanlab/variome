@@ -10,9 +10,7 @@ from rest_framework.response import Response
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def reference_sequence(request, species, region):
-    if species not in ("human", "homo_sapiens"):
-        return Response({"error": "Only human sequence is supported."}, status=400)
+def reference_sequence(request, region):
     if request.query_params.get("coord_system_version", "GRCh38") != "GRCh38":
         return Response({"error": "Only GRCh38 is available locally."}, status=400)
 

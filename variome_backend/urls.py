@@ -27,7 +27,7 @@ from .library.views.reference_sequence import reference_sequence
 
 api_urls = [
     path(
-        "sequence/region/<str:species>/<str:region>",
+        "sequence/region/<str:region>",
         reference_sequence,
         name="reference_sequence",
     ),
