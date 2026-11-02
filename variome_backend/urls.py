@@ -23,8 +23,14 @@ from django.shortcuts import redirect
 from .library import views as library
 from .library_access import views as access
 from .views import backend_home_page, get_site_settings
+from .library.views.reference_sequence import reference_sequence
 
 api_urls = [
+    path(
+        "sequence/region/<str:species>/<str:region>",
+        reference_sequence,
+        name="reference_sequence",
+    ),
     path("variant/<str:id>", library.variant, name="variant"),
     path("search", library.snv_search, name="search"),
     path("search/invalid", access.invalid_search_query, name="invalid_search_query"),
