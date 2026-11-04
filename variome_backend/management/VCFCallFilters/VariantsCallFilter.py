@@ -6,15 +6,15 @@ class VariantsCallFilter(CallFilter):
     """
     Generates the 'variants' table (master variant list).
     """
-    def __init__(self, vcf_file_path, settings):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
+        super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
     def getTableRows(self):
         """
         Generator that yields variant rows one at a time.
         """
         seen = set()
-        for record in self.vcf_record_stream():
+        for record in self.shared_record_stream():
             filter_val = ";".join(record.FILTER)
             type_info = record.INFO.get("TYPE")
             if isinstance(type_info, list) and type_info:

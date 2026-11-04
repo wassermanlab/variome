@@ -10,8 +10,8 @@ class TranscriptsCallFilter(CallFilter):
     """
     Generates the 'transcripts' table.
     """
-    def __init__(self, vcf_file_path, settings):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
+        super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
     def getTableRows(self):
         """
@@ -19,7 +19,7 @@ class TranscriptsCallFilter(CallFilter):
         """
         seen = set()
         na = self.settings.NA
-        for record in self.vcf_record_stream():
+        for record in self.shared_record_stream():
             feature = self.get_csq_values(record, "Feature")
             if feature == "" or feature == "NA" or feature is None or len(feature) == 0:
                 logger.warning("skipping transcript with no feature: %s", feature)

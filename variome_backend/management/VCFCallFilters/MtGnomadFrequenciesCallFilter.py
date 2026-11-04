@@ -7,16 +7,16 @@ from .CallFilter import CallFilter
 class MtGnomadFrequenciesCallFilter(CallFilter):
     """Intersect the documented gnomAD MT TSV with mitochondrial VCF variants."""
 
-    def __init__(self, vcf_file_path, settings, tsv_path=None):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path, settings, tsv_path=None, mt_vcf_file_path=None):
+        super().__init__(None, settings, mt_vcf_file_path)
         self.tsv_path = tsv_path
 
     def getTableRows(self):
-        if not self.tsv_path:
+        if not self.tsv_path or not self._mt_vcf_file_path:
             return
         variants = {
             variant
-            for record in self.vcf_record_stream()
+            for record in self.vcf_record_stream(self._mt_vcf_file_path)
             if self.is_mitochondrial(record)
             for variant in self.make_variant_ids(record)
         }

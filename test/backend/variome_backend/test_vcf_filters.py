@@ -438,7 +438,8 @@ class TestMtsCallFilter(FocusableTestCase):
         self.vcf_files = get_fixture_path('mock_mt.vcf')
         self.filter = MtsCallFilter(
             self.vcf_files,
-            SETTINGS
+            SETTINGS,
+            mt_vcf_file_path=self.vcf_files,
         )
 
     def test_getTableRows_output_structure(self):
@@ -463,7 +464,7 @@ class TestMtsCallFilter(FocusableTestCase):
         self.assertIn("variant=8602T%3EC", row["mitomap_url"])
 
     def test_variome_metadata_and_indel_ids(self):
-        instance = MtsCallFilter(SUPPLIED_MT, SETTINGS)
+        instance = MtsCallFilter(None, SETTINGS, mt_vcf_file_path=SUPPLIED_MT)
         rows = {row["variant"]: row for row in instance.getTableRows()}
         self.assertEqual(rows["chrM_4440_G_T"]["clinvar_vcv"], ".")
         self.assertEqual(rows["chrM_5600_AC_A"]["alt"], "A")
@@ -473,7 +474,7 @@ class TestMtsCallFilter(FocusableTestCase):
             row = instance.getTableRows()[0]
         self.assertEqual(row["clinvar_vcv"], "123")
         self.assertIn("/123/", row["clinvar_url"])
-        instance.csq_index_map = {"Existing_variation": 0}
+        record._variome_csq_index_map = {"Existing_variation": 0}
         record.INFO["CSQ"] = ["rs123&VCV000456"]
         with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
             row = instance.getTableRows()[0]
@@ -486,14 +487,14 @@ class TestMtsCallFilter(FocusableTestCase):
             self.assertEqual(list(GenomicBvlFrequenciesCallFilter(path, SETTINGS).getTableRows()), [])
             self.assertTrue(all(
                 row["var_type"] == "M"
-                for row in VariantsCallFilter(path, SETTINGS).getTableRows()
+                for row in VariantsCallFilter(None, SETTINGS, mt_vcf_file_path=path).getTableRows()
             ))
 
     def test_mt_range_aliases(self):
         for chrom in ("M", "MT", "chrM", "chrMT"):
             settings = copy.copy(SETTINGS)
             settings.RANGES = f"{chrom}:4440-4440"
-            rows = MtsCallFilter(SUPPLIED_MT, settings).getTableRows()
+            rows = MtsCallFilter(None, settings, mt_vcf_file_path=SUPPLIED_MT).getTableRows()
             self.assertEqual(len(rows), 1)
 
 class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
@@ -508,7 +509,8 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.vcf_files = get_fixture_path('mock_mt.vcf')
         self.filter = MtBvlFrequenciesCallFilter(
             self.vcf_files,
-            SETTINGS
+            SETTINGS,
+            mt_vcf_file_path=self.vcf_files,
         )
 
     def test_getTableRows_output_structure(self):
@@ -535,7 +537,7 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
         self.assertEqual(row["hl_hist"], "5,10,15,8,6,4,3,2,1,1")
 
     def test_variome_info_and_format_metrics(self):
-        instance = MtBvlFrequenciesCallFilter(SUPPLIED_MT, SETTINGS)
+        instance = MtBvlFrequenciesCallFilter(None, SETTINGS, mt_vcf_file_path=SUPPLIED_MT)
         record = next(instance.vcf_record_stream())
         metrics = {
             "AN": 100, "AC_hom": [5], "AC_het": [10],
@@ -581,8 +583,9 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
 
     def test_multiallelic_cohort_metrics_are_selected_per_alt(self):
         instance = MtBvlFrequenciesCallFilter(
-            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),
+            None,
             SETTINGS,
+            mt_vcf_file_path=SUPPLIED_MT,
         )
         record = next(record for record in instance.vcf_record_stream() if record.POS == 9055)
         record.INFO.update({
@@ -602,8 +605,9 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
 
     def test_histogram_and_max_hl_derived_per_alt_from_sample_af(self):
         instance = MtBvlFrequenciesCallFilter(
-            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"),
+            None,
             SETTINGS,
+            mt_vcf_file_path=SUPPLIED_MT,
         )
         record = next(record for record in instance.vcf_record_stream() if record.POS == 9055)
         with patch.object(instance, "vcf_record_stream", return_value=iter([copy.deepcopy(record)])):
@@ -630,7 +634,7 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
 
     def test_sample_denominator_includes_zero_and_excludes_missing_af(self):
         instance = MtBvlFrequenciesCallFilter(
-            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"), SETTINGS,
+            None, SETTINGS, mt_vcf_file_path=SUPPLIED_MT,
         )
         record = next(record for record in instance.vcf_record_stream() if record.POS == 8860)
         record.INFO.pop("AN")
@@ -644,7 +648,7 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
 
     def test_invalid_sample_af_is_reported_not_counted(self):
         instance = MtBvlFrequenciesCallFilter(
-            str(Path(__file__).resolve().parents[3] / "data/fixtures/vcf/mt.vcf"), SETTINGS,
+            None, SETTINGS, mt_vcf_file_path=SUPPLIED_MT,
         )
         record = next(record for record in instance.vcf_record_stream() if record.POS == 8860)
         for invalid in (-0.1, 1.1, float("nan"), float("inf")):
@@ -653,6 +657,138 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
                 with patch.object(instance, "vcf_record_stream", return_value=iter([record])):
                     with self.assertRaisesRegex(ValueError, "Invalid FORMAT/AF"):
                         instance.getTableRows()
+
+
+class TestExplicitFilterInputs(unittest.TestCase):
+    shared_filters = (
+        GenesCallFilter, TranscriptsCallFilter, VariantsCallFilter,
+        VariantsTranscriptsCallFilter, VariantsAnnotationsCallFilter,
+        VariantsConsequencesCallFilter,
+    )
+    fields = (
+        "SYMBOL", "Feature", "SOURCE", "BIOTYPE", "HGVSc", "HGVSp",
+        "SIFT", "PolyPhen", "IMPACT", "Consequence", "Existing_variation",
+        "VARIANT_CLASS",
+    )
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        directory = Path(self.directory.name)
+        self.nuclear = directory / "nuclear.vcf"
+        self.mt = directory / "mt.vcf"
+        self.write_vcf(self.nuclear, [
+            ("1", 101, "SHARED", "T1"), ("1", 101, "SHARED", "T1"),
+            ("1", 102, "OTHER", "T2"), ("M", 999, "WRONG", "WRONG"),
+        ])
+        self.write_vcf(self.mt, [
+            ("2", 888, "WRONG", "WRONG"), ("MT", 201, "SHARED", "T1"),
+            ("MT", 201, "SHARED", "T1"), ("MT", 202, "GENE_MT", "TMT"),
+        ], reverse=True)
+
+    def write_vcf(self, path, records, reverse=False, csq=True):
+        fields = self.fields[::-1] if reverse else self.fields
+        lines = ["##fileformat=VCFv4.2"]
+        if csq:
+            lines.append(
+                '##INFO=<ID=CSQ,Number=.,Type=String,Description="Format: '
+                + "|".join(fields) + '">'
+            )
+        lines.append("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")
+        for chrom, pos, gene, transcript in records:
+            values = dict(zip(self.fields, (
+                gene, transcript, "Ensembl", "protein_coding", "c.1A>G",
+                "p.Test", "tolerated", "benign", "MODERATE",
+                "missense_variant", "rs123", "SNV",
+            )))
+            info = "CSQ=" + "|".join(values[field] for field in fields) if csq else "."
+            lines.append(f"{chrom}\t{pos}\t.\tA\tG\t30\tPASS\t{info}")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    def test_shared_filters_merge_selected_records_and_deduplicate(self):
+        counts = (3, 3, 4, 4, 4, 4)
+        for filter_cls, count in zip(self.shared_filters, counts):
+            with self.subTest(filter=filter_cls.__name__):
+                instance = filter_cls(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
+                rows = list(instance.getTableRows())
+                self.assertEqual(len(rows), count)
+                self.assertNotIn("WRONG", repr(rows))
+                self.assertEqual(list(instance.getTableRows()), rows)
+
+    def test_specialized_filters_ignore_the_other_input(self):
+        for filter_cls in (SnvsCallFilter, GenomicBvlFrequenciesCallFilter):
+            with self.subTest(filter=filter_cls.__name__):
+                rows = list(filter_cls(
+                    get_fixture_path("mock_snv.vcf"), SETTINGS,
+                    mt_vcf_file_path="unused-missing-mt.vcf",
+                ).getTableRows())
+                self.assertTrue(rows)
+                self.assertTrue(all(not row["variant"].startswith("chrM_") for row in rows))
+        for filter_cls in (MtsCallFilter, MtBvlFrequenciesCallFilter):
+            with self.subTest(filter=filter_cls.__name__):
+                rows = list(filter_cls(
+                    "unused-missing-nuclear.vcf", SETTINGS,
+                    mt_vcf_file_path=get_fixture_path("mock_mt.vcf"),
+                ).getTableRows())
+                self.assertEqual(len(rows), 1)
+                self.assertTrue(all(row["variant"].startswith("chrM_") for row in rows))
+
+    def test_missing_optional_paths(self):
+        for filter_cls in self.shared_filters + (
+            SnvsCallFilter, GenomicBvlFrequenciesCallFilter, MtsCallFilter,
+            MtBvlFrequenciesCallFilter, MtGnomadFrequenciesCallFilter,
+        ):
+            with self.subTest(filter=filter_cls.__name__):
+                self.assertEqual(list(filter_cls(
+                    None, SETTINGS, mt_vcf_file_path=None,
+                ).getTableRows()), [])
+        self.assertEqual(MtsCallFilter(self.nuclear, SETTINGS).getTableRows(), [])
+        self.assertEqual(MtBvlFrequenciesCallFilter(self.nuclear, SETTINGS).getTableRows(), [])
+        rows = list(VariantsCallFilter(self.nuclear, SETTINGS).getTableRows())
+        self.assertEqual(len(rows), 2)
+        rows = list(VariantsCallFilter(None, SETTINGS, mt_vcf_file_path=self.mt).getTableRows())
+        self.assertEqual(len(rows), 2)
+
+    def test_identical_and_equivalent_files_are_read_once(self):
+        alias = Path(self.directory.name) / "alias.vcf"
+        alias.symlink_to(self.nuclear)
+        hardlink = Path(self.directory.name) / "hardlink.vcf"
+        hardlink.hardlink_to(self.nuclear)
+        for mt_path in (self.nuclear, alias, hardlink):
+            instance = VariantsCallFilter(self.nuclear, SETTINGS, mt_vcf_file_path=mt_path)
+            with patch.object(instance, "_all_vcf_records", wraps=instance._all_vcf_records) as read:
+                self.assertEqual(len(list(instance.getTableRows())), 3)
+                self.assertEqual(read.call_count, 1)
+
+    def test_suspended_and_materialized_records_keep_their_csq_header(self):
+        instance = GenesCallFilter(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
+        nuclear_stream = instance.vcf_record_stream(self.nuclear)
+        first = next(nuclear_stream)
+        mt_records = list(instance.vcf_record_stream(self.mt))
+        self.assertEqual(instance.get_csq_values(first, "SYMBOL"), ["SHARED"])
+        resumed = next(nuclear_stream)
+        self.assertEqual(instance.get_csq_values(resumed, "SYMBOL"), ["SHARED"])
+        self.assertEqual(instance.get_csq_values(mt_records[-1], "SYMBOL"), ["GENE_MT"])
+        nuclear_stream.close()
+
+    def test_no_csq_header_does_not_inherit_other_files_fields(self):
+        self.write_vcf(self.mt, [("MT", 201, "", "")], csq=False)
+        instance = GenesCallFilter(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
+        self.assertEqual(list(instance.getTableRows()), [
+            {"short_name": "SHARED"}, {"short_name": "OTHER"},
+        ])
+
+    def test_both_dialects_keep_their_parser_on_repeated_reads(self):
+        instance = GenesCallFilter(
+            get_fixture_path("mock_snv.vcf"), SETTINGS,
+            mt_vcf_file_path=get_fixture_path("mock_mt.vcf"),
+        )
+        expected = [
+            {"short_name": "LA16c-60H5.7"}, {"short_name": "NBEAP3"},
+            {"short_name": "MT-ATP6"},
+        ]
+        self.assertEqual(list(instance.getTableRows()), expected)
+        self.assertEqual(list(instance.getTableRows()), expected)
 
 
 class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):
@@ -667,8 +803,11 @@ class TestMtGnomadFrequenciesCallFilter(FocusableTestCase):
                 encoding="utf-8",
             )
             rows = list(MtGnomadFrequenciesCallFilter(
-                SUPPLIED_MT, SETTINGS, path
+                "unused-missing-nuclear.vcf", SETTINGS, path, mt_vcf_file_path=SUPPLIED_MT,
             ).getTableRows())
+            self.assertEqual(list(MtGnomadFrequenciesCallFilter(
+                SUPPLIED_MT, SETTINGS, path, mt_vcf_file_path=None,
+            ).getTableRows()), [])
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows[0]["variant"], "chrM_4440_G_T")
         self.assertEqual(rows[0]["ac_hom"], 0)

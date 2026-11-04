@@ -1631,6 +1631,7 @@ class ConsequenceImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
+        row["severity"] = str(row["severity"])
         chromosome, position, _ = row["variant"].split(self.delimiter, 2)
         position = int(position)
         if (
@@ -1694,7 +1695,8 @@ class ConsequenceImporter(Importer):
         # This is significantly *faster* than doing bulk updates
         try:
             updated = self.model.objects.filter(
-                variant_transcript_id=self.vts[(row["variant"], row["transcript"])]
+                variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
+                severity_id=self.severities[row["severity"]],
             ).update(
                 severity_id=self.severities[row["severity"]],
             )
@@ -1722,9 +1724,7 @@ class ConsequenceImporter(Importer):
         try:
             obj, created = self.upsert(
                 variant_transcript_id=self.vts[(row["variant"], row["transcript"])],
-                defaults={
-                    "severity_id": self.severities[row["severity"]],
-                },
+                severity_id=self.severities[row["severity"]],
             )
             return True, (obj, created)
         except Exception as e:

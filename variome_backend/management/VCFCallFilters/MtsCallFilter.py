@@ -6,15 +6,15 @@ class MtsCallFilter(CallFilter):
     """
     Generates the 'mts' table (mitochondrial variant annotations).
     """
-    def __init__(self, vcf_file_path: str, settings, assembly: Optional[str] = None):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path: str, settings, assembly: Optional[str] = None, mt_vcf_file_path=None):
+        super().__init__(None, settings, mt_vcf_file_path)
         self.assembly = assembly
         self.gnomad_variants = set()
 
     def getTableRows(self) -> List[Dict[str, Any]]:
         mts = {}
         NA = self.settings.NA
-        for record in self.vcf_record_stream():
+        for record in self.vcf_record_stream(self._mt_vcf_file_path):
             if not self.is_mitochondrial(record):
                 continue
             pos = record.POS

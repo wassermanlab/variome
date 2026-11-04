@@ -28,17 +28,17 @@ def wait_with_sleep(retry_state):
 logger = logging.getLogger(__name__)
 
 class CallFilter(ABC):
-    # Restrict records read from the file: None (all), "nuclear" or "mt"
-    record_scope = None
-
-    def __init__(self, vcf_file_path: str, settings):
+    def __init__(self, vcf_file_path: str, settings, mt_vcf_file_path=None):
         self.csq_fields = []
         self.csq_index_map = {}
         self.vcf_header = None
         self._vcf_file_path = vcf_file_path
+        self._mt_vcf_file_path = mt_vcf_file_path
         self.settings = settings
-
-        self._init_vcf_header_and_csq()
+        self._vcf_contexts = {}
+        self.mt_columns = None
+        if vcf_file_path or mt_vcf_file_path:
+            self._init_vcf_header_and_csq(vcf_file_path or mt_vcf_file_path)
 
     @retry(
         stop=stop_after_attempt(ATTEMPTS),
@@ -47,7 +47,7 @@ class CallFilter(ABC):
         before_sleep=before_sleep_log(logger, logging.WARNING)
     )
     def stream_with_retries(self, file_path):
-
+        file_path = os.fspath(file_path)
         if file_path.endswith('.gz'):
             gz = gzip.open(file_path, 'rb')
             return io.TextIOWrapper(gz, encoding='utf-8', errors='replace')
@@ -60,12 +60,14 @@ class CallFilter(ABC):
         retry=retry_if_exception_type(FileNotFoundError),
         before_sleep=before_sleep_log(logger, logging.WARNING)
     )
-    def _init_vcf_header_and_csq(self):
+    def _init_vcf_header_and_csq(self, file_path):
 
         child_class_name = self.__class__.__name__
-        logger.info(f"scanning {self._vcf_file_path} using {child_class_name}...")
+        logger.info(f"scanning {file_path} using {child_class_name}...")
+        self.csq_fields = []
+        self.csq_index_map = {}
         self.mt_columns = None
-        with self.stream_with_retries(self._vcf_file_path) as stream:
+        with self.stream_with_retries(file_path) as stream:
             header_lines = []
             for line in stream:
                 if line.startswith("#CHROM"):
@@ -86,19 +88,22 @@ class CallFilter(ABC):
             if csq.description and "Format: " in csq.description:
                 self.csq_fields = csq.description.split("Format: ")[1].split("|")
                 self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+        self._vcf_contexts[os.path.realpath(file_path)] = (
+            self.vcf_header, self.csq_fields, self.csq_index_map, self.mt_columns
+        )
 
     @staticmethod
     def is_mitochondrial(record):
         return record.CHROM.removeprefix("chr").upper() in ("M", "MT")
 
-    def _ibvl_mt_records(self, stream):
+    def _ibvl_mt_records(self, stream, columns):
         for line in stream:
             if line.startswith("#CHROM"):
                 break
         for values in csv.reader(stream, delimiter="\t", quoting=csv.QUOTE_NONE):
             if not values:
                 continue
-            row = dict(zip(self.mt_columns, values))
+            row = dict(zip(columns, values))
             info = {}
             for field, value in row.items():
                 value, sep, csq = value.partition(";CSQ=")
@@ -116,20 +121,46 @@ class CallFilter(ABC):
                 QUAL=None, FILTER=row.get("filters", "PASS").split(";"), INFO=info,
             )
 
-    def in_scope(self, record):
-        if self.record_scope is None:
-            return True
-        return self.is_mitochondrial(record) == (self.record_scope == "mt")
+    def shared_record_stream(self):
+        nuclear_path = self._vcf_file_path
+        mt_path = self._mt_vcf_file_path
+        if nuclear_path and mt_path and (
+            os.path.realpath(nuclear_path) == os.path.realpath(mt_path)
+            or (
+                os.path.exists(nuclear_path) and os.path.exists(mt_path)
+                and os.path.samefile(nuclear_path, mt_path)
+            )
+        ):
+            yield from self.vcf_record_stream(nuclear_path)
+            return
+        if nuclear_path:
+            for record in self.vcf_record_stream(nuclear_path):
+                if not self.is_mitochondrial(record):
+                    yield record
+        if mt_path:
+            for record in self.vcf_record_stream(mt_path):
+                if self.is_mitochondrial(record):
+                    yield record
 
-    def vcf_record_stream(self):
-        """
-        Generator that yields VCF records one at a time from the file.
-        """
-        for record in self._all_vcf_records():
-            if self.in_scope(record):
-                yield record
+    def vcf_record_stream(self, *file_paths):
+        """Read explicit files once, retaining each record's own CSQ header."""
+        if not file_paths:
+            file_paths = (self._vcf_file_path or self._mt_vcf_file_path,)
+        seen = set()
+        for file_path in file_paths:
+            if not file_path:
+                continue
+            key = os.path.realpath(file_path)
+            if key in seen:
+                continue
+            seen.add(key)
+            yield from self._all_vcf_records(file_path)
 
-    def _all_vcf_records(self):
+    def _all_vcf_records(self, file_path):
+        key = os.path.realpath(file_path)
+        if key not in self._vcf_contexts:
+            self._init_vcf_header_and_csq(file_path)
+        context = self._vcf_contexts[key]
         RANGES = self.settings.RANGES
         ranges = RANGES.split(",") if RANGES else []
         range_map = {}
@@ -158,14 +189,17 @@ class CallFilter(ABC):
                 for record in reader:
                     yield record
 
-        with self.stream_with_retries(self._vcf_file_path) as stream:
-            if self.mt_columns:
+        with self.stream_with_retries(file_path) as stream:
+            if context[3]:
                 # IBVL MT dialect is tabular rather than a standard VCF.
-                records = self._ibvl_mt_records(stream)
+                records = self._ibvl_mt_records(stream, context[3])
             else:
                 # Variome dialect (and genomic IBVL) is parsed as standard VCF.
                 records = vcfpy.Reader(stream=stream)
-            yield from yield_records_in_ranges(records)
+            for record in yield_records_in_ranges(records):
+                self.vcf_header, self.csq_fields, self.csq_index_map, self.mt_columns = context
+                record._variome_csq_index_map = context[2]
+                yield record
 
 
 
@@ -194,7 +228,7 @@ class CallFilter(ABC):
             record: VCF record object
             field_name: Name of the CSQ field to extract
         """
-        index = self.csq_index_map.get(field_name)
+        index = getattr(record, "_variome_csq_index_map", self.csq_index_map).get(field_name)
         values = []
         if index is None:
             return []

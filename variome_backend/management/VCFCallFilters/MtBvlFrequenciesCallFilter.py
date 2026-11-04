@@ -12,8 +12,8 @@ class MtBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'mt_bvl_frequencies' table.
     """
-    def __init__(self, vcf_file_path: str, settings):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path: str, settings, mt_vcf_file_path=None):
+        super().__init__(None, settings, mt_vcf_file_path)
 
     @staticmethod
     def sample_heteroplasmy_levels(record, allele_index):
@@ -44,7 +44,7 @@ class MtBvlFrequenciesCallFilter(CallFilter):
     def getTableRows(self) -> List[Dict[str, Any]]:
         rows = []
         seen = set()
-        for record in self.vcf_record_stream():
+        for record in self.vcf_record_stream(self._mt_vcf_file_path):
             if not self.is_mitochondrial(record):
                 continue
             def scalar(value):

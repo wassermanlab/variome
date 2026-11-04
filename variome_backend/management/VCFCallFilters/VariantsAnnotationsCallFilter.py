@@ -7,15 +7,16 @@ class VariantsAnnotationsCallFilter(CallFilter):
     """
     Generates the 'variants_annotations' table.
     """
-    def __init__(self, vcf_file_path, settings):
-        super().__init__(vcf_file_path, settings)
+    def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
+        super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
     def getTableRows(self):
         """
         Generator that yields annotation rows one at a time.
         """
         NA = self.settings.NA
-        for record in self.vcf_record_stream():
+        seen = set()
+        for record in self.shared_record_stream():
             variant = self.make_variant_id(record)
             hgvsp_list = self.get_csq_values(record, "HGVSp")
             sift_list = self.get_csq_values(record, "SIFT")
@@ -34,6 +35,10 @@ class VariantsAnnotationsCallFilter(CallFilter):
                 polyphen = polyphen_list[i]
                 transcript = transcript_list[i]
                 impact = impact_list[i] if impact_list and len(impact_list) > i else NA
+                key = (variant, transcript or NA)
+                if key in seen:
+                    continue
+                seen.add(key)
                 yield {
                     'hgvsp': hgvsp,
                     'sift': sift,

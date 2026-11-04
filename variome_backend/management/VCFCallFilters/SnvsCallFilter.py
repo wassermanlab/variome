@@ -9,7 +9,7 @@ class SnvsCallFilter(CallFilter):
     """
     Generates the 'snvs' table (SNV-specific annotations).
     """
-    def __init__(self, vcf_file_path: str, settings, assembly=None):
+    def __init__(self, vcf_file_path: str, settings, assembly=None, mt_vcf_file_path=None):
         super().__init__(vcf_file_path, settings)
         self.assembly = assembly
 

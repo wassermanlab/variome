@@ -187,6 +187,13 @@ Nuclear variants are read from `--vcf` and mitochondrial variants from
 `data/fixtures/vcf/variome-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
 Mitochondrial records in `--vcf` (and non-mitochondrial records in `--mt-vcf`)
 are ignored with a warning; to import a combined VCF, pass the same file to both.
+Each table's CallFilter selects the relevant input(s) and produces one row
+iterator. Shared gene, variant and transcript annotation tables combine both
+inputs, retaining each file's own annotation header and deduplicating shared
+records. The importer runs once per table, so `--delete` replaces that table
+once rather than deleting the first file's rows when processing the second.
+Equivalent paths to the same file are read only once per filter. Tables whose
+corresponding input is absent are skipped.
 
 Mitochondrial records (`M`, `MT`, `chrM` or `chrMT`) are imported into separate
 metadata and frequency tables. Both the IBVL tabular MT export and standard

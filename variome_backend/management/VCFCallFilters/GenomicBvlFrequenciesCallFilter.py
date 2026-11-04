@@ -10,7 +10,7 @@ class GenomicBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'genomic_bvl_frequencies' table.
     """
-    def __init__(self, vcf_file_path: str, settings):
+    def __init__(self, vcf_file_path: str, settings, mt_vcf_file_path=None):
         super().__init__(vcf_file_path, settings)
 
     def getTableRows(self):
