@@ -118,10 +118,6 @@ function cachedFetch(
   return map[key];
 }
 
-function getFetch(url, query=null, localStorageKey){  
-    return cachedFetch(url, query, 'GET', null, false, localStorageKey)
-}
-
 const Api = {
   post: (path, data) => cachedFetch(API_URL_BASE + path, null, 'POST', data),
   get: async (path, query) => {
@@ -161,14 +157,15 @@ const Api = {
       
       if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
         
-          json = await getFetch(
-            `https://rest.ensembl.org/sequence/region/human/${chr}:${pos}..${posEnd}:1`,
+          json = await cachedFetch(
+            `${API_URL_BASE}sequence/region/${chr}:${pos}..${posEnd}:1`,
             {"content-type":"application/json",
               "coord_system_version":coordSystemVersion
             },
-            `ensemble:${chr}:${pos}..${posEnd}-${coordSystemVersion}`,
+            'GET', null, true,
+            `local-reference:${chr}:${pos}..${posEnd}-${coordSystemVersion}`,
         ).catch ((e)=> {
-          console.error("ensembl.org request failed", e);
+          console.error("Local reference request failed", e);
           if (e && e.text && _.isFunction(e.text)){
             return e.text().then(t => {
               return Promise.reject(new Error(t));

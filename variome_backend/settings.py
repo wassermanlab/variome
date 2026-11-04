@@ -85,6 +85,9 @@ else:
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+REFERENCE_GENOME_PATH = os.environ.get("REFERENCE_GENOME_PATH") or str(
+    BASE_DIR / "data" / "reference" / "GRCh38.fa"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = IS_DEVELOPMENT

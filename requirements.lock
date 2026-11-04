@@ -44,12 +44,16 @@ idna==3.15
     #   requests
 natsort==8.4.0
     # via variome (pyproject.toml)
+packaging==26.3
+    # via pyfaidx
 psycopg==3.3.4
     # via variome (pyproject.toml)
 psycopg-binary==3.3.4
     # via psycopg
 pycparser==2.22
     # via cffi
+pyfaidx==0.9.2.2
+    # via variome (pyproject.toml)
 pyjwt==2.15.1
     # via
     #   variome (pyproject.toml)
