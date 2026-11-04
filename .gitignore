@@ -175,6 +175,14 @@ data/backups/*
 *.sqlite*
 *.bak
 
+# Local reference genome and its FASTA index
+/data/reference/
+*.fa
+*.fa.gz
+*.fasta
+*.fasta.gz
+*.fai
+
 # because it depends on OS and is generated dynamically
 package-lock.json
 

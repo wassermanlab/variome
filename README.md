@@ -102,6 +102,35 @@ python manage.py import_bvl
 python manage.py createsuperuser
 ```
 
+### 6. Install the local GRCh38 reference
+
+Set `REFERENCE_GENOME_PATH` in `.env` to the desired FASTA filename (for example
+`/srv/variome/reference/GRCh38.fa`). The default is `data/reference/GRCh38.fa`.
+Then run:
+
+```
+python manage.py download_reference_genome
+```
+
+This streams the official Ensembl release 115 human GRCh38 primary assembly over
+HTTPS, decompresses it, and builds a samtools-compatible `.fai` index using
+`pyfaidx`. Allow about 4 GB of free disk space for the roughly 3.1 GB FASTA and
+index. No whole-genome load into memory is needed. Existing files are not
+overwritten; use a new path when replacing the reference.
+
+If the configured directory is unwritable, the command downloads to the repository
+root instead and, after completion, tells you where to move **both** files.
+Ensure the Django service account can read the FASTA and its adjacent `.fai`.
+Genome files must not be committed to Git.
+
+Authenticated sequence lookups use
+`GET /api/sequence/region/1:1000..1001:1?coord_system_version=GRCh38`
+and return `{"seq": "..."}`. Coordinates are 1-based and inclusive; strand can be
+`1` or `-1`. `chr` prefixes and mitochondrial `M`/`MT` aliases are accepted.
+Only GRCh38 is supported, requests are limited to 200 bases, and unavailable reference
+files return HTTP 503 rather than falling back to an external service. The search
+UI uses this endpoint for its reference-allele warning.
+
 ## Run the Django app
 
 ```
