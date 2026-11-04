@@ -127,7 +127,7 @@ Authenticated sequence lookups use
 `GET /api/sequence/region/1:1000..1001:1?coord_system_version=GRCh38`
 and return `{"seq": "..."}`. Coordinates are 1-based and inclusive; strand can be
 `1` or `-1`. `chr` prefixes and mitochondrial `M`/`MT` aliases are accepted.
-Only GRCh38 is supported, requests are limited to 10 Mb, and unavailable reference
+Only GRCh38 is supported, requests are limited to 200 bases, and unavailable reference
 files return HTTP 503 rather than falling back to an external service. The search
 UI uses this endpoint for its reference-allele warning.
 

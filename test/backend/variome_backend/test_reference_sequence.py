@@ -67,6 +67,23 @@ class ReferenceSequenceTests(TestCase):
                 response = self.lookup(f"{chromosome}:1..3:1")
                 self.assertEqual(response.json(), {"seq": "GAT"})
 
+    def test_sequence_length_limit(self):
+        reference = self.reference.parent / "length.fa"
+        reference.write_text(">1\n" + "A" * 202 + "\n")
+        with Fasta(str(reference)):
+            pass
+        with self.settings(REFERENCE_GENOME_PATH=str(reference)):
+            response = self.lookup("1:2..201:1")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {"seq": "A" * 200})
+
+            response = self.lookup("1:2..202:1")
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(
+                response.json(),
+                {"error": "Invalid region or region exceeds 200 bases."},
+            )
+
     def test_invalid_regions(self):
         for region in [
             "1:0..1:1",

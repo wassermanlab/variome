@@ -8,12 +8,17 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 
+MAX_SEQUENCE_LENGTH = 200
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def reference_sequence(request, region):
     if request.query_params.get("coord_system_version", "GRCh38") != "GRCh38":
         return Response({"error": "Only GRCh38 is available locally."}, status=400)
 
+    # Match chromosome:start..end[:strand], with inclusive 1-based coordinates
+    # and optional strand 1 or -1. Bounded fields limit work on untrusted input.
     match = re.fullmatch(
         r"([A-Za-z0-9_.-]{1,100}):([0-9]{1,12})\.\.([0-9]{1,12})(?::(-?1))?",
         region,
@@ -24,9 +29,10 @@ def reference_sequence(request, region):
         )
     chromosome, start, end, strand = match.groups()
     start, end = int(start), int(end)
-    if start < 1 or end < start or end - start + 1 > 10_000_000:
+    if start < 1 or end < start or end - start + 1 > MAX_SEQUENCE_LENGTH:
         return Response(
-            {"error": "Invalid region or region exceeds 10 Mb."}, status=400
+            {"error": f"Invalid region or region exceeds {MAX_SEQUENCE_LENGTH} bases."},
+            status=400,
         )
     chromosome = chromosome.removeprefix("chr")
     if chromosome in ("M", "MT"):
