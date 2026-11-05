@@ -8,10 +8,14 @@ from django.core.management import call_command
 from django.test import TransactionTestCase
 
 from variome_backend.library.models import (
-    MT, SNV, Variant, VariantTranscript,
-    GenomicVariomeFrequency, MtVariomeFrequency, MtGnomadFrequency,
+    MT,
+    SNV,
+    Variant,
+    VariantTranscript,
+    GenomicVariomeFrequency,
+    MtVariomeFrequency,
+    MtGnomadFrequency,
 )
-
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "vcf"
@@ -45,29 +49,43 @@ class MitochondrialImportTests(TransactionTestCase):
                 self.assertFalse(Variant.objects.exclude(var_type="M").exists())
                 variant = Variant.objects.get(variant_id="M-4440-G-T")
                 metadata = MT.objects.get(variant=variant)
-                self.assertEqual((metadata.pos, metadata.ref, metadata.alt), (4440, "G", "T"))
+                self.assertEqual(
+                    (metadata.pos, metadata.ref, metadata.alt), (4440, "G", "T")
+                )
                 self.assertEqual(metadata.dbsnp_id, "")
                 self.assertIsNone(metadata.clinvar_vcv)
                 frequency = MtVariomeFrequency.objects.get(variant=variant)
                 self.assertEqual(frequency.an, 1)
                 self.assertEqual((frequency.ac_hom, frequency.ac_het), (0, 1))
-                self.assertEqual((float(frequency.af_hom), float(frequency.af_het)), (0, 1))
+                self.assertEqual(
+                    (float(frequency.af_hom), float(frequency.af_het)), (0, 1)
+                )
                 self.assertAlmostEqual(float(frequency.max_hl), 0.009923)
                 self.assertEqual(frequency.hl_hist, "1,0,0,0,0,0,0,0,0,0")
-                frequency = MtVariomeFrequency.objects.get(variant__variant_id="M-8860-A-G")
+                frequency = MtVariomeFrequency.objects.get(
+                    variant__variant_id="M-8860-A-G"
+                )
                 self.assertEqual(frequency.an, 3)
                 self.assertEqual((frequency.ac_hom, frequency.ac_het), (3, 0))
-                self.assertEqual((float(frequency.af_hom), float(frequency.af_het)), (1, 0))
+                self.assertEqual(
+                    (float(frequency.af_hom), float(frequency.af_het)), (1, 0)
+                )
                 self.assertEqual(frequency.hl_hist, "0,0,0,0,0,0,0,0,0,3")
                 self.assertAlmostEqual(float(frequency.max_hl), 0.997)
-                self.assertTrue(MT.objects.filter(variant__variant_id="M-9055-G-T").exists())
-                self.assertTrue(MT.objects.filter(variant__variant_id="M-9055-G-A").exists())
+                self.assertTrue(
+                    MT.objects.filter(variant__variant_id="M-9055-G-T").exists()
+                )
+                self.assertTrue(
+                    MT.objects.filter(variant__variant_id="M-9055-G-A").exists()
+                )
                 self.assertFalse(VariantTranscript.objects.exists())
                 self.assertFalse(SNV.objects.exists())
                 self.assertFalse(GenomicVariomeFrequency.objects.exists())
 
     def test_default_run_imports_nuclear_and_mt_vcfs(self):
-        call_command("import_bvl_vcf", progress=False, stdout=io.StringIO(), stderr=io.StringIO())
+        call_command(
+            "import_bvl_vcf", progress=False, stdout=io.StringIO(), stderr=io.StringIO()
+        )
         self.assertEqual(Variant.objects.filter(var_type="M").count(), 158)
         self.assertEqual(Variant.objects.exclude(var_type="M").count(), 73)
         self.assertEqual(MT.objects.count(), 158)
@@ -89,18 +107,26 @@ class MitochondrialImportTests(TransactionTestCase):
             for args, expected in (
                 ({"vcf_file": str(path), "mt_vcf_file": ""}, ["1-100-A-G"]),
                 ({"vcf_file": "", "mt_vcf_file": str(path)}, ["M-200-A-G"]),
-                ({"vcf_file": str(path), "mt_vcf_file": str(path)}, ["1-100-A-G", "M-200-A-G"]),
+                (
+                    {"vcf_file": str(path), "mt_vcf_file": str(path)},
+                    ["1-100-A-G", "M-200-A-G"],
+                ),
             ):
                 with self.subTest(**args):
                     Variant.objects.all().delete()
                     with self.assertLogs("management", level="WARNING") as logs:
                         logging.getLogger("management").warning("sentinel")
                         call_command(
-                            "import_bvl_vcf", out_chr=False, progress=False,
-                            stdout=io.StringIO(), stderr=io.StringIO(), **args,
+                            "import_bvl_vcf",
+                            out_chr=False,
+                            progress=False,
+                            stdout=io.StringIO(),
+                            stderr=io.StringIO(),
+                            **args,
                         )
                     self.assertEqual(
-                        sorted(Variant.objects.values_list("variant_id", flat=True)), expected
+                        sorted(Variant.objects.values_list("variant_id", flat=True)),
+                        expected,
                     )
                     self.assertEqual(MT.objects.count(), expected.count("M-200-A-G"))
                     ignored = [line for line in logs.output if "Ignoring 1 " in line]
@@ -114,7 +140,9 @@ class MitochondrialImportTests(TransactionTestCase):
             self.import_vcf(path, convert_to_tsv=True, tsv_output_dir=directory)
             metadata = (Path(directory) / "mts" / "mts.tsv").read_text()
             frequencies = (
-                Path(directory) / "mt_variome_frequencies" / "mt_variome_frequencies.tsv"
+                Path(directory)
+                / "mt_variome_frequencies"
+                / "mt_variome_frequencies.tsv"
             ).read_text()
         self.assertEqual(len(metadata.splitlines()), 159)
         self.assertEqual(len(frequencies.splitlines()), 159)

@@ -15,7 +15,6 @@ from django.core.management.color import no_style
 
 import variome_backend.library.models as bvlmodels
 
-
 log = logging.getLogger("management")
 
 
@@ -25,6 +24,7 @@ class ImportCode(enum.Enum):
     Using an enum means grouping is exact (by enum identity) rather than
     relying on fragile post-hoc text parsing.
     """
+
     # ── Errors ────────────────────────────────────────────────────────────────
     BULK_CREATE_FAILED = "bulk create failed"
     COUNT_ERROR = "error counting objects"
@@ -52,6 +52,7 @@ class ImportMessage:
     The *detail* string provides human-readable context for the specific
     occurrence.
     """
+
     code: ImportCode
     detail: str
 
@@ -69,10 +70,19 @@ class ImportCounts:
     deleted: int = 0
 
     def __add__(self, other):
-        return ImportCounts(*(
-            getattr(self, field) + getattr(other, field)
-            for field in ("processed", "created", "updated", "skipped", "failed", "deleted")
-        ))
+        return ImportCounts(
+            *(
+                getattr(self, field) + getattr(other, field)
+                for field in (
+                    "processed",
+                    "created",
+                    "updated",
+                    "skipped",
+                    "failed",
+                    "deleted",
+                )
+            )
+        )
 
     def __str__(self):
         return (
@@ -99,8 +109,10 @@ def format_import_counts(counts_map, errors_map, durations_map=None):
     fields = ("processed", "created", "updated", "skipped", "failed", "deleted")
     name_width = max(len("Table"), *(len(name) for name in counts_map))
     values = {
-        name: [f"{getattr(counts, field):,}" if counts is not None else "-"
-               for field in fields]
+        name: [
+            f"{getattr(counts, field):,}" if counts is not None else "-"
+            for field in fields
+        ]
         for name, counts in counts_map.items()
     }
     if durations_map is not None:
@@ -306,11 +318,13 @@ class Importer:
                 return True
             except Exception as e:
                 self.counts.failed += len(bulk_create)
-                errors.append(ImportMessage(
-                    ImportCode.BULK_CREATE_FAILED,
-                    f"error in bulk create of {self.object_name_plural} "
-                    f"({len(bulk_create)} rows, ending at input row {self._row_num}): {e}",
-                ))
+                errors.append(
+                    ImportMessage(
+                        ImportCode.BULK_CREATE_FAILED,
+                        f"error in bulk create of {self.object_name_plural} "
+                        f"({len(bulk_create)} rows, ending at input row {self._row_num}): {e}",
+                    )
+                )
                 return False
             finally:
                 bulk_create.clear()
@@ -325,15 +339,18 @@ class Importer:
                     now_time2 = datetime.now()
                     timing = (
                         f" (took {(now_time2 - now_time).total_seconds()} seconds)"
-                        if self.show_timings else ""
+                        if self.show_timings
+                        else ""
                     )
                     sys.stderr.write(f"{self.object_name} {self._row_num}{timing}...\n")
                     now_time = datetime.now()
                 if self.limit is not None and self.limit < self._row_num:
-                    warnings.append(ImportMessage(
-                        ImportCode.PROCESSING_LIMIT_HIT,
-                        f"stopped processing after limit ({self.limit}) hit",
-                    ))
+                    warnings.append(
+                        ImportMessage(
+                            ImportCode.PROCESSING_LIMIT_HIT,
+                            f"stopped processing after limit ({self.limit}) hit",
+                        )
+                    )
                     break
                 self.counts.processed += 1
                 success, obj = self.clean_data(row)
@@ -342,10 +359,12 @@ class Importer:
                 else:
                     self.counts.skipped += 1
                     for msg in obj:
-                        warnings.append(ImportMessage(
-                            ImportCode.UNCLEANABLE_ROW,
-                            f"row {self._row_num}: {msg}",
-                        ))
+                        warnings.append(
+                            ImportMessage(
+                                ImportCode.UNCLEANABLE_ROW,
+                                f"row {self._row_num}: {msg}",
+                            )
+                        )
                     continue
                 if self.batch:
                     if not self.check_existing(row):
@@ -397,10 +416,12 @@ class Importer:
             if bulk_create:
                 flush_creates()
         except csv.Error as e:
-            errors.append(ImportMessage(
-                ImportCode.CSV_READ_ERROR,
-                f"error reading row {self._row_num}: {e}",
-            ))
+            errors.append(
+                ImportMessage(
+                    ImportCode.CSV_READ_ERROR,
+                    f"error reading row {self._row_num}: {e}",
+                )
+            )
         finally:
             # Fail-fast can leave accepted rows that never reached a bulk insert.
             self.counts.skipped += len(bulk_create)
@@ -1149,7 +1170,7 @@ class GGFImporter(Importer):
 
     def clean_data(self, row):
         """Clean the input data in row & return cleaned row"""
-        for field in ("af_tot", "ac_tot", "hom_tot", "hemi_tot"): # add hemi_tot too ??
+        for field in ("af_tot", "ac_tot", "hom_tot", "hemi_tot"):  # add hemi_tot too ??
             if row[field] in (".", "NA"):
                 row[field] = None
         for field in ("an_tot",):
@@ -1405,7 +1426,9 @@ class AnnotationImporter(Importer):
                 f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
             )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
+            q = Q(
+                variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}"
+            )
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1423,7 +1446,10 @@ class AnnotationImporter(Importer):
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
-                length=StrIndex(Substr("variant__variant_id", F("first")), V(self.delimiter)) - 1,
+                length=StrIndex(
+                    Substr("variant__variant_id", F("first")), V(self.delimiter)
+                )
+                - 1,
                 pos=Cast(
                     Substr("variant__variant_id", F("first"), F("length")),
                     IntegerField(),
@@ -1585,7 +1611,9 @@ class ConsequenceImporter(Importer):
                 f"Caching chromosome {chromosome} from positions: {position} to {position + self.dedupe_cache_window}\n"
             )
         if not self.noexisting:
-            q = Q(variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}")
+            q = Q(
+                variant_transcript__variant__variant_id__startswith=f"{chromosome}{self.delimiter}"
+            )
             qs = self.model.objects.filter(q).values(
                 "variant_transcript__variant__variant_id",
                 "variant_transcript__transcript__transcript_id",
@@ -1605,7 +1633,10 @@ class ConsequenceImporter(Importer):
         qs = (
             bvlmodels.VariantTranscript.objects.annotate(
                 first=StrIndex("variant__variant_id", V(self.delimiter)) + 1,
-                length=StrIndex(Substr("variant__variant_id", F("first")), V(self.delimiter)) - 1,
+                length=StrIndex(
+                    Substr("variant__variant_id", F("first")), V(self.delimiter)
+                )
+                - 1,
                 pos=Cast(
                     Substr("variant__variant_id", F("first"), F("length")),
                     IntegerField(),
@@ -1668,7 +1699,9 @@ class ConsequenceImporter(Importer):
                 "variant transcript object not found for consequence of "
                 f"variant {row['variant']} transcript {row['transcript']}",
             )
-        severity = self.severities.get(row["severity"], self.severities.get(str(row["severity"]), None))
+        severity = self.severities.get(
+            row["severity"], self.severities.get(str(row["severity"]), None)
+        )
         if severity is None:
             return False, ImportMessage(
                 ImportCode.SEVERITY_NOT_FOUND,
@@ -1700,8 +1733,8 @@ class ConsequenceImporter(Importer):
             ).update(
                 severity_id=self.severities[row["severity"]],
             )
-            if updated < 1: 
-              # variant-transcript pairs can have multiple consequences
+            if updated < 1:
+                # variant-transcript pairs can have multiple consequences
                 return False, ImportMessage(
                     ImportCode.UNEXPECTED_UPDATE_COUNT,
                     f"error, updated {updated} DB rows for variant {row['variant']} "

@@ -9,6 +9,7 @@ class VariantsTranscriptsCallFilter(CallFilter):
     """
     Generates the 'variants_transcripts' table.
     """
+
     def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
         super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
@@ -25,7 +26,9 @@ class VariantsTranscriptsCallFilter(CallFilter):
             l = len(transcript)
             lh = len(hgvsc)
             if l != lh:
-                logging.warning(f"mismatched lengths for transcript and hgvsc: {l} vs {lh}")
+                logging.warning(
+                    f"mismatched lengths for transcript and hgvsc: {l} vs {lh}"
+                )
                 continue
             for i in range(l):
                 t = transcript[i]
@@ -38,8 +41,4 @@ class VariantsTranscriptsCallFilter(CallFilter):
                 if key in seen:
                     continue
                 seen.add(key)
-                yield {
-                    'transcript': t,
-                    'variant': variant,
-                    'hgvsc': h
-                }
+                yield {"transcript": t, "variant": variant, "hgvsc": h}

@@ -144,13 +144,9 @@ class Command(BaseCommand):
             )
 
         # Grant privileges
-        self.stdout.write(
-            f"Granting all privileges on '{db_name}' to '{db_user}'..."
-        )
+        self.stdout.write(f"Granting all privileges on '{db_name}' to '{db_user}'...")
         cur.execute(
-            psycopg.sql.SQL(
-                "GRANT ALL PRIVILEGES ON DATABASE {} TO {}"
-            ).format(
+            psycopg.sql.SQL("GRANT ALL PRIVILEGES ON DATABASE {} TO {}").format(
                 psycopg.sql.Identifier(db_name),
                 psycopg.sql.Identifier(db_user),
             )

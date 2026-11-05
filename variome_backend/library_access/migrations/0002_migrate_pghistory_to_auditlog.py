@@ -35,7 +35,6 @@ from django.apps import apps as django_apps
 from django.db import migrations, transaction
 from django.db.utils import DatabaseError
 
-
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -119,8 +118,9 @@ def _snapshot_attnames(EventModel):
     ]
 
 
-def _migrate_event_model(apps, event_app_label, event_model_name,
-                         content_type, LogEntry, context_user_map):
+def _migrate_event_model(
+    apps, event_app_label, event_model_name, content_type, LogEntry, context_user_map
+):
     """
     Read *event_model_name* via the ORM and bulk-insert LogEntry rows.
     Skips gracefully if the model is not in the live app registry.
@@ -181,11 +181,7 @@ def _migrate_event_model(apps, event_app_label, event_model_name,
         last_snapshot[obj_id] = snapshot
 
         # Best-effort human-readable representation using snapshot fields.
-        obj_repr = (
-            snapshot.get("username")
-            or snapshot.get("name")
-            or str(obj_id)
-        )
+        obj_repr = snapshot.get("username") or snapshot.get("name") or str(obj_id)
 
         entries.append(
             LogEntry(
@@ -213,6 +209,7 @@ def _migrate_event_model(apps, event_app_label, event_model_name,
 # ---------------------------------------------------------------------------
 # Forward migration
 # ---------------------------------------------------------------------------
+
 
 def migrate_pghistory_to_auditlog(apps, schema_editor):
     if schema_editor.connection.vendor != "postgresql":
@@ -247,6 +244,7 @@ def migrate_pghistory_to_auditlog(apps, schema_editor):
 # Reverse migration
 # ---------------------------------------------------------------------------
 
+
 def reverse_migrate_pghistory_to_auditlog(apps, schema_editor):
     if schema_editor.connection.vendor != "postgresql":
         return
@@ -258,14 +256,13 @@ def reverse_migrate_pghistory_to_auditlog(apps, schema_editor):
 
     # Remove only the entries that this migration imported.
     # The legacy tables and triggers cannot be trivially recreated.
-    LogEntry.objects.filter(
-        additional_data__has_key="migrated_from_pghistory"
-    ).delete()
+    LogEntry.objects.filter(additional_data__has_key="migrated_from_pghistory").delete()
 
 
 # ---------------------------------------------------------------------------
 # Migration class
 # ---------------------------------------------------------------------------
+
 
 class Migration(migrations.Migration):
 

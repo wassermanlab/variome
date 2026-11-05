@@ -6,6 +6,7 @@ class GenesCallFilter(CallFilter):
     """
     Generates the 'genes' table.
     """
+
     def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
         super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
@@ -19,4 +20,4 @@ class GenesCallFilter(CallFilter):
                 if gene_symbol and gene_symbol != self.settings.NA:
                     if gene_symbol not in short_names:
                         short_names.add(gene_symbol)
-                        yield {'short_name': gene_symbol}
+                        yield {"short_name": gene_symbol}

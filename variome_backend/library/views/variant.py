@@ -93,24 +93,16 @@ def variant(request, id):
     )
 
     try:
-        gnomadFrequenciesObject = gnomad_model.objects.get(
-            variant_id=variant.id
-        )
-        gnomadFrequences = gnomad_serializer(
-            gnomadFrequenciesObject
-        ).data
+        gnomadFrequenciesObject = gnomad_model.objects.get(variant_id=variant.id)
+        gnomadFrequences = gnomad_serializer(gnomadFrequenciesObject).data
     except gnomad_model.DoesNotExist:
         errors.append(
             f"{'mitochondrial' if is_mt else 'genomic'} gnomad frequency not found for this variant"
         )
 
     try:
-        variomeFrequenciesObject = variome_model.objects.get(
-            variant_id=variant.id
-        )
-        bvlFrequencies = variome_serializer(
-            variomeFrequenciesObject
-        ).data
+        variomeFrequenciesObject = variome_model.objects.get(variant_id=variant.id)
+        bvlFrequencies = variome_serializer(variomeFrequenciesObject).data
     except variome_model.DoesNotExist:
         errors.append(
             f"{'mitochondrial' if is_mt else 'genomic'} variome frequency not found for this variant"

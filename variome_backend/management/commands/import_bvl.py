@@ -122,14 +122,14 @@ class Command(BaseCommand):
             "--batchsize",
             type=int,
             default=999,
-            help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
+            help="Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL",
         )
         parser.add_argument(
             "--dedupe-cache-window",
             "-c",
             type=int,
             default=10000000,
-            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used"
+            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used",
         )
         parser.add_argument(
             "--delete",
@@ -220,7 +220,7 @@ class Command(BaseCommand):
         ann_counts = None
         con_counts = None
 
-        options['out_hyphens'] = True
+        options["out_hyphens"] = True
         # too fragile to allow customizing the variant id delimiter right now
         # variant_id is used in joins across TSVs in the output script(s)
         # so it's natural to follow the TSV input instead of using a flag
@@ -346,7 +346,9 @@ class Command(BaseCommand):
             ("Annotation", "annotations", ann_counts, ann_errors),
             ("Consequence", "consequences", con_counts, con_errors),
         ]
-        counts_map = {name: counts for name, _, counts, _ in results if counts is not None}
+        counts_map = {
+            name: counts for name, _, counts, _ in results if counts is not None
+        }
         errors_map = {name: errors for name, _, _, errors in results}
         durations = {name: durations_map.get(step) for name, step, _, _ in results}
         for line in bvltools.format_import_counts(counts_map, errors_map, durations):

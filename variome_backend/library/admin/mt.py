@@ -13,7 +13,14 @@ class MTAdmin(admin.ModelAdmin):
 @admin.register(MtVariomeFrequency)
 class MtVariomeFrequencyAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "variant", "an", "ac_hom", "ac_het", "af_hom", "af_het", "max_hl"
+        "id",
+        "variant",
+        "an",
+        "ac_hom",
+        "ac_het",
+        "af_hom",
+        "af_het",
+        "max_hl",
     )
     search_fields = ("variant__variant_id",)
     autocomplete_fields = ("variant",)
@@ -22,7 +29,14 @@ class MtVariomeFrequencyAdmin(admin.ModelAdmin):
 @admin.register(MtGnomadFrequency)
 class MtGnomadFrequencyAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "variant", "an", "ac_hom", "ac_het", "af_hom", "af_het", "max_hl"
+        "id",
+        "variant",
+        "an",
+        "ac_hom",
+        "ac_het",
+        "af_hom",
+        "af_het",
+        "max_hl",
     )
     search_fields = ("variant__variant_id",)
     autocomplete_fields = ("variant",)

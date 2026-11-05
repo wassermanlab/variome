@@ -10,7 +10,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from pyfaidx import Fasta, FastaIndexingError
 
-
 REFERENCE_URL = (
     "https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/dna/"
     "Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"

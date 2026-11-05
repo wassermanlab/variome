@@ -12,6 +12,7 @@ class MtBvlFrequenciesCallFilter(CallFilter):
     """
     Generates the 'mt_bvl_frequencies' table.
     """
+
     def __init__(self, vcf_file_path: str, settings, mt_vcf_file_path=None):
         super().__init__(None, settings, mt_vcf_file_path)
 
@@ -47,6 +48,7 @@ class MtBvlFrequenciesCallFilter(CallFilter):
         for record in self.vcf_record_stream(self._mt_vcf_file_path):
             if not self.is_mitochondrial(record):
                 continue
+
             def scalar(value):
                 if isinstance(value, list):
                     return value[0] if value else None
@@ -58,8 +60,12 @@ class MtBvlFrequenciesCallFilter(CallFilter):
             else:
                 # IBVL VCF dialect supplies cohort metrics in a FORMAT/GT sample.
                 fields = next(
-                    (call.data for call in record.calls
-                     if scalar(call.data.get("AN")) not in (None, "", ".")), {}
+                    (
+                        call.data
+                        for call in record.calls
+                        if scalar(call.data.get("AN")) not in (None, "", ".")
+                    ),
+                    {},
                 )
 
             def number(name, cast, allele_index=0):
@@ -73,7 +79,11 @@ class MtBvlFrequenciesCallFilter(CallFilter):
             if not an and not derive_from_samples:
                 continue
             hl_histogram = fields.get("heteroplasmy_histogram")
-            if isinstance(hl_histogram, list) and len(hl_histogram) == 1 and isinstance(hl_histogram[0], str):
+            if (
+                isinstance(hl_histogram, list)
+                and len(hl_histogram) == 1
+                and isinstance(hl_histogram[0], str)
+            ):
                 hl_histogram = hl_histogram[0]
             if isinstance(hl_histogram, str):
                 if hl_histogram.startswith("{"):
@@ -106,17 +116,21 @@ class MtBvlFrequenciesCallFilter(CallFilter):
                         # MT frequencies count observed samples, not diploid GT alleles.
                         allele_an = len(levels)
                         ac_hom = sum(level >= HOMOPLASMY_THRESHOLD for level in levels)
-                        ac_het = sum(0 < level < HOMOPLASMY_THRESHOLD for level in levels)
+                        ac_het = sum(
+                            0 < level < HOMOPLASMY_THRESHOLD for level in levels
+                        )
                         af_hom = ac_hom / allele_an
                         af_het = ac_het / allele_an
-                rows.append({
-                    'variant': variant,
-                    'an': allele_an,
-                    'ac_hom': ac_hom,
-                    'ac_het': ac_het,
-                    'af_hom': af_hom,
-                    'af_het': af_het,
-                    'hl_hist': allele_hist,
-                    'max_hl': max_hl
-                })
+                rows.append(
+                    {
+                        "variant": variant,
+                        "an": allele_an,
+                        "ac_hom": ac_hom,
+                        "ac_het": ac_het,
+                        "af_hom": af_hom,
+                        "af_het": af_het,
+                        "hl_hist": allele_hist,
+                        "max_hl": max_hl,
+                    }
+                )
         return rows

@@ -6,6 +6,7 @@ class VariantsCallFilter(CallFilter):
     """
     Generates the 'variants' table (master variant list).
     """
+
     def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
         super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
@@ -21,9 +22,13 @@ class VariantsCallFilter(CallFilter):
                 # Variome vcf dialect uses TYPE in INFO for variant type
                 var_type = type_info[0]
             else:
-                #IBVL vcf dialect uses VARIANT_CLASS in CSQ for variant type
+                # IBVL vcf dialect uses VARIANT_CLASS in CSQ for variant type
                 var_classes = self.get_csq_values(record, "VARIANT_CLASS")
-                var_type = var_classes[0] if isinstance(var_classes, list) and var_classes else None
+                var_type = (
+                    var_classes[0]
+                    if isinstance(var_classes, list) and var_classes
+                    else None
+                )
             if self.is_mitochondrial(record):
                 var_type = "M"
             elif var_type not in ["SNV", "SNP"] and var_type is not None:
@@ -35,7 +40,7 @@ class VariantsCallFilter(CallFilter):
                     continue
                 seen.add(variant_id)
                 yield {
-                    'variant_id': variant_id,
-                    'var_type': var_type,
-                    'filter': filter_val if filter_val != "" else self.settings.NA
+                    "variant_id": variant_id,
+                    "var_type": var_type,
+                    "filter": filter_val if filter_val != "" else self.settings.NA,
                 }

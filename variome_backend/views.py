@@ -42,6 +42,7 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, "development-mode-login.html", context={"form": form})
 
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 @never_cache

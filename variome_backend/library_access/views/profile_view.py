@@ -17,6 +17,7 @@ def profile_view_redirect(request):
     # do redirect to app
     return redirect(f"{DOMAIN}/")
 
+
 @api_view(["GET"])
 @never_cache
 def profile_view_json(request):

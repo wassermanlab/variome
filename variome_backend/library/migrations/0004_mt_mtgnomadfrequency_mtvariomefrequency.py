@@ -24,8 +24,14 @@ class Migration(migrations.Migration):
                 ("ref", models.CharField(max_length=400)),
                 ("alt", models.CharField(max_length=255)),
                 ("ucsc_url", models.CharField(blank=True, default="", max_length=511)),
-                ("mitomap_url", models.CharField(blank=True, default="", max_length=511)),
-                ("gnomad_url", models.CharField(blank=True, default="", max_length=511)),
+                (
+                    "mitomap_url",
+                    models.CharField(blank=True, default="", max_length=511),
+                ),
+                (
+                    "gnomad_url",
+                    models.CharField(blank=True, default="", max_length=511),
+                ),
                 (
                     "dbsnp_id",
                     models.CharField(
@@ -33,7 +39,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("dbsnp_url", models.CharField(blank=True, default="", max_length=511)),
-                ("clinvar_url", models.CharField(blank=True, default="", max_length=511)),
+                (
+                    "clinvar_url",
+                    models.CharField(blank=True, default="", max_length=511),
+                ),
                 (
                     "clinvar_vcv",
                     models.DecimalField(

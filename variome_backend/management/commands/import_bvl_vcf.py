@@ -16,16 +16,32 @@ from django.db import transaction
 import variome_backend.management.import_tools as bvltools
 from variome_backend.management.vcf_import_settings import VcfImportSettings
 from variome_backend.management.VCFCallFilters.GenesCallFilter import GenesCallFilter
-from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import TranscriptsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsCallFilter import VariantsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import VariantsTranscriptsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import VariantsAnnotationsCallFilter
-from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import VariantsConsequencesCallFilter
+from variome_backend.management.VCFCallFilters.TranscriptsCallFilter import (
+    TranscriptsCallFilter,
+)
+from variome_backend.management.VCFCallFilters.VariantsCallFilter import (
+    VariantsCallFilter,
+)
+from variome_backend.management.VCFCallFilters.VariantsTranscriptsCallFilter import (
+    VariantsTranscriptsCallFilter,
+)
+from variome_backend.management.VCFCallFilters.VariantsAnnotationsCallFilter import (
+    VariantsAnnotationsCallFilter,
+)
+from variome_backend.management.VCFCallFilters.VariantsConsequencesCallFilter import (
+    VariantsConsequencesCallFilter,
+)
 from variome_backend.management.VCFCallFilters.SnvsCallFilter import SnvsCallFilter
-from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import GenomicBvlFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.GenomicBvlFrequenciesCallFilter import (
+    GenomicBvlFrequenciesCallFilter,
+)
 from variome_backend.management.VCFCallFilters.MtsCallFilter import MtsCallFilter
-from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import MtBvlFrequenciesCallFilter
-from variome_backend.management.VCFCallFilters.MtGnomadFrequenciesCallFilter import MtGnomadFrequenciesCallFilter
+from variome_backend.management.VCFCallFilters.MtBvlFrequenciesCallFilter import (
+    MtBvlFrequenciesCallFilter,
+)
+from variome_backend.management.VCFCallFilters.MtGnomadFrequenciesCallFilter import (
+    MtGnomadFrequenciesCallFilter,
+)
 
 log = logging.getLogger("management")
 
@@ -61,7 +77,9 @@ import summary:
 """
 
 
-class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+class HelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter
+):
     pass
 
 
@@ -96,7 +114,10 @@ def check_vcf(vcf_path, settings, mitochondrial=None):
         for record in call_filter.vcf_record_stream():
             n += 1
             last_record = record
-            if mitochondrial is not None and call_filter.is_mitochondrial(record) != mitochondrial:
+            if (
+                mitochondrial is not None
+                and call_filter.is_mitochondrial(record) != mitochondrial
+            ):
                 ignored += 1
     except Exception as e:
         log.warning("Error reading VCF file %s: %s", vcf_path, e)
@@ -113,13 +134,15 @@ def check_vcf(vcf_path, settings, mitochondrial=None):
         if mitochondrial:
             log.warning(
                 "Ignoring %d non-mitochondrial records in --mt-vcf %s; supply them via --vcf",
-                ignored, vcf_path,
+                ignored,
+                vcf_path,
             )
         else:
             log.warning(
                 "Ignoring %d mitochondrial records in --vcf %s; supply them via --mt-vcf "
                 "(or pass the same file to both --vcf and --mt-vcf)",
-                ignored, vcf_path,
+                ignored,
+                vcf_path,
             )
 
 
@@ -147,6 +170,7 @@ def compute_dir_hash(dir_path):
 
     Returns (hash_list_json, hash_map, final_hash).
     """
+
     def file_hash(path):
         hasher = hashlib.sha256()
         with open(path, "rb") as f:
@@ -160,7 +184,7 @@ def compute_dir_hash(dir_path):
 
     final_hasher = hashlib.sha256()
     hash_list_json = json.dumps(hash_map, indent=2)
-    final_hasher.update(hash_list_json.encode('utf-8'))
+    final_hasher.update(hash_list_json.encode("utf-8"))
     return hash_list_json, hash_map, final_hasher.hexdigest()
 
 
@@ -256,7 +280,7 @@ class Command(BaseCommand):
             help="CADD phred score threshold for 'Damaging' classification",
         )
         parser.add_argument(
-            "--input-tsv-dir", # still needed for severities, which are not read from the VCF
+            "--input-tsv-dir",  # still needed for severities, which are not read from the VCF
             default="data/fixtures",
             dest="input_tsv_dir",
             help="Path to the dir of the severities TSV file used by VCF filters",
@@ -299,32 +323,75 @@ class Command(BaseCommand):
             "-c",
             type=int,
             default=10000,
-            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used"
+            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used",
         )
 
         # --- Table selection (mirrors import_bvl) ---
-        parser.add_argument("--severities", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process severity table?")
-        parser.add_argument("--genes", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process genes?")
-        parser.add_argument("--variants", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process variants?")
-        parser.add_argument("--transcripts", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process transcripts?")
-        parser.add_argument("--snvs", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process SNVs?")
-        parser.add_argument("--gvfs", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process genomic variome frequencies?")
-        parser.add_argument("--mts", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process mitochondrial metadata and cohort frequencies?")
-        parser.add_argument("--mt-gnomad-tsv", default=None,
-                            help="Optional gnomAD mitochondrial frequency TSV to intersect with the VCF")
-        parser.add_argument("--annotations", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process variant annotations?")
-        parser.add_argument("--consequences", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process variant consequences?")
-        parser.add_argument("--vts", default=True, action=argparse.BooleanOptionalAction,
-                            help="Process variant transcripts?")
+        parser.add_argument(
+            "--severities",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process severity table?",
+        )
+        parser.add_argument(
+            "--genes",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process genes?",
+        )
+        parser.add_argument(
+            "--variants",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process variants?",
+        )
+        parser.add_argument(
+            "--transcripts",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process transcripts?",
+        )
+        parser.add_argument(
+            "--snvs",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process SNVs?",
+        )
+        parser.add_argument(
+            "--gvfs",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process genomic variome frequencies?",
+        )
+        parser.add_argument(
+            "--mts",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process mitochondrial metadata and cohort frequencies?",
+        )
+        parser.add_argument(
+            "--mt-gnomad-tsv",
+            default=None,
+            help="Optional gnomAD mitochondrial frequency TSV to intersect with the VCF",
+        )
+        parser.add_argument(
+            "--annotations",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process variant annotations?",
+        )
+        parser.add_argument(
+            "--consequences",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process variant consequences?",
+        )
+        parser.add_argument(
+            "--vts",
+            default=True,
+            action=argparse.BooleanOptionalAction,
+            help="Process variant transcripts?",
+        )
 
         # --- Shared DB/run flags (mirrors import_bvl) ---
         parser.add_argument(
@@ -334,7 +401,8 @@ class Command(BaseCommand):
             help="Show progress indications?",
         )
         parser.add_argument(
-            "--failfast", "-f",
+            "--failfast",
+            "-f",
             default=False,
             action=argparse.BooleanOptionalAction,
             help="Fail on first error?",
@@ -349,7 +417,7 @@ class Command(BaseCommand):
             "--batchsize",
             type=int,
             default=999,
-            help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
+            help="Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL",
         )
         parser.add_argument(
             "--delete",
@@ -358,21 +426,24 @@ class Command(BaseCommand):
             help="Delete existing data before importing",
         )
         parser.add_argument(
-            "--ignore-existing", "-i",
+            "--ignore-existing",
+            "-i",
             dest="ignore-existing",
             action="store_true",
             default=False,
             help="Ignore input rows that already exist in the database",
         )
         parser.add_argument(
-            "--rollback-on-error", "-r",
+            "--rollback-on-error",
+            "-r",
             dest="rollback-on-error",
             action="store_true",
             default=False,
             help="Roll back all database changes if any errors occur",
         )
         parser.add_argument(
-            "--dry-run", "-n",
+            "--dry-run",
+            "-n",
             dest="dry-run",
             action="store_true",
             default=False,
@@ -420,11 +491,16 @@ class Command(BaseCommand):
         if not vcf_file and not mt_vcf_file:
             self.stderr.write("No input VCF: both --vcf and --mt-vcf are empty")
             sys.exit(1)
-        if vcf_file and mt_vcf_file and (
-            os.path.realpath(vcf_file) == os.path.realpath(mt_vcf_file)
-            or (
-                os.path.exists(vcf_file) and os.path.exists(mt_vcf_file)
-                and os.path.samefile(vcf_file, mt_vcf_file)
+        if (
+            vcf_file
+            and mt_vcf_file
+            and (
+                os.path.realpath(vcf_file) == os.path.realpath(mt_vcf_file)
+                or (
+                    os.path.exists(vcf_file)
+                    and os.path.exists(mt_vcf_file)
+                    and os.path.samefile(vcf_file, mt_vcf_file)
+                )
             )
         ):
             check_vcf(vcf_file, settings)
@@ -449,40 +525,104 @@ class Command(BaseCommand):
                 self.stderr.write(f"First existing variant: {first_existing_variant}")
             check_fail_reason = False
             if first_existing_variant is not None:
-                if "-" in first_existing_variant.variant_id and not options["out_hyphens"]:
+                if (
+                    "-" in first_existing_variant.variant_id
+                    and not options["out_hyphens"]
+                ):
                     check_fail_reason = "-"
                 if "_" in first_existing_variant.variant_id and options["out_hyphens"]:
                     check_fail_reason = "_"
-                if "chr" in first_existing_variant.variant_id and not options["out_chr"]:
+                if (
+                    "chr" in first_existing_variant.variant_id
+                    and not options["out_chr"]
+                ):
                     check_fail_reason = "chr prefix"
-                if "chr" not in first_existing_variant.variant_id and options["out_chr"]:
+                if (
+                    "chr" not in first_existing_variant.variant_id
+                    and options["out_chr"]
+                ):
                     check_fail_reason = "no chr prefix"
             if check_fail_reason:
-                log.error(f"inconsistent variant_id format was detected: Existing data uses {check_fail_reason}. Please adjust --out-hyphens or --out-chr flags to make consistent with your first variant's ID, which is {first_existing_variant.variant_id}")
+                log.error(
+                    f"inconsistent variant_id format was detected: Existing data uses {check_fail_reason}. Please adjust --out-hyphens or --out-chr flags to make consistent with your first variant's ID, which is {first_existing_variant.variant_id}"
+                )
                 exit()
         # Table selection flags and corresponding filter / importer pairs
         table_specs = []
         if options["genes"]:
-            table_specs.append(("Gene", "genes", GenesCallFilter, bvltools.GeneImporter))
+            table_specs.append(
+                ("Gene", "genes", GenesCallFilter, bvltools.GeneImporter)
+            )
         if options["variants"]:
-            table_specs.append(("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter))
+            table_specs.append(
+                ("Variant", "variants", VariantsCallFilter, bvltools.VariantImporter)
+            )
         if options["transcripts"]:
-            table_specs.append(("Transcript", "transcripts", TranscriptsCallFilter, bvltools.TranscriptImporter))
+            table_specs.append(
+                (
+                    "Transcript",
+                    "transcripts",
+                    TranscriptsCallFilter,
+                    bvltools.TranscriptImporter,
+                )
+            )
         if options["snvs"] and vcf_file:
             table_specs.append(("SNV", "snvs", SnvsCallFilter, bvltools.SNVImporter))
         if options["gvfs"] and vcf_file:
-            table_specs.append(("GVF", "genomic_variome_frequencies", GenomicBvlFrequenciesCallFilter, bvltools.GVFImporter))
+            table_specs.append(
+                (
+                    "GVF",
+                    "genomic_variome_frequencies",
+                    GenomicBvlFrequenciesCallFilter,
+                    bvltools.GVFImporter,
+                )
+            )
         if options["mts"] and mt_vcf_file:
             table_specs.append(("MT", "mts", MtsCallFilter, bvltools.MTImporter))
-            table_specs.append(("MT frequency", "mt_variome_frequencies", MtBvlFrequenciesCallFilter, bvltools.MtVariomeFrequencyImporter))
+            table_specs.append(
+                (
+                    "MT frequency",
+                    "mt_variome_frequencies",
+                    MtBvlFrequenciesCallFilter,
+                    bvltools.MtVariomeFrequencyImporter,
+                )
+            )
             if options["mt_gnomad_tsv"]:
-                table_specs.append(("MT gnomAD frequency", "mt_gnomad_frequencies", MtGnomadFrequenciesCallFilter, bvltools.MtGnomadFrequencyImporter))
+                table_specs.append(
+                    (
+                        "MT gnomAD frequency",
+                        "mt_gnomad_frequencies",
+                        MtGnomadFrequenciesCallFilter,
+                        bvltools.MtGnomadFrequencyImporter,
+                    )
+                )
         if options["vts"]:
-            table_specs.append(("Variant Transcript", "variants_transcripts", VariantsTranscriptsCallFilter, bvltools.VariantTranscriptImporter))
+            table_specs.append(
+                (
+                    "Variant Transcript",
+                    "variants_transcripts",
+                    VariantsTranscriptsCallFilter,
+                    bvltools.VariantTranscriptImporter,
+                )
+            )
         if options["annotations"]:
-            table_specs.append(("Annotation", "variants_annotations", VariantsAnnotationsCallFilter, bvltools.AnnotationImporter))
+            table_specs.append(
+                (
+                    "Annotation",
+                    "variants_annotations",
+                    VariantsAnnotationsCallFilter,
+                    bvltools.AnnotationImporter,
+                )
+            )
         if options["consequences"]:
-            table_specs.append(("Consequence", "variants_consequences", VariantsConsequencesCallFilter, bvltools.ConsequenceImporter))
+            table_specs.append(
+                (
+                    "Consequence",
+                    "variants_consequences",
+                    VariantsConsequencesCallFilter,
+                    bvltools.ConsequenceImporter,
+                )
+            )
 
         if convert_to_tsv:
             # TSV-only mode: write one TSV file per table, do not touch the database.
@@ -496,10 +636,17 @@ class Command(BaseCommand):
 
             # Copy the severities file to the output dir if it exists
             import shutil
+
             severities_src = Path(options["input_tsv_dir"], "severities.tsv")
             severities_dst = Path(tsv_output_dir, "severities.tsv")
-            (shutil.copy(severities_src, severities_dst) and log.info(f"Copied severities file to {severities_dst}")) if severities_src else None
-            
+            (
+                (
+                    shutil.copy(severities_src, severities_dst)
+                    and log.info(f"Copied severities file to {severities_dst}")
+                )
+                if severities_src
+                else None
+            )
 
             hash_list, hash_map, final_hash = compute_dir_hash(tsv_output_dir)
             log.info("Hash list:\n%s", hash_list)
@@ -517,7 +664,9 @@ class Command(BaseCommand):
                     else:
                         log.warning("File %s hashes don't match ❌", fname)
 
-            self.stdout.write(f"\nDuration: {bvltools.format_duration(time() - start_time)}")
+            self.stdout.write(
+                f"\nDuration: {bvltools.format_duration(time() - start_time)}"
+            )
             return
 
         # DB import mode
@@ -539,11 +688,15 @@ class Command(BaseCommand):
             nonlocal last_step_time
             durations_map[name] = time() - last_step_time
             if self.verbosity >= 3:
-                self.stderr.write(f"{name} took {bvltools.format_duration(time() - last_step_time)}")
+                self.stderr.write(
+                    f"{name} took {bvltools.format_duration(time() - last_step_time)}"
+                )
             last_step_time = time()
 
         if options["severities"]:
-            errors, warnings, counts = bvltools.SeverityImporter(importer_options).import_data()
+            errors, warnings, counts = bvltools.SeverityImporter(
+                importer_options
+            ).import_data()
             log_timing("Severity")
             errors_map["Severity"] = errors
             warnings_map["Severity"] = warnings
@@ -557,10 +710,12 @@ class Command(BaseCommand):
             except Exception as e:
                 log.exception("Import failed for %s", label)
                 errors_map[label], warnings_map[label], counts_map[label] = (
-                    [bvltools.ImportMessage(
-                        bvltools.ImportCode.BULK_CREATE_FAILED,
-                        f"table import failed and was rolled back: {e}",
-                    )],
+                    [
+                        bvltools.ImportMessage(
+                            bvltools.ImportCode.BULK_CREATE_FAILED,
+                            f"table import failed and was rolled back: {e}",
+                        )
+                    ],
                     [],
                     None,
                 )
@@ -585,6 +740,8 @@ class Command(BaseCommand):
             status = "COMMITTED"
 
         self.stdout.write(f"\nImport summary ({status})")
-        for line in bvltools.format_import_counts(counts_map, errors_map, durations_map):
+        for line in bvltools.format_import_counts(
+            counts_map, errors_map, durations_map
+        ):
             self.stdout.write(line)
         self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

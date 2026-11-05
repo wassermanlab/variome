@@ -1,6 +1,5 @@
 from django.db import models
 
-
 VAR_CHOICES = [("SNV", "SNV"), ("M", "Mitochondrial"), ("SV", "SV"), ("INDEL", "INDEL")]
 
 

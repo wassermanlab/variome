@@ -8,11 +8,18 @@ from django.core.management import call_command
 from django.test import TransactionTestCase
 
 from variome_backend.library.models import (
-    Gene, Transcript, Variant, VariantTranscript, VariantAnnotation,
-    VariantConsequence, SNV, MT, GenomicVariomeFrequency, MtVariomeFrequency,
+    Gene,
+    Transcript,
+    Variant,
+    VariantTranscript,
+    VariantAnnotation,
+    VariantConsequence,
+    SNV,
+    MT,
+    GenomicVariomeFrequency,
+    MtVariomeFrequency,
 )
 from variome_backend.management.import_tools import Importer
-
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -29,30 +36,57 @@ class MultiVcfImportTests(TransactionTestCase):
 
     def write_vcf(self, path, mitochondrial):
         fields = [
-            "Allele", "Consequence", "IMPACT", "SYMBOL", "Gene", "Feature_type",
-            "Feature", "BIOTYPE", "HGVSc", "HGVSp", "Existing_variation",
-            "VARIANT_CLASS", "SOURCE", "SIFT", "PolyPhen",
+            "Allele",
+            "Consequence",
+            "IMPACT",
+            "SYMBOL",
+            "Gene",
+            "Feature_type",
+            "Feature",
+            "BIOTYPE",
+            "HGVSc",
+            "HGVSp",
+            "Existing_variation",
+            "VARIANT_CLASS",
+            "SOURCE",
+            "SIFT",
+            "PolyPhen",
         ]
         if mitochondrial:
             fields.reverse()
         annotations = {
-            "Allele": "G", "Consequence": "missense_variant", "IMPACT": "MODERATE",
-            "SYMBOL": "SHARED", "Gene": "ENSG_SHARED", "Feature_type": "Transcript",
-            "Feature": "ENST_SHARED", "BIOTYPE": "protein_coding",
-            "HGVSc": "ENST_SHARED:c.1A>G", "HGVSp": "ENSP_SHARED:p.Lys1Arg",
+            "Allele": "G",
+            "Consequence": "missense_variant",
+            "IMPACT": "MODERATE",
+            "SYMBOL": "SHARED",
+            "Gene": "ENSG_SHARED",
+            "Feature_type": "Transcript",
+            "Feature": "ENST_SHARED",
+            "BIOTYPE": "protein_coding",
+            "HGVSc": "ENST_SHARED:c.1A>G",
+            "HGVSp": "ENSP_SHARED:p.Lys1Arg",
             "Existing_variation": "rs222" if mitochondrial else "rs111",
-            "VARIANT_CLASS": "SNV", "SOURCE": "Ensembl", "SIFT": "", "PolyPhen": "",
+            "VARIANT_CLASS": "SNV",
+            "SOURCE": "Ensembl",
+            "SIFT": "",
+            "PolyPhen": "",
         }
         metrics = (
             "AN=10;AC_hom=0;AC_het=1;AF_hom=0;AF_het=0.1"
-            if mitochondrial else "AN=20;AC=1;AF=0.05;numhomalt=0"
+            if mitochondrial
+            else "AN=20;AC=1;AF=0.05;numhomalt=0"
         )
         chromosome = "MT" if mitochondrial else "1"
         position = 200 if mitochondrial else 100
         metric_headers = [
-            ("AN", "Integer"), ("AC", "Integer"), ("AF", "Float"),
-            ("numhomalt", "Integer"), ("AC_hom", "Integer"), ("AC_het", "Integer"),
-            ("AF_hom", "Float"), ("AF_het", "Float"),
+            ("AN", "Integer"),
+            ("AC", "Integer"),
+            ("AF", "Float"),
+            ("numhomalt", "Integer"),
+            ("AC_hom", "Integer"),
+            ("AC_het", "Integer"),
+            ("AF_hom", "Float"),
+            ("AF_het", "Float"),
         ]
         path.write_text(
             "##fileformat=VCFv4.2\n"
@@ -63,20 +97,26 @@ class MultiVcfImportTests(TransactionTestCase):
                 for name, kind in metric_headers
             )
             + '##INFO=<ID=CSQ,Number=.,Type=String,Description="VEP. Format: '
-            + "|".join(fields) + '">\n'
+            + "|".join(fields)
+            + '">\n'
             + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
             + f"{chromosome}\t{position}\t.\tA\tG\t99\tPASS\t{metrics};CSQ="
-            + "|".join(annotations[field] for field in fields) + "\n",
+            + "|".join(annotations[field] for field in fields)
+            + "\n",
             encoding="utf-8",
         )
 
     def run_import(self, **overrides):
         output, errors = io.StringIO(), io.StringIO()
         options = {
-            "vcf_file": str(self.nuclear), "mt_vcf_file": str(self.mt),
+            "vcf_file": str(self.nuclear),
+            "mt_vcf_file": str(self.mt),
             "input_tsv_dir": str(ROOT / "data" / "fixtures"),
-            "out_chr": False, "out_hyphens": True, "progress": False,
-            "stdout": output, "stderr": errors,
+            "out_chr": False,
+            "out_hyphens": True,
+            "progress": False,
+            "stdout": output,
+            "stderr": errors,
         }
         options.update(overrides)
         call_command("import_bvl_vcf", **options)
@@ -99,10 +139,12 @@ class MultiVcfImportTests(TransactionTestCase):
         self.assertEqual(VariantTranscript.objects.count(), 2)
         self.assertEqual(VariantAnnotation.objects.count(), 2)
         self.assertEqual(VariantConsequence.objects.count(), 2)
-        self.assertTrue(all(
-            value == "ENSP_SHARED:p.Lys1Arg"
-            for value in VariantAnnotation.objects.values_list("hgvsp", flat=True)
-        ))
+        self.assertTrue(
+            all(
+                value == "ENSP_SHARED:p.Lys1Arg"
+                for value in VariantAnnotation.objects.values_list("hgvsp", flat=True)
+            )
+        )
 
     def test_delete_combines_distinct_files_on_fresh_and_populated_database(self):
         for batch in (True, False):
@@ -142,25 +184,39 @@ class MultiVcfImportTests(TransactionTestCase):
         self.assert_both_genomes()
 
     def test_multiple_consequences_survive_repeated_imports_in_both_modes(self):
-        self.nuclear.write_text(self.nuclear.read_text().replace(
-            "missense_variant|", "missense_variant&splice_region_variant|"
-        ))
+        self.nuclear.write_text(
+            self.nuclear.read_text().replace(
+                "missense_variant|", "missense_variant&splice_region_variant|"
+            )
+        )
         for batch in (True, False):
             with self.subTest(batch=batch):
                 self.run_import(delete=True, batch=batch)
-                expected = set(VariantConsequence.objects.values_list(
-                    "variant_transcript__variant__variant_id", "severity__consequence"
-                ))
-                self.assertEqual(expected, {
-                    ("1-100-A-G", "missense_variant"),
-                    ("1-100-A-G", "splice_region_variant"),
-                    ("M-200-A-G", "missense_variant"),
-                })
+                expected = set(
+                    VariantConsequence.objects.values_list(
+                        "variant_transcript__variant__variant_id",
+                        "severity__consequence",
+                    )
+                )
+                self.assertEqual(
+                    expected,
+                    {
+                        ("1-100-A-G", "missense_variant"),
+                        ("1-100-A-G", "splice_region_variant"),
+                        ("M-200-A-G", "missense_variant"),
+                    },
+                )
                 self.run_import(batch=batch)
                 self.assertEqual(VariantConsequence.objects.count(), 3)
-                self.assertEqual(set(VariantConsequence.objects.values_list(
-                    "variant_transcript__variant__variant_id", "severity__consequence"
-                )), expected)
+                self.assertEqual(
+                    set(
+                        VariantConsequence.objects.values_list(
+                            "variant_transcript__variant__variant_id",
+                            "severity__consequence",
+                        )
+                    ),
+                    expected,
+                )
 
     def test_tsv_and_database_outputs_share_header_context_and_deduplication(self):
         self.run_import()
@@ -189,13 +245,17 @@ class MultiVcfImportTests(TransactionTestCase):
         text = self.nuclear.read_text().replace(
             "##contig=<ID=1>\n", "##contig=<ID=1>\n##contig=<ID=MT>\n"
         )
-        combined.write_text(text + "MT\t200\t.\tA\tG\t99\tPASS\tAN=10;AC_hom=0;AC_het=1\n")
+        combined.write_text(
+            text + "MT\t200\t.\tA\tG\t99\tPASS\tAN=10;AC_hom=0;AC_het=1\n"
+        )
         alias = self.path / "alias.vcf"
         alias.symlink_to(combined)
         output = self.path / "same-file-tsv"
         self.run_import(
-            vcf_file=str(combined), mt_vcf_file=str(alias),
-            convert_to_tsv=True, tsv_output_dir=str(output),
+            vcf_file=str(combined),
+            mt_vcf_file=str(alias),
+            convert_to_tsv=True,
+            tsv_output_dir=str(output),
         )
         lines = (output / "variants" / "variants.tsv").read_text().splitlines()
         self.assertEqual(len(lines), 3)
@@ -215,8 +275,14 @@ class MultiVcfImportTests(TransactionTestCase):
     def test_disabled_tables_are_not_deleted(self):
         self.run_import()
         self.run_import(
-            delete=True, genes=False, variants=False, transcripts=False,
-            vts=False, annotations=False, consequences=False, severities=False,
+            delete=True,
+            genes=False,
+            variants=False,
+            transcripts=False,
+            vts=False,
+            annotations=False,
+            consequences=False,
+            severities=False,
             mt_vcf_file="",
         )
         self.assert_both_genomes()

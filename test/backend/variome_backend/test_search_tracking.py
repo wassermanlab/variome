@@ -230,7 +230,9 @@ class SearchQueryAnalytics(TestCase):
             ("2", "chr2-1000-A-T", 3),
         ]:
             SearchQueryAction.objects.create(
-                chromosome=chromosome, query=query, result_count=result_count,
+                chromosome=chromosome,
+                query=query,
+                result_count=result_count,
                 is_valid=True,
             )
         SearchQueryAction.objects.create(query="legacy-A-T", is_valid=True)
@@ -239,8 +241,12 @@ class SearchQueryAnalytics(TestCase):
         data = self.client.get(
             self.url,
             {
-                "chromosome": "1", "query": "a-t", "min_results": 2,
-                "max_results": 4, "is_valid": "true", "sort": "oldest",
+                "chromosome": "1",
+                "query": "a-t",
+                "min_results": 2,
+                "max_results": 4,
+                "is_valid": "true",
+                "sort": "oldest",
                 "page_size": 1,
             },
         ).json()
@@ -252,7 +258,8 @@ class SearchQueryAnalytics(TestCase):
         self.grant_dashboard_access()
         for result_count in [0, 1, 5]:
             SearchQueryAction.objects.create(
-                query=f"results-{result_count}", result_count=result_count,
+                query=f"results-{result_count}",
+                result_count=result_count,
                 is_valid=True,
             )
         for filters, expected in [
@@ -291,7 +298,9 @@ class SearchQueryAnalytics(TestCase):
                 data = self.client.get(self.url, {"chromosome": chromosome}).json()
                 self.assertEqual(data["count"], 1)
                 self.assertEqual(data["results"][0]["chromosome"], chromosome)
-        self.assertEqual(self.client.get(self.url, {"chromosome": ""}).json()["count"], 6)
+        self.assertEqual(
+            self.client.get(self.url, {"chromosome": ""}).json()["count"], 6
+        )
 
     def test_bad_filters_return_bad_request(self):
         self.grant_dashboard_access()

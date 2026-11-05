@@ -29,9 +29,7 @@ class ReferenceSequenceTests(TestCase):
         )
 
     def lookup(self, region="1:1..1:1", **query):
-        return self.client.get(
-            reverse("reference_sequence", args=[region]), query
-        )
+        return self.client.get(reverse("reference_sequence", args=[region]), query)
 
     def test_route_has_no_species_segment(self):
         self.assertEqual(
