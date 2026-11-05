@@ -20,7 +20,7 @@ from variome_backend.library.models import (
 
 from .helpers import ROOT, MT_VCF, IMPORT_NUCLEAR_VCF, combine_vcf_fixtures
 
-FIXTURES = Path(__file__).resolve().parent / "fixtures" / "vcf"
+FIXTURES = ROOT / "data" / "fixtures" / "vcf"
 SUPPLIED_MT = MT_VCF
 
 

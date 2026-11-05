@@ -10,9 +10,9 @@ from variome_backend.library_access.models import SearchQueryAction
 
 from variome_backend.library.views import search
 
-SEARCH_FIXTURE_VCF = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "fixtures", "vcf", "mock_snv_search.vcf"
-)
+from .helpers import ROOT
+
+SEARCH_FIXTURE_VCF = ROOT / "data" / "fixtures" / "vcf" / "mock_snv_search.vcf"
 
 
 def load_search_fixtures(self):

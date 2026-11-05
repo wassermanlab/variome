@@ -24,8 +24,7 @@ from variome_backend.management.import_tools import Importer
 from .helpers import (
     ROOT,
     MT_VCF,
-    IMPORT_NUCLEAR_VCF,
-    annotate_mt_for_header_edge_case,
+    ANNOTATED_MT_VCF,
     combine_vcf_fixtures,
     select_nuclear_import_record,
 )
@@ -281,12 +280,11 @@ class MultiVcfImportTests(ImportVcfTestCase):
 
 
 class AnnotatedMtHeaderEdgeCaseTests(ImportVcfTestCase):
-    """Canonical MT lacks CSQ: deliberately add nuclear annotations at one site."""
+    """Use synthetic shared annotations with a differently ordered CSQ header."""
 
     def setUp(self):
         super().setUp()
-        self.mt = self.path / "annotated-mt-header-edge.vcf"
-        annotate_mt_for_header_edge_case(self.mt, IMPORT_NUCLEAR_VCF)
+        self.mt = ANNOTATED_MT_VCF
 
     def assert_both_genomes(self):
         # Genes/transcripts are shared across files; only per-variant rows increase.

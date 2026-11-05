@@ -58,9 +58,11 @@ from unittest.mock import patch
 from variome_backend.management.vcf_import_settings import VcfImportSettings
 
 from .helpers import (
+    ROOT,
     MT_VCF,
+    ANNOTATED_MT_VCF,
     NUCLEAR_VCF,
-    annotate_mt_for_header_edge_case,
+    IMPORT_NUCLEAR_VCF,
     combine_vcf_fixtures,
 )
 
@@ -132,9 +134,7 @@ class FocusableTestCase(unittest.TestCase):
 # Helper function to get fixture paths
 def get_fixture_path(filename: str) -> str:
     """Get the absolute path to a fixture file."""
-    return os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "fixtures", "vcf", filename
-    )
+    return str(ROOT / "data" / "fixtures" / "vcf" / filename)
 
 
 class TestBaseFilter(FocusableTestCase):
@@ -928,52 +928,64 @@ class TestExplicitFilterInputs(unittest.TestCase):
 
 
 class TestAnnotatedFilterHeaderEdgeCases(unittest.TestCase):
-    """Deliberately annotate one canonical MT record to exercise differing CSQ."""
+    """Read synthetic MT annotations alongside the canonical nuclear CSQ header."""
 
     def setUp(self):
-        self.directory = tempfile.TemporaryDirectory()
-        self.addCleanup(self.directory.cleanup)
-        self.nuclear = NUCLEAR_VCF
-        self.mt = Path(self.directory.name) / "annotated-mt-header-edge.vcf"
-        annotate_mt_for_header_edge_case(self.mt)
+        self.nuclear = IMPORT_NUCLEAR_VCF
+        self.mt = ANNOTATED_MT_VCF
+        self.settings = copy.copy(SETTINGS)
+        self.settings.RANGES = "22:27000075-27000323,M:1-16569"
 
     def test_shared_filters_deduplicate_shared_genes_transcripts_and_records(self):
         """Duplicate the annotated canonical record; no output row should duplicate."""
-        lines = self.mt.read_text().splitlines()
-        duplicate = next(line for line in lines if line.startswith("chrM\t4440\t"))
-        with self.mt.open("a") as stream:
-            stream.write(duplicate + "\n")
-        for filter_cls, count in zip(
-            TestExplicitFilterInputs.shared_filters, (2, 3, 160, 5, 5, 7)
-        ):
-            with self.subTest(filter=filter_cls.__name__):
-                instance = filter_cls(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
-                rows = list(instance.getTableRows())
-                self.assertEqual(len(rows), count)
-                self.assertEqual(list(instance.getTableRows()), rows)
-        genes = GenesCallFilter(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
+        with tempfile.TemporaryDirectory() as directory:
+            duplicate_mt = Path(directory) / "duplicate-mt.vcf"
+            lines = self.mt.read_text().splitlines()
+            duplicate = next(line for line in lines if line.startswith("chrM\t4440\t"))
+            duplicate_mt.write_text(
+                self.mt.read_text() + duplicate + "\n", encoding="utf-8"
+            )
+            for mt in (self.mt, duplicate_mt):
+                for filter_cls, count in zip(
+                    TestExplicitFilterInputs.shared_filters, (2, 3, 160, 9, 9, 18)
+                ):
+                    with self.subTest(filter=filter_cls.__name__, mt=mt.name):
+                        instance = filter_cls(
+                            self.nuclear, self.settings, mt_vcf_file_path=mt
+                        )
+                        rows = list(instance.getTableRows())
+                        self.assertEqual(len(rows), count)
+                        self.assertEqual(list(instance.getTableRows()), rows)
+        genes = GenesCallFilter(self.nuclear, self.settings, mt_vcf_file_path=self.mt)
         self.assertEqual(
             list(genes.getTableRows()),
-            [{"short_name": "LA16c-60H5.7"}, {"short_name": "NBEAP3"}],
+            [{"short_name": "MIATNB"}, {"short_name": "LOC107985582"}],
         )
 
     def test_suspended_and_materialized_records_keep_their_csq_header(self):
-        instance = GenesCallFilter(self.nuclear, SETTINGS, mt_vcf_file_path=self.mt)
+        instance = GenesCallFilter(
+            self.nuclear, self.settings, mt_vcf_file_path=self.mt
+        )
         nuclear_stream = instance.vcf_record_stream(self.nuclear)
         first = next(nuclear_stream)
         mt_records = list(instance.vcf_record_stream(self.mt))
         annotated = next(record for record in mt_records if record.POS == 4440)
-        self.assertEqual(instance.get_csq_values(first, "SYMBOL"), [""])
+        self.assertEqual(
+            instance.get_csq_values(first, "SYMBOL"),
+            ["MIATNB", "MIATNB", "LOC107985582"],
+        )
         resumed = next(nuclear_stream)
         self.assertEqual(
-            instance.get_csq_values(resumed, "SYMBOL"), ["LA16c-60H5.7", "NBEAP3"]
+            instance.get_csq_values(resumed, "SYMBOL"),
+            ["MIATNB", "MIATNB", "LOC107985582"],
         )
         self.assertEqual(
-            instance.get_csq_values(annotated, "SYMBOL"), ["LA16c-60H5.7", "NBEAP3"]
+            instance.get_csq_values(annotated, "SYMBOL"),
+            ["MIATNB", "MIATNB", "LOC107985582"],
         )
         self.assertEqual(
             instance.get_csq_values(annotated, "Feature"),
-            ["ENST00000398242.2", "ENST00000420638.1"],
+            ["ENST00000717151", "ENST00000717153", "XR_001755472.2"],
         )
         nuclear_stream.close()
 

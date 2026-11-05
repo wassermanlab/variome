@@ -185,6 +185,11 @@ Use the `import_bvl_vcf` management command to import data directly from VCF fil
 Nuclear variants are read from `--vcf` and mitochondrial variants from
 `--mt-vcf`; one run imports both. With no arguments the development fixtures
 `data/fixtures/vcf/variome-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
+These are the canonical nuclear and unannotated mitochondrial fixtures.
+All mock VCFs also live in `data/fixtures/vcf/`. The `mt-annotated.vcf` fixture
+preserves `mt.vcf` and adds synthetic CSQ annotations at chrM:4440, with reordered
+fields and shared nuclear genes/transcripts for header-context edge-case tests;
+these annotations are artificial, not biological assertions.
 Mitochondrial records in `--vcf` (and non-mitochondrial records in `--mt-vcf`)
 are ignored with a warning; to import a combined VCF, pass the same file to both.
 Each table's CallFilter selects the relevant input(s) and produces one row
