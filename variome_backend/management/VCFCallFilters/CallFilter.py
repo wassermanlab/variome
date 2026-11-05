@@ -96,7 +96,7 @@ class CallFilter(ABC):
     def is_mitochondrial(record):
         return record.CHROM.removeprefix("chr").upper() in ("M", "MT")
 
-    def _ibvl_mt_records(self, stream, columns):
+    def make_vcfpy_records_from_legacy_ibvl_mt_vcf(self, stream, columns):
         for line in stream:
             if line.startswith("#CHROM"):
                 break
@@ -118,7 +118,7 @@ class CallFilter(ABC):
             yield vcfpy.Record(
                 CHROM=row["#CHROM"], POS=int(row["POS"]), ID=[row["ID"]],
                 REF=row["REF"], ALT=[vcfpy.Substitution("SNV", row["ALT"])],
-                QUAL=None, FILTER=row.get("filters", "PASS").split(";"), INFO=info,
+                QUAL=None, FILTER=row.get("filters", "").split(";"), INFO=info,
             )
 
     def shared_record_stream(self):
@@ -191,8 +191,8 @@ class CallFilter(ABC):
 
         with self.stream_with_retries(file_path) as stream:
             if context[3]:
-                # IBVL MT dialect is tabular rather than a standard VCF.
-                records = self._ibvl_mt_records(stream, context[3])
+                # legacy 2024 IBVL MT format has no INFO field, uses custom columns, so we parse it into vcfpy.Record objects manually
+                records = self.make_vcfpy_records_from_legacy_ibvl_mt_vcf(stream, context[3])
             else:
                 # Variome dialect (and genomic IBVL) is parsed as standard VCF.
                 records = vcfpy.Reader(stream=stream)
