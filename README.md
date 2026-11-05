@@ -184,7 +184,7 @@ PUBLIC_BVL - opens the database for public access, as a demonstration app. For t
 Use the `import_bvl_vcf` management command to import data directly from VCF files into the database.
 Nuclear variants are read from `--vcf` and mitochondrial variants from
 `--mt-vcf`; one run imports both. With no arguments the development fixtures
-`data/fixtures/vcf/variome-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
+`data/fixtures/vcf/nuclear-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
 These are the canonical nuclear and unannotated mitochondrial fixtures.
 All mock VCFs also live in `data/fixtures/vcf/`. The `mt-annotated.vcf` fixture
 preserves `mt.vcf` and adds synthetic CSQ annotations at chrM:4440, with reordered
@@ -240,7 +240,7 @@ explanation of the import summary.
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--vcf` | `data/fixtures/vcf/variome-tiny.vcf` | Nuclear VCF file (plain text or `.gz`); `''` skips it |
+| `--vcf` | `data/fixtures/vcf/nuclear-tiny.vcf` | Nuclear VCF file (plain text or `.gz`); `''` skips it |
 | `--mt-vcf` | `data/fixtures/vcf/mt.vcf` | Mitochondrial VCF file (plain text or `.gz`); `''` or `--no-mts` skips it |
 | `--input-tsv-dir` | `data/fixtures` | Path to the dir containing severities.tsv |
 | `--mts` / `--no-mts` | enabled | Import mitochondrial metadata and cohort frequencies |

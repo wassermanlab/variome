@@ -234,7 +234,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--vcf",
             dest="vcf_file",
-            default="data/fixtures/vcf/variome-tiny.vcf",
+            default="data/fixtures/vcf/nuclear-tiny.vcf",
             help="Path to the nuclear (chromosomal) VCF file (plain or gzipped); "
             "mitochondrial records in it are ignored unless it is also given as --mt-vcf. "
             "Pass '' to skip",

@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[3]
 MT_VCF = ROOT / "data" / "fixtures" / "vcf" / "mt.vcf"
 ANNOTATED_MT_VCF = ROOT / "data" / "fixtures" / "vcf" / "mt-annotated.vcf"
 NUCLEAR_VCF = ROOT / "data" / "fixtures" / "vcf" / "mock_snv.vcf"
-IMPORT_NUCLEAR_VCF = ROOT / "data" / "fixtures" / "vcf" / "variome-tiny.vcf"
+IMPORT_NUCLEAR_VCF = ROOT / "data" / "fixtures" / "vcf" / "nuclear-tiny.vcf"
 
 
 def create_authenticated_user(client, username="test-user"):

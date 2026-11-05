@@ -478,7 +478,7 @@ class TestMtsCallFilter(FocusableTestCase):
     def test_ibvl_metadata(self):
         """The old IBVL custom-column dialect remains supported separately."""
         row = MtsCallFilter(
-            None, SETTINGS, mt_vcf_file_path=get_fixture_path("mock_mt.vcf")
+            None, SETTINGS, mt_vcf_file_path=get_fixture_path("mt_ibvl_legacy.vcf")
         ).getTableRows()[0]
         self.assertEqual(row["variant"], "chrM_8602_T_C")
         self.assertEqual(row["dbsnp_id"], "rs879029014")
@@ -505,7 +505,7 @@ class TestMtsCallFilter(FocusableTestCase):
         self.assertIn("/000456/", row["clinvar_url"])
 
     def test_mt_variants_do_not_populate_nuclear_tables(self):
-        for path in (get_fixture_path("mock_mt.vcf"), SUPPLIED_MT):
+        for path in (get_fixture_path("mt_ibvl_legacy.vcf"), SUPPLIED_MT):
             self.assertEqual(list(SnvsCallFilter(path, SETTINGS).getTableRows()), [])
             self.assertEqual(
                 list(GenomicBvlFrequenciesCallFilter(path, SETTINGS).getTableRows()), []
@@ -565,7 +565,7 @@ class TestMtBvlFrequenciesCallFilter(FocusableTestCase):
     def test_ibvl_metrics_and_histogram(self):
         """The old IBVL custom-column dialect remains supported separately."""
         row = MtBvlFrequenciesCallFilter(
-            None, SETTINGS, mt_vcf_file_path=get_fixture_path("mock_mt.vcf")
+            None, SETTINGS, mt_vcf_file_path=get_fixture_path("mt_ibvl_legacy.vcf")
         ).getTableRows()[0]
         self.assertEqual(row["an"], 100)
         self.assertEqual(row["ac_hom"], 5)
@@ -916,7 +916,7 @@ class TestExplicitFilterInputs(unittest.TestCase):
         instance = GenesCallFilter(
             get_fixture_path("mock_snv.vcf"),
             SETTINGS,
-            mt_vcf_file_path=get_fixture_path("mock_mt.vcf"),
+            mt_vcf_file_path=get_fixture_path("mt_ibvl_legacy.vcf"),
         )
         expected = [
             {"short_name": "LA16c-60H5.7"},

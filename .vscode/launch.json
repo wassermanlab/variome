@@ -74,7 +74,7 @@
       "args": [
         "import_bvl_vcf",
         "--vcf",
-        "data/fixtures/vcf/variome.vcf",
+        "data/fixtures/vcf/nuclear.vcf",
         "--delete",
         "--no-progress"
       ],
@@ -90,7 +90,7 @@
       "args": [
         "import_bvl_vcf",
         "--vcf",
-        "data/fixtures/vcf/variome.vcf",
+        "data/fixtures/vcf/nuclear.vcf",
         "--no-progress"
       ],
       "console": "integratedTerminal",

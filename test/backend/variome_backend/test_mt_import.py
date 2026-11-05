@@ -243,7 +243,7 @@ class MitochondrialImportTests(TransactionTestCase):
 
     def test_ibvl_import_creates_mitochondrial_models_and_annotations(self):
         """Retain compatibility coverage for the legacy nonstandard IBVL dialect."""
-        self.import_vcf(FIXTURES / "mock_mt.vcf")
+        self.import_vcf(FIXTURES / "mt_ibvl_legacy.vcf")
         variant = Variant.objects.get(variant_id="M-8602-T-C")
         self.assertEqual(variant.var_type, "M")
         self.assertEqual(MT.objects.get(variant=variant).dbsnp_id, "rs879029014")
