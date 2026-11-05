@@ -21,90 +21,31 @@ from variome_backend.library.models import (
 )
 from variome_backend.management.import_tools import Importer
 
-ROOT = Path(__file__).resolve().parents[3]
+from .helpers import (
+    ROOT,
+    MT_VCF,
+    IMPORT_NUCLEAR_VCF,
+    annotate_mt_for_header_edge_case,
+    combine_vcf_fixtures,
+    select_nuclear_import_record,
+)
+
+GENES = {"MIATNB", "LOC107985582"}
+SHARED_TRANSCRIPTS = {"ENST00000717151", "ENST00000717153", "XR_001755472.2"}
+NUCLEAR_CONSEQUENCES = {
+    ("22-27000075-C-T", "intron_variant"),
+    ("22-27000075-C-T", "non_coding_transcript_variant"),
+}
 
 
-class MultiVcfImportTests(TransactionTestCase):
+class ImportVcfTestCase(TransactionTestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name)
-        self.nuclear = self.path / "nuclear.vcf"
-        self.mt = self.path / "mt.vcf"
-        self.write_vcf(self.nuclear, mitochondrial=False)
-        self.write_vcf(self.mt, mitochondrial=True)
-
-    def write_vcf(self, path, mitochondrial):
-        fields = [
-            "Allele",
-            "Consequence",
-            "IMPACT",
-            "SYMBOL",
-            "Gene",
-            "Feature_type",
-            "Feature",
-            "BIOTYPE",
-            "HGVSc",
-            "HGVSp",
-            "Existing_variation",
-            "VARIANT_CLASS",
-            "SOURCE",
-            "SIFT",
-            "PolyPhen",
-        ]
-        if mitochondrial:
-            fields.reverse()
-        annotations = {
-            "Allele": "G",
-            "Consequence": "missense_variant",
-            "IMPACT": "MODERATE",
-            "SYMBOL": "SHARED",
-            "Gene": "ENSG_SHARED",
-            "Feature_type": "Transcript",
-            "Feature": "ENST_SHARED",
-            "BIOTYPE": "protein_coding",
-            "HGVSc": "ENST_SHARED:c.1A>G",
-            "HGVSp": "ENSP_SHARED:p.Lys1Arg",
-            "Existing_variation": "rs222" if mitochondrial else "rs111",
-            "VARIANT_CLASS": "SNV",
-            "SOURCE": "Ensembl",
-            "SIFT": "",
-            "PolyPhen": "",
-        }
-        metrics = (
-            "AN=10;AC_hom=0;AC_het=1;AF_hom=0;AF_het=0.1"
-            if mitochondrial
-            else "AN=20;AC=1;AF=0.05;numhomalt=0"
-        )
-        chromosome = "MT" if mitochondrial else "1"
-        position = 200 if mitochondrial else 100
-        metric_headers = [
-            ("AN", "Integer"),
-            ("AC", "Integer"),
-            ("AF", "Float"),
-            ("numhomalt", "Integer"),
-            ("AC_hom", "Integer"),
-            ("AC_het", "Integer"),
-            ("AF_hom", "Float"),
-            ("AF_het", "Float"),
-        ]
-        path.write_text(
-            "##fileformat=VCFv4.2\n"
-            f"##contig=<ID={chromosome}>\n"
-            '##FILTER=<ID=PASS,Description="Passed">\n'
-            + "".join(
-                f'##INFO=<ID={name},Number=A,Type={kind},Description="Metric">\n'
-                for name, kind in metric_headers
-            )
-            + '##INFO=<ID=CSQ,Number=.,Type=String,Description="VEP. Format: '
-            + "|".join(fields)
-            + '">\n'
-            + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
-            + f"{chromosome}\t{position}\t.\tA\tG\t99\tPASS\t{metrics};CSQ="
-            + "|".join(annotations[field] for field in fields)
-            + "\n",
-            encoding="utf-8",
-        )
+        self.nuclear = self.path / "nuclear-fixture-record.vcf"
+        select_nuclear_import_record(self.nuclear)
+        self.mt = MT_VCF
 
     def run_import(self, **overrides):
         output, errors = io.StringIO(), io.StringIO()
@@ -124,26 +65,59 @@ class MultiVcfImportTests(TransactionTestCase):
         self.assertNotIn("FAILED", output.getvalue(), output.getvalue())
         return output.getvalue()
 
+
+class MultiVcfImportTests(ImportVcfTestCase):
     def assert_both_genomes(self):
+        self.assertEqual(Variant.objects.count(), 159)
         self.assertEqual(
-            set(Variant.objects.values_list("variant_id", flat=True)),
-            {"1-100-A-G", "M-200-A-G"},
+            list(
+                Variant.objects.exclude(var_type="M").values_list(
+                    "variant_id", flat=True
+                )
+            ),
+            ["22-27000075-C-T"],
         )
-        self.assertEqual(Gene.objects.count(), 1)
-        self.assertEqual(Transcript.objects.count(), 1)
-        self.assertEqual(Transcript.objects.get().gene.short_name, "SHARED")
-        self.assertEqual(SNV.objects.get().dbsnp_id, "rs111")
-        self.assertEqual(MT.objects.get().dbsnp_id, "rs222")
-        self.assertEqual(GenomicVariomeFrequency.objects.get().an_tot, 20)
-        self.assertEqual(MtVariomeFrequency.objects.get().an, 10)
-        self.assertEqual(VariantTranscript.objects.count(), 2)
-        self.assertEqual(VariantAnnotation.objects.count(), 2)
-        self.assertEqual(VariantConsequence.objects.count(), 2)
-        self.assertTrue(
-            all(
-                value == "ENSP_SHARED:p.Lys1Arg"
-                for value in VariantAnnotation.objects.values_list("hgvsp", flat=True)
-            )
+        self.assertEqual(MT.objects.count(), 158)
+        self.assertEqual(MtVariomeFrequency.objects.count(), 158)
+        self.assertEqual(set(Gene.objects.values_list("short_name", flat=True)), GENES)
+        self.assertEqual(
+            set(Transcript.objects.values_list("transcript_id", flat=True)),
+            SHARED_TRANSCRIPTS,
+        )
+        self.assertEqual(SNV.objects.count(), 1)
+        self.assertEqual(
+            SNV.objects.get(variant__variant_id="22-27000075-C-T").dbsnp_id,
+            "rs8136857",
+        )
+        self.assertEqual(GenomicVariomeFrequency.objects.count(), 1)
+        self.assertEqual(
+            GenomicVariomeFrequency.objects.get(
+                variant__variant_id="22-27000075-C-T"
+            ).an_tot,
+            6,
+        )
+        frequency = MtVariomeFrequency.objects.get(variant__variant_id="M-4440-G-T")
+        self.assertEqual((frequency.an, frequency.ac_hom, frequency.ac_het), (1, 0, 1))
+        self.assertEqual((float(frequency.af_hom), float(frequency.af_het)), (0, 1))
+        self.assertAlmostEqual(float(frequency.max_hl), 0.009923)
+        self.assertEqual(frequency.hl_hist, "1,0,0,0,0,0,0,0,0,0")
+        frequency = MtVariomeFrequency.objects.get(variant__variant_id="M-8860-A-G")
+        self.assertEqual((frequency.an, frequency.ac_hom, frequency.ac_het), (3, 3, 0))
+        self.assertAlmostEqual(float(frequency.max_hl), 0.997)
+        self.assertEqual(frequency.hl_hist, "0,0,0,0,0,0,0,0,0,3")
+        self.assertEqual(
+            set(
+                MT.objects.filter(pos=9055).values_list(
+                    "variant__variant_id", flat=True
+                )
+            ),
+            {"M-9055-G-T", "M-9055-G-A"},
+        )
+        self.assertEqual(VariantTranscript.objects.count(), 3)
+        self.assertEqual(VariantAnnotation.objects.count(), 3)
+        self.assertEqual(VariantConsequence.objects.count(), 6)
+        self.assertFalse(
+            VariantTranscript.objects.filter(variant__var_type="M").exists()
         )
 
     def test_delete_combines_distinct_files_on_fresh_and_populated_database(self):
@@ -177,40 +151,39 @@ class MultiVcfImportTests(TransactionTestCase):
             self.run_import(delete=True)
         self.assertTrue(invocations)
         self.assertTrue(all(count == 1 for count in invocations.values()), invocations)
-        self.assertEqual(counts["Variant"].processed, 2)
-        self.assertEqual(counts["Variant"].created, 2)
-        self.assertEqual(counts["Gene"].created, 1)
-        self.assertEqual(counts["Transcript"].created, 1)
+        self.assertEqual(counts["Variant"].processed, 159)
+        self.assertEqual(counts["Variant"].created, 159)
+        self.assertEqual(counts["Gene"].created, 2)
+        self.assertEqual(counts["Transcript"].created, 3)
+        self.assertEqual(counts["MT"].created, 158)
+        self.assertEqual(counts["MtVariomeFrequency"].created, 158)
+        self.assertTrue(all(count.failed == 0 for count in counts.values()), counts)
         self.assert_both_genomes()
 
     def test_multiple_consequences_survive_repeated_imports_in_both_modes(self):
-        self.nuclear.write_text(
-            self.nuclear.read_text().replace(
-                "missense_variant|", "missense_variant&splice_region_variant|"
-            )
-        )
+        """The nuclear fixture already contains an ampersand-separated consequence."""
+        expected = NUCLEAR_CONSEQUENCES
         for batch in (True, False):
             with self.subTest(batch=batch):
                 self.run_import(delete=True, batch=batch)
-                expected = set(
-                    VariantConsequence.objects.values_list(
-                        "variant_transcript__variant__variant_id",
-                        "severity__consequence",
-                    )
-                )
-                self.assertEqual(
-                    expected,
-                    {
-                        ("1-100-A-G", "missense_variant"),
-                        ("1-100-A-G", "splice_region_variant"),
-                        ("M-200-A-G", "missense_variant"),
-                    },
-                )
-                self.run_import(batch=batch)
-                self.assertEqual(VariantConsequence.objects.count(), 3)
                 self.assertEqual(
                     set(
-                        VariantConsequence.objects.values_list(
+                        VariantConsequence.objects.filter(
+                            variant_transcript__variant__variant_id="22-27000075-C-T"
+                        ).values_list(
+                            "variant_transcript__variant__variant_id",
+                            "severity__consequence",
+                        )
+                    ),
+                    expected,
+                )
+                self.run_import(batch=batch)
+                self.assertEqual(VariantConsequence.objects.count(), 6)
+                self.assertEqual(
+                    set(
+                        VariantConsequence.objects.filter(
+                            variant_transcript__variant__variant_id="22-27000075-C-T"
+                        ).values_list(
                             "variant_transcript__variant__variant_id",
                             "severity__consequence",
                         )
@@ -228,26 +201,47 @@ class MultiVcfImportTests(TransactionTestCase):
             with (output / table / f"{table}.tsv").open() as stream:
                 return list(csv.DictReader(stream, delimiter="\t"))
 
+        self.assertEqual(len(rows("variants")), 159)
         self.assertEqual(
             {row["variant_id"] for row in rows("variants")},
             set(Variant.objects.values_list("variant_id", flat=True)),
         )
-        self.assertEqual(len(rows("genes")), 1)
-        self.assertEqual(len(rows("transcripts")), 1)
-        self.assertEqual(len(rows("variants_transcripts")), 2)
-        self.assertEqual(len(rows("variants_annotations")), 2)
-        self.assertEqual(len(rows("variants_consequences")), 2)
-        self.assertEqual(rows("snvs")[0]["dbsnp_id"], "rs111")
-        self.assertEqual(rows("mts")[0]["dbsnp_id"], "rs222")
+        self.assertEqual(len(rows("genes")), 2)
+        self.assertEqual(len(rows("transcripts")), 3)
+        self.assertEqual(len(rows("variants_transcripts")), 3)
+        self.assertEqual(len(rows("variants_annotations")), 3)
+        self.assertEqual(len(rows("variants_consequences")), 6)
+        self.assertEqual(len(rows("snvs")), 1)
+        self.assertEqual(
+            next(
+                row["dbsnp_id"]
+                for row in rows("snvs")
+                if row["variant"] == "22-27000075-C-T"
+            ),
+            "rs8136857",
+        )
+        self.assertEqual(len(rows("mts")), 158)
+        frequencies = {row["variant"]: row for row in rows("mt_variome_frequencies")}
+        self.assertEqual(len(frequencies), 158)
+        self.assertEqual(frequencies["M-4440-G-T"]["an"], "1")
+        self.assertEqual(frequencies["M-4440-G-T"]["hl_hist"], "1,0,0,0,0,0,0,0,0,0")
+        self.assertEqual(frequencies["M-8860-A-G"]["ac_hom"], "3")
+        self.assertEqual(frequencies["M-8860-A-G"]["hl_hist"], "0,0,0,0,0,0,0,0,0,3")
+        self.assertEqual(
+            {
+                (row["variant"], int(row["an"]), row["hl_hist"])
+                for row in frequencies.values()
+            },
+            set(
+                MtVariomeFrequency.objects.values_list(
+                    "variant__variant_id", "an", "hl_hist"
+                )
+            ),
+        )
 
     def test_equivalent_paths_read_combined_file_once(self):
         combined = self.path / "combined.vcf"
-        text = self.nuclear.read_text().replace(
-            "##contig=<ID=1>\n", "##contig=<ID=1>\n##contig=<ID=MT>\n"
-        )
-        combined.write_text(
-            text + "MT\t200\t.\tA\tG\t99\tPASS\tAN=10;AC_hom=0;AC_het=1\n"
-        )
+        combine_vcf_fixtures(combined, self.nuclear)
         alias = self.path / "alias.vcf"
         alias.symlink_to(combined)
         output = self.path / "same-file-tsv"
@@ -258,17 +252,15 @@ class MultiVcfImportTests(TransactionTestCase):
             tsv_output_dir=str(output),
         )
         lines = (output / "variants" / "variants.tsv").read_text().splitlines()
-        self.assertEqual(len(lines), 3)
+        self.assertEqual(len(lines), 160)
         self.run_import(vcf_file=str(combined), mt_vcf_file=str(alias), delete=True)
-        self.assertEqual(Variant.objects.count(), 2)
-        self.assertEqual(SNV.objects.count(), 1)
-        self.assertEqual(MT.objects.count(), 1)
+        self.assert_both_genomes()
 
     def test_disabled_mt_import_does_not_read_mt_file(self):
-        self.mt.unlink()
-        self.run_import(mts=False)
+        self.run_import(mts=False, mt_vcf_file=str(self.path / "missing-mt.vcf"))
         self.assertEqual(
-            list(Variant.objects.values_list("variant_id", flat=True)), ["1-100-A-G"]
+            list(Variant.objects.values_list("variant_id", flat=True)),
+            ["22-27000075-C-T"],
         )
         self.assertFalse(MT.objects.exists())
 
@@ -286,3 +278,80 @@ class MultiVcfImportTests(TransactionTestCase):
             mt_vcf_file="",
         )
         self.assert_both_genomes()
+
+
+class AnnotatedMtHeaderEdgeCaseTests(ImportVcfTestCase):
+    """Canonical MT lacks CSQ: deliberately add nuclear annotations at one site."""
+
+    def setUp(self):
+        super().setUp()
+        self.mt = self.path / "annotated-mt-header-edge.vcf"
+        annotate_mt_for_header_edge_case(self.mt, IMPORT_NUCLEAR_VCF)
+
+    def assert_both_genomes(self):
+        # Genes/transcripts are shared across files; only per-variant rows increase.
+        self.assertEqual(Variant.objects.count(), 159)
+        self.assertEqual(MT.objects.count(), 158)
+        self.assertEqual(set(Gene.objects.values_list("short_name", flat=True)), GENES)
+        self.assertEqual(Transcript.objects.count(), 3)
+        self.assertEqual(VariantTranscript.objects.count(), 6)
+        self.assertEqual(VariantAnnotation.objects.count(), 6)
+        self.assertEqual(VariantConsequence.objects.count(), 12)
+        self.assertEqual(MT.objects.get(pos=4440).dbsnp_id, "rs8136857")
+        self.assertEqual(
+            set(
+                VariantTranscript.objects.filter(
+                    variant__variant_id="M-4440-G-T"
+                ).values_list("transcript__transcript_id", "hgvsc")
+            ),
+            {
+                ("ENST00000717151", "ENST00000717151.1:n.760-2081C>T"),
+                ("ENST00000717153", "ENST00000717153.1:n.346-3392C>T"),
+                ("XR_001755472.2", "XR_001755472.2:n.51+1889C>T"),
+            },
+        )
+
+    def test_multiple_consequences_survive_repeated_imports_in_both_modes(self):
+        expected = NUCLEAR_CONSEQUENCES | {
+            ("M-4440-G-T", "intron_variant"),
+            ("M-4440-G-T", "non_coding_transcript_variant"),
+        }
+        for batch in (True, False):
+            with self.subTest(batch=batch):
+                self.run_import(delete=True, batch=batch)
+                self.run_import(batch=batch)
+                self.assert_both_genomes()
+                self.assertEqual(
+                    set(
+                        VariantConsequence.objects.filter(
+                            variant_transcript__variant__variant_id__in=(
+                                "22-27000075-C-T",
+                                "M-4440-G-T",
+                            )
+                        ).values_list(
+                            "variant_transcript__variant__variant_id",
+                            "severity__consequence",
+                        )
+                    ),
+                    expected,
+                )
+
+    def test_tsv_preserves_reordered_header_and_shared_annotations(self):
+        self.run_import(delete=True)
+        self.assert_both_genomes()
+        output = self.path / "annotated-tsv"
+        self.run_import(convert_to_tsv=True, tsv_output_dir=str(output))
+        with (
+            output / "variants_transcripts" / "variants_transcripts.tsv"
+        ).open() as stream:
+            rows = list(csv.DictReader(stream, delimiter="\t"))
+        self.assertEqual(len(rows), 6)
+        self.assertEqual(
+            {row["transcript"] for row in rows if row["variant"] == "M-4440-G-T"},
+            SHARED_TRANSCRIPTS,
+        )
+        with (output / "mts" / "mts.tsv").open() as stream:
+            rows = {
+                row["variant"]: row for row in csv.DictReader(stream, delimiter="\t")
+            }
+        self.assertEqual(rows["M-4440-G-T"]["dbsnp_id"], "rs8136857")

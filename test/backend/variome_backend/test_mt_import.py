@@ -4,6 +4,7 @@ import logging
 import tempfile
 from pathlib import Path
 
+import vcfpy
 from django.core.management import call_command
 from django.test import TransactionTestCase
 
@@ -17,12 +18,70 @@ from variome_backend.library.models import (
     MtGnomadFrequency,
 )
 
-ROOT = Path(__file__).resolve().parents[3]
+from .helpers import ROOT, MT_VCF, IMPORT_NUCLEAR_VCF, combine_vcf_fixtures
+
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "vcf"
-SUPPLIED_MT = ROOT / "data" / "fixtures" / "vcf" / "mt.vcf"
+SUPPLIED_MT = MT_VCF
 
 
 class MitochondrialImportTests(TransactionTestCase):
+    def test_canonical_mt_format_and_samples_contract(self):
+        """Lock the real input schema independently of importer output."""
+        with vcfpy.Reader.from_path(str(SUPPLIED_MT)) as reader:
+            self.assertEqual(reader.header.samples.names, ["HG002", "HG003", "HG004"])
+            self.assertNotIn("CSQ", reader.header.info_ids())
+            self.assertEqual(
+                set(reader.header.format_ids()),
+                {
+                    "AD",
+                    "AF",
+                    "DP",
+                    "F1R2",
+                    "F2R1",
+                    "FAD",
+                    "GQ",
+                    "GT",
+                    "PGT",
+                    "PID",
+                    "PL",
+                    "PS",
+                    "SB",
+                },
+            )
+            for name, number, kind in (
+                ("GT", 1, "String"),
+                ("AD", "R", "Integer"),
+                ("AF", "A", "Float"),
+                ("DP", 1, "Integer"),
+            ):
+                field = reader.header.get_format_field_info(name)
+                self.assertEqual((field.number, field.type), (number, kind))
+            records = {record.POS: record for record in reader}
+        self.assertEqual(len(records), 157)
+        record = records[4440]
+        self.assertEqual(record.CHROM, "chrM")
+        self.assertEqual(
+            record.FORMAT, ["GT", "AD", "AF", "DP", "F1R2", "F2R1", "FAD", "SB"]
+        )
+        self.assertEqual(record.INFO["AN"], 2)
+        self.assertEqual(
+            [(call.sample, call.data["GT"], call.data["AF"]) for call in record.calls],
+            [
+                ("HG002", "0/1", [0.009923]),
+                ("HG003", "./.", []),
+                ("HG004", "./.", []),
+            ],
+        )
+        self.assertEqual(
+            [call.data["AF"] for call in records[8860].calls],
+            [[0.997], [0.997], [0.997]],
+        )
+        self.assertEqual([alt.value for alt in records[9055].ALT], ["T", "A"])
+        self.assertEqual(
+            [call.data["AF"] for call in records[9055].calls],
+            [[0.01, None], [None, 0.997], []],
+        )
+
     def import_vcf(self, filename, **options):
         output = io.StringIO()
         errors = io.StringIO()
@@ -39,6 +98,7 @@ class MitochondrialImportTests(TransactionTestCase):
             **options,
         )
         self.assertNotIn("ERRORS", errors.getvalue(), errors.getvalue())
+        self.assertNotIn("FAILED", output.getvalue(), output.getvalue())
 
     def test_supplied_mt_import_without_csq(self):
         for batch in (True, False):
@@ -94,43 +154,60 @@ class MitochondrialImportTests(TransactionTestCase):
         self.assertTrue(Variant.objects.filter(variant_id="chrM-9055-G-A").exists())
 
     def test_separate_files_ignore_records_of_the_other_genome(self):
+        """Combine unchanged fixture records to exercise nuclear/MT input scopes."""
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "mixed.vcf"
-            path.write_text(
-                "##fileformat=VCFv4.2\n"
-                "##contig=<ID=chr1>\n##contig=<ID=chrM>\n"
-                "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
-                "chr1\t100\t.\tA\tG\t.\tPASS\t.\n"
-                "chrM\t200\t.\tA\tG\t.\tPASS\t.\n",
-                encoding="utf-8",
-            )
-            for args, expected in (
-                ({"vcf_file": str(path), "mt_vcf_file": ""}, ["1-100-A-G"]),
-                ({"vcf_file": "", "mt_vcf_file": str(path)}, ["M-200-A-G"]),
+            combine_vcf_fixtures(path, IMPORT_NUCLEAR_VCF)
+            for args, nuclear_count, mt_count, ignored_count in (
+                ({"vcf_file": str(path), "mt_vcf_file": ""}, 73, 0, 157),
+                ({"vcf_file": "", "mt_vcf_file": str(path)}, 0, 158, 73),
                 (
                     {"vcf_file": str(path), "mt_vcf_file": str(path)},
-                    ["1-100-A-G", "M-200-A-G"],
+                    73,
+                    158,
+                    0,
                 ),
             ):
                 with self.subTest(**args):
                     Variant.objects.all().delete()
+                    output, errors = io.StringIO(), io.StringIO()
                     with self.assertLogs("management", level="WARNING") as logs:
                         logging.getLogger("management").warning("sentinel")
                         call_command(
                             "import_bvl_vcf",
                             out_chr=False,
                             progress=False,
-                            stdout=io.StringIO(),
-                            stderr=io.StringIO(),
+                            stdout=output,
+                            stderr=errors,
                             **args,
                         )
+                    self.assertNotIn("FAILED", output.getvalue(), output.getvalue())
+                    self.assertNotIn("ERRORS", errors.getvalue(), errors.getvalue())
                     self.assertEqual(
-                        sorted(Variant.objects.values_list("variant_id", flat=True)),
-                        expected,
+                        Variant.objects.exclude(var_type="M").count(), nuclear_count
                     )
-                    self.assertEqual(MT.objects.count(), expected.count("M-200-A-G"))
-                    ignored = [line for line in logs.output if "Ignoring 1 " in line]
-                    self.assertEqual(len(ignored), 0 if len(expected) == 2 else 1)
+                    self.assertEqual(
+                        Variant.objects.filter(variant_id="22-27000075-C-T").exists(),
+                        bool(nuclear_count),
+                    )
+                    self.assertEqual(Variant.objects.count(), nuclear_count + mt_count)
+                    self.assertEqual(MT.objects.count(), mt_count)
+                    if mt_count:
+                        self.assertTrue(
+                            MT.objects.filter(variant__variant_id="M-4440-G-T").exists()
+                        )
+                        self.assertEqual(
+                            set(
+                                MT.objects.filter(pos=9055).values_list(
+                                    "alt", flat=True
+                                )
+                            ),
+                            {"T", "A"},
+                        )
+                    ignored = [line for line in logs.output if "Ignoring " in line]
+                    self.assertEqual(len(ignored), 1 if ignored_count else 0)
+                    if ignored_count:
+                        self.assertIn(f"Ignoring {ignored_count} ", ignored[0])
 
     def test_supplied_mt_gzipped_conversion_without_csq(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -165,6 +242,7 @@ class MitochondrialImportTests(TransactionTestCase):
         self.assertEqual(frequency.an, 1000)
 
     def test_ibvl_import_creates_mitochondrial_models_and_annotations(self):
+        """Retain compatibility coverage for the legacy nonstandard IBVL dialect."""
         self.import_vcf(FIXTURES / "mock_mt.vcf")
         variant = Variant.objects.get(variant_id="M-8602-T-C")
         self.assertEqual(variant.var_type, "M")
