@@ -16,16 +16,25 @@ import csv
 import json
 from typing import List, Dict, Any, Optional
 from abc import ABC, abstractmethod
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type, before_sleep_log
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_fixed,
+    retry_if_exception_type,
+    before_sleep_log,
+)
 
-#file open retries
+# file open retries
 ATTEMPTS = 12
 INTERVAL = 40
+
 
 def wait_with_sleep(retry_state):
     return INTERVAL
 
+
 logger = logging.getLogger(__name__)
+
 
 class CallFilter(ABC):
     def __init__(self, vcf_file_path: str, settings, mt_vcf_file_path=None):
@@ -44,21 +53,23 @@ class CallFilter(ABC):
         stop=stop_after_attempt(ATTEMPTS),
         wait=wait_with_sleep,
         retry=retry_if_exception_type(FileNotFoundError),
-        before_sleep=before_sleep_log(logger, logging.WARNING)
+        before_sleep=before_sleep_log(logger, logging.WARNING),
     )
     def stream_with_retries(self, file_path):
         file_path = os.fspath(file_path)
-        if file_path.endswith('.gz'):
-            gz = gzip.open(file_path, 'rb')
-            return io.TextIOWrapper(gz, encoding='utf-8', errors='replace')
+        if file_path.endswith(".gz"):
+            gz = gzip.open(file_path, "rb")
+            return io.TextIOWrapper(gz, encoding="utf-8", errors="replace")
         else:
-            return io.TextIOWrapper(open(file_path, 'rb'), encoding='utf-8', errors='replace')
+            return io.TextIOWrapper(
+                open(file_path, "rb"), encoding="utf-8", errors="replace"
+            )
 
     @retry(
         stop=stop_after_attempt(ATTEMPTS),
         wait=wait_with_sleep,
         retry=retry_if_exception_type(FileNotFoundError),
-        before_sleep=before_sleep_log(logger, logging.WARNING)
+        before_sleep=before_sleep_log(logger, logging.WARNING),
     )
     def _init_vcf_header_and_csq(self, file_path):
 
@@ -87,9 +98,14 @@ class CallFilter(ABC):
             csq = self.vcf_header.get_info_field_info("CSQ")
             if csq.description and "Format: " in csq.description:
                 self.csq_fields = csq.description.split("Format: ")[1].split("|")
-                self.csq_index_map = {field: index for index, field in enumerate(self.csq_fields)}
+                self.csq_index_map = {
+                    field: index for index, field in enumerate(self.csq_fields)
+                }
         self._vcf_contexts[os.path.realpath(file_path)] = (
-            self.vcf_header, self.csq_fields, self.csq_index_map, self.mt_columns
+            self.vcf_header,
+            self.csq_fields,
+            self.csq_index_map,
+            self.mt_columns,
         )
 
     @staticmethod
@@ -116,19 +132,29 @@ class CallFilter(ABC):
                 elif field == "heteroplasmy_histogram":
                     info[field] = json.loads(value) if value not in ("", ".") else None
             yield vcfpy.Record(
-                CHROM=row["#CHROM"], POS=int(row["POS"]), ID=[row["ID"]],
-                REF=row["REF"], ALT=[vcfpy.Substitution("SNV", row["ALT"])],
-                QUAL=None, FILTER=row.get("filters", "").split(";"), INFO=info,
+                CHROM=row["#CHROM"],
+                POS=int(row["POS"]),
+                ID=[row["ID"]],
+                REF=row["REF"],
+                ALT=[vcfpy.Substitution("SNV", row["ALT"])],
+                QUAL=None,
+                FILTER=row.get("filters", "").split(";"),
+                INFO=info,
             )
 
     def shared_record_stream(self):
         nuclear_path = self._vcf_file_path
         mt_path = self._mt_vcf_file_path
-        if nuclear_path and mt_path and (
-            os.path.realpath(nuclear_path) == os.path.realpath(mt_path)
-            or (
-                os.path.exists(nuclear_path) and os.path.exists(mt_path)
-                and os.path.samefile(nuclear_path, mt_path)
+        if (
+            nuclear_path
+            and mt_path
+            and (
+                os.path.realpath(nuclear_path) == os.path.realpath(mt_path)
+                or (
+                    os.path.exists(nuclear_path)
+                    and os.path.exists(mt_path)
+                    and os.path.samefile(nuclear_path, mt_path)
+                )
             )
         ):
             yield from self.vcf_record_stream(nuclear_path)
@@ -176,7 +202,7 @@ class CallFilter(ABC):
                     chrom_key = record.CHROM.removeprefix("chr").upper()
                     chrom_key = "M" if chrom_key == "MT" else chrom_key
                     # Try all possible chrom representations
-                    keys = [chrom_key, chrom_key.replace("chr", ""), "chr"+chrom_key]
+                    keys = [chrom_key, chrom_key.replace("chr", ""), "chr" + chrom_key]
                     found = False
                     for k in keys:
                         if k in range_map:
@@ -192,32 +218,36 @@ class CallFilter(ABC):
         with self.stream_with_retries(file_path) as stream:
             if context[3]:
                 # legacy 2024 IBVL MT format has no INFO field, uses custom columns, so we parse it into vcfpy.Record objects manually
-                records = self.make_vcfpy_records_from_legacy_ibvl_mt_vcf(stream, context[3])
+                records = self.make_vcfpy_records_from_legacy_ibvl_mt_vcf(
+                    stream, context[3]
+                )
             else:
                 # Variome dialect (and genomic IBVL) is parsed as standard VCF.
                 records = vcfpy.Reader(stream=stream)
             for record in yield_records_in_ranges(records):
-                self.vcf_header, self.csq_fields, self.csq_index_map, self.mt_columns = context
+                (
+                    self.vcf_header,
+                    self.csq_fields,
+                    self.csq_index_map,
+                    self.mt_columns,
+                ) = context
                 record._variome_csq_index_map = context[2]
                 yield record
 
-
-
-
     def describe(self) -> str:
         description = ""
-        csq_fields = '\n'.join(self.csq_fields)
+        csq_fields = "\n".join(self.csq_fields)
         description += f"INFO fields:"
-        if hasattr(self, 'vcf_header') and self.vcf_header is not None:
-            info_fields = '(from header) \n'
-            info_fields += '\n'.join(self.vcf_header.info_ids())
+        if hasattr(self, "vcf_header") and self.vcf_header is not None:
+            info_fields = "(from header) \n"
+            info_fields += "\n".join(self.vcf_header.info_ids())
         else:
-            info_fields = '(not found)'
+            info_fields = "(not found)"
         description += f"\n{info_fields}\n"
         description += f"CSQ fields:\n{csq_fields}\n"
         return description
 
-    def load_vcf_file(self, file, type = "SNV"):
+    def load_vcf_file(self, file, type="SNV"):
         return []
 
     def get_csq_values(self, record: vcfpy.Record, field_name: str) -> List[str]:
@@ -228,7 +258,9 @@ class CallFilter(ABC):
             record: VCF record object
             field_name: Name of the CSQ field to extract
         """
-        index = getattr(record, "_variome_csq_index_map", self.csq_index_map).get(field_name)
+        index = getattr(record, "_variome_csq_index_map", self.csq_index_map).get(
+            field_name
+        )
         values = []
         if index is None:
             return []
@@ -243,7 +275,9 @@ class CallFilter(ABC):
                 values.append(csq_parts[index])
         return values
 
-    def get_info_value(self, record: vcfpy.Record, field_name: str, fallback = None) -> str:
+    def get_info_value(
+        self, record: vcfpy.Record, field_name: str, fallback=None
+    ) -> str:
         """
         Helper method to extract a specific INFO field value from a VCF record.
 
