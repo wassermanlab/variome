@@ -42,21 +42,24 @@ def login_view(request):
     form = AuthenticationForm()
     return render(request, "development-mode-login.html", context={"form": form})
 
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 @never_cache
 def get_site_settings(request):
-    site_settings = VariomeSettings.objects.get(pk=1)
-    example_variant = site_settings.example_snv
-
+    site_settings = VariomeSettings.objects.select_related(
+        "example_snv", "example_mt"
+    ).get(pk=1)
     settings = {"settings": {"home_page_message": site_settings.home_page_message}}
 
-    if isinstance(example_variant, Variant) & request.user.is_authenticated:
-        settings["settings"]["example_snv"] = {
-            "id": example_variant.id,
-            "var_id": example_variant.variant_id,
-        }
-    else:
-        settings["settings"]["example_snv"] = None
+    for field in ("example_snv", "example_mt"):
+        example_variant = getattr(site_settings, field)
+        if isinstance(example_variant, Variant) and request.user.is_authenticated:
+            settings["settings"][field] = {
+                "id": example_variant.id,
+                "var_id": example_variant.variant_id,
+            }
+        else:
+            settings["settings"][field] = None
 
     return Response(settings)

@@ -10,8 +10,9 @@ class TranscriptsCallFilter(CallFilter):
     """
     Generates the 'transcripts' table.
     """
-    def __init__(self, vcf_file_path, settings):
-        super().__init__(vcf_file_path, settings)
+
+    def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
+        super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
     def getTableRows(self):
         """
@@ -19,7 +20,7 @@ class TranscriptsCallFilter(CallFilter):
         """
         seen = set()
         na = self.settings.NA
-        for record in self.vcf_record_stream():
+        for record in self.shared_record_stream():
             feature = self.get_csq_values(record, "Feature")
             if feature == "" or feature == "NA" or feature is None or len(feature) == 0:
                 logger.warning("skipping transcript with no feature: %s", feature)
@@ -28,7 +29,9 @@ class TranscriptsCallFilter(CallFilter):
             source = self.get_csq_values(record, "SOURCE")
             biotype = self.get_csq_values(record, "BIOTYPE")
             l = len(feature)
-            tsl = [None] * l  # variome sets this to none (.)  it could be: self.get_csq_values(record, "TSL")
+            tsl = [
+                None
+            ] * l  # variome sets this to none (.)  it could be: self.get_csq_values(record, "TSL")
             if not (l == len(symbol) == len(source) == len(tsl)):
                 continue
             for i in range(l):
@@ -51,9 +54,9 @@ class TranscriptsCallFilter(CallFilter):
                 else:
                     biotype_val = biotype[i]
                 yield {
-                    'transcript_id': transcript_id,
-                    'gene': validate_get(symbol, i, na),
-                    'transcript_type': transcript_type,
-                    'tsl': validate_get(tsl, i, na),
-                    'biotype': biotype_val
+                    "transcript_id": transcript_id,
+                    "gene": validate_get(symbol, i, na),
+                    "transcript_type": transcript_type,
+                    "tsl": validate_get(tsl, i, na),
+                    "biotype": biotype_val,
                 }

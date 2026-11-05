@@ -10,9 +10,9 @@ from variome_backend.library_access.models import SearchQueryAction
 
 from variome_backend.library.views import search
 
-SEARCH_FIXTURE_VCF = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "fixtures", "vcf", "mock_snv_search.vcf"
-)
+from .helpers import ROOT
+
+SEARCH_FIXTURE_VCF = ROOT / "data" / "fixtures" / "vcf" / "mock_snv_search.vcf"
 
 
 def load_search_fixtures(self):
@@ -52,14 +52,14 @@ class SnvSearchResultsByID(TransactionTestCase):
 
     def test_clinvar_search_returns_matching_variants(self):
         response = self.client.get(
-            self.url, {"resultSets": "clinvar", "query": "12345.678"}
+            self.url, {"resultSets": "clinvar", "query": "12345"}
         )
 
         self.assertEqual(response.status_code, 200)
         results = response.json()["results"]["clinvar"]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["id"], self.match.variant.id)
-        self.assertEqual(results[0]["snv__clinvar_vcv"], 12345.678)
+        self.assertEqual(results[0]["snv__clinvar_vcv"], 12345)
         self.assertEqual(SearchQueryAction.objects.get().result_count, 1)
 
     def test_valid_search_without_results_is_tracked(self):
@@ -107,7 +107,12 @@ class SnvSearchHttpRequests(TransactionTestCase):
     def test_invalid_position_is_tracked(self):
         response = self.client.get(
             self.url,
-            {"query": "chr90-1000", "resultSets": "position", "chr": "90", "pos": "1000"},
+            {
+                "query": "chr90-1000",
+                "resultSets": "position",
+                "chr": "90",
+                "pos": "1000",
+            },
         )
 
         self.assertEqual(response.status_code, 400)
@@ -186,11 +191,15 @@ class SnvSearchHttpRequests(TransactionTestCase):
             ],
         )
 
-
     def test_valid_position_without_matches_records_normalized_coordinates(self):
         response = self.client.get(
             self.url,
-            {"query": "chrx-00042", "resultSets": "position", "chr": "x", "pos": "00042"},
+            {
+                "query": "chrx-00042",
+                "resultSets": "position",
+                "chr": "x",
+                "pos": "00042",
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -203,7 +212,12 @@ class SnvSearchHttpRequests(TransactionTestCase):
     def test_numeric_chromosome_is_normalized_before_searching_and_tracking(self):
         response = self.client.get(
             self.url,
-            {"query": "chr001-1000", "resultSets": "position", "chr": "001", "pos": "1000"},
+            {
+                "query": "chr001-1000",
+                "resultSets": "position",
+                "chr": "001",
+                "pos": "1000",
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -223,7 +237,7 @@ class SnvSearchStandardResults(TransactionTestCase):
     def test_positional_search_chr_pos_ref_alt_no_nearby(self):
 
         # search using position, ref, and alt, no nearby
-        (position, nearby) = search.standard_search("7", "2000", "TAA", "TA")
+        position, nearby = search.standard_search("7", "2000", "TAA", "TA")
         position = [v["variant_id"] for v in position]
         self.assertEqual(["7_2000_TAA_TA"], position)
         self.assertEqual(len(nearby), 0)
@@ -231,7 +245,7 @@ class SnvSearchStandardResults(TransactionTestCase):
     # only search using chromosome and position
     def test_positional_search_chr_pos(self):
 
-        (position, nearby) = search.standard_search("7", "2000")
+        position, nearby = search.standard_search("7", "2000")
         position = [p["variant_id"] for p in position]
         self.assertEqual(
             position, ["7_2000_TAA_TA"], "only chromosome and position supplied"
@@ -242,7 +256,7 @@ class SnvSearchStandardResults(TransactionTestCase):
     def test_positional_search_chr_pos_ref_with_nearby(self):
 
         # search using position, ref, expect nearby results
-        (position, nearby) = search.standard_search("4", "2000", "T")
+        position, nearby = search.standard_search("4", "2000", "T")
         position = [r["variant_id"] for r in position]
 
         self.assertEqual(position, ["4_2000_T_C", "4_2000_T_G"])
@@ -253,7 +267,7 @@ class SnvSearchStandardResults(TransactionTestCase):
     def test_positional_search_chr_pos_ref_indel(self):
 
         # search using position, ref, expect nearby results
-        (position, nearby) = search.standard_search("3", "50", "A")
+        position, nearby = search.standard_search("3", "50", "A")
         position = [r["variant_id"] for r in position]
         nearby = [r["variant_id"] for r in nearby]
 
@@ -268,7 +282,7 @@ class SnvSearchStandardResults(TransactionTestCase):
 
     def test_positional_search_chr_pos_ref_alt_multiple_same_position(self):
 
-        (position, nearby) = search.standard_search("4", "2000", "T", "C")
+        position, nearby = search.standard_search("4", "2000", "T", "C")
         position = [p["variant_id"] for p in position]
         nearby = [n["variant_id"] for n in nearby]
 
@@ -277,7 +291,7 @@ class SnvSearchStandardResults(TransactionTestCase):
 
     def test_positional_search_chr_pos_ref_alt_with_nearby(self):
 
-        (position, nearby) = search.standard_search("1", "1006", "C", "G")
+        position, nearby = search.standard_search("1", "1006", "C", "G")
         position = [p["variant_id"] for p in position]
         nearby = [n["variant_id"] for n in nearby]
 
@@ -290,7 +304,7 @@ class SnvSearchStandardResults(TransactionTestCase):
 
     def test_positional_search_chr_pos_ref_alt_with_diff_repeat_numbers(self):
 
-        (position, nearby) = search.standard_search("5", "100", "A", "ATGT")
+        position, nearby = search.standard_search("5", "100", "A", "ATGT")
         position = [p["variant_id"] for p in position]
         nearby = [n["variant_id"] for n in nearby]
 
@@ -304,8 +318,8 @@ class SnvSearchStandardResults(TransactionTestCase):
         )
 
     def test_positional_search_nearby_limit_10(self):
-        (position, nearby) = search.standard_search("10", "207")
-        (position2, nearby2) = search.standard_search("10", "208", "A", "AT")
+        position, nearby = search.standard_search("10", "207")
+        position2, nearby2 = search.standard_search("10", "208", "A", "AT")
 
         position = [p["variant_id"] for p in position]
         nearby = [n["variant_id"] for n in nearby]
@@ -347,7 +361,7 @@ class SnvSearchStandardResults(TransactionTestCase):
             ],
         )
 
-        (position3, nearby3) = search.standard_search("10", "220")
+        position3, nearby3 = search.standard_search("10", "220")
         position3 = [v["variant_id"] for v in position3]
         nearby3 = [v["variant_id"] for v in nearby3]
         self.assertEqual(

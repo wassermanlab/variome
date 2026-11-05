@@ -56,7 +56,9 @@ class SearchQueryFilterForm(forms.Form):
             and data.get("max_results") is not None
             and data["min_results"] > data["max_results"]
         ):
-            raise forms.ValidationError("Minimum results must not exceed maximum results.")
+            raise forms.ValidationError(
+                "Minimum results must not exceed maximum results."
+            )
         return data
 
 

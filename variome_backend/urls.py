@@ -41,7 +41,9 @@ api_urls = [
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("tracking/", access.tracking_dashboard, name="tracking_dashboard"),
-    path("tracking/searches/", access.search_query_actions, name="search_query_actions"),
+    path(
+        "tracking/searches/", access.search_query_actions, name="search_query_actions"
+    ),
     path("accounts/profile/", access.profile_view_redirect, name="profile"),
     path("api/", include(api_urls)),
 ]

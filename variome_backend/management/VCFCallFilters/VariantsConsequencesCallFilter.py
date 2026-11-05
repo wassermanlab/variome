@@ -5,12 +5,14 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
 class VariantsConsequencesCallFilter(CallFilter):
     """
     Generates the 'variants_consequences' table.
     """
-    def __init__(self, vcf_file_path, settings):
-        super().__init__(vcf_file_path, settings)
+
+    def __init__(self, vcf_file_path, settings, mt_vcf_file_path=None):
+        super().__init__(vcf_file_path, settings, mt_vcf_file_path)
 
     def getTableRows(self):
         """
@@ -36,8 +38,8 @@ class VariantsConsequencesCallFilter(CallFilter):
         except FileNotFoundError:
             logger.warning("Severity table file not found: %s", severity_table_path)
 
-
-        for record in self.vcf_record_stream():
+        seen = set()
+        for record in self.shared_record_stream():
             variant = self.make_variant_id(record)
             transcript_list = self.get_csq_values(record, "Feature")
             consequence_list = self.get_csq_values(record, "Consequence")
@@ -50,8 +52,14 @@ class VariantsConsequencesCallFilter(CallFilter):
                 for consequence in consequences:
                     severity = severity_map.get(consequence)
                     if severity is not None:
+                        key = (variant, transcript or self.settings.NA, severity)
+                        if key in seen:
+                            continue
+                        seen.add(key)
                         yield {
-                            'severity': severity,
-                            'variant': variant,
-                            'transcript': transcript if transcript else self.settings.NA,
+                            "severity": severity,
+                            "variant": variant,
+                            "transcript": (
+                                transcript if transcript else self.settings.NA
+                            ),
                         }

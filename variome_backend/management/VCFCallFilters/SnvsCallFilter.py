@@ -9,7 +9,10 @@ class SnvsCallFilter(CallFilter):
     """
     Generates the 'snvs' table (SNV-specific annotations).
     """
-    def __init__(self, vcf_file_path: str, settings, assembly=None):
+
+    def __init__(
+        self, vcf_file_path: str, settings, assembly=None, mt_vcf_file_path=None
+    ):
         super().__init__(vcf_file_path, settings)
         self.assembly = assembly
 
@@ -19,6 +22,8 @@ class SnvsCallFilter(CallFilter):
         """
         seen = set()
         for record in self.vcf_record_stream():
+            if self.is_mitochondrial(record):
+                continue
             variant = self.make_variant_id(record)
             if variant in seen:
                 continue
@@ -28,7 +33,9 @@ class SnvsCallFilter(CallFilter):
             alt = record.ALT[0].value  # assuming single ALT allele
 
             class_list = self.get_csq_values(record, "VARIANT_CLASS")
-            cadd_phred_list = record.INFO.get("CADD_PHREDscore", self.get_csq_values(record, "CADD_PHRED")) # variome: CADD_PHREDscore in info; ibvl: CADD_PHRED in csq!
+            cadd_phred_list = record.INFO.get(
+                "CADD_PHREDscore", self.get_csq_values(record, "CADD_PHRED")
+            )  # variome: CADD_PHREDscore in info; ibvl: CADD_PHRED in csq!
             existing_variation_list = self.get_csq_values(record, "Existing_variation")
             ds_ag_list = self.get_csq_values(record, "DS_AG")
             ds_al_list = self.get_csq_values(record, "DS_AL")
@@ -41,18 +48,22 @@ class SnvsCallFilter(CallFilter):
             for ev in existing_variation_list:
                 if ev.startswith("rs"):
                     if "&" in ev:
-                        [ dbsnp_ids.append(ev_id) for ev_id in ev.split("&")]
+                        [dbsnp_ids.append(ev_id) for ev_id in ev.split("&")]
                     else:
                         dbsnp_ids.append(ev)
                 if ev.startswith("VCV"):
                     clinvar_vcvs.append(ev)
             NA = self.settings.NA
-            variant_class = record.INFO.get("TYPE")[0] if record.INFO.get("TYPE") else (class_list[0] if class_list else NA)
+            variant_class = (
+                record.INFO.get("TYPE")[0]
+                if record.INFO.get("TYPE")
+                else (class_list[0] if class_list else NA)
+            )
             if cadd_phred_list and cadd_phred_list[0] != "":
                 try:
                     cadd_score = float(cadd_phred_list[0])
                     if float(cadd_score).is_integer():
-                        cadd_score = str(cadd_score).replace('.0', '')
+                        cadd_score = str(cadd_score).replace(".0", "")
                 except (ValueError, TypeError):
                     cadd_score = None
             else:
@@ -66,7 +77,11 @@ class SnvsCallFilter(CallFilter):
 
             # CADD interpretation (threshold from settings)
             if cadd_score is not None:
-                cadd_intr = "Damaging" if float(cadd_score) >= self.settings.CADD_DAMAGING_THRESHOLD else "Tolerable"
+                cadd_intr = (
+                    "Damaging"
+                    if float(cadd_score) >= self.settings.CADD_DAMAGING_THRESHOLD
+                    else "Tolerable"
+                )
             else:
                 cadd_score = NA
                 cadd_intr = NA
@@ -83,12 +98,15 @@ class SnvsCallFilter(CallFilter):
                     spliceai_str = spliceai_info
                 spliceai_parts = spliceai_str.split("|")
                 # AG, AL, DG, DL are 3rd, 4th, 5th, 6th fields (0-based: 2,3,4,5)
-                splice_ai_raw = [spliceai_parts[i] if len(spliceai_parts) > i else '.' for i in range(2, 6)]
+                splice_ai_raw = [
+                    spliceai_parts[i] if len(spliceai_parts) > i else "."
+                    for i in range(2, 6)
+                ]
             else:
                 # Fallback: use DS_* from CSQ
                 splice_ai_raw = ds_ag_list + ds_al_list + ds_dg_list + ds_dl_list
             # If all are '.' (or empty), set splice_ai to '.'
-            if all((s == '.' or s == '' or s is None) for s in splice_ai_raw):
+            if all((s == "." or s == "" or s is None) for s in splice_ai_raw):
                 max_splice_ai = NA
             else:
                 splice_ai_scores = []
@@ -100,7 +118,7 @@ class SnvsCallFilter(CallFilter):
                 if splice_ai_scores:
                     max_splice_ai = max(splice_ai_scores)
                     if float(max_splice_ai).is_integer():
-                        max_splice_ai = str(max_splice_ai).replace('.0', '')
+                        max_splice_ai = str(max_splice_ai).replace(".0", "")
                 else:
                     max_splice_ai = NA
             window = 25
@@ -110,29 +128,39 @@ class SnvsCallFilter(CallFilter):
             ucsc_url = f"https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&highlight=hg38.{chrom_noprefix}%3A{pos}-{pos}&position={chrom_noprefix}%3A{start}-{end}"
             ensembl_url = f"https://asia.ensembl.org/Homo_sapiens/Location/View?r={chrom_noprefix}%3A{start}-{end}"
             gnomad_url = f"https://gnomad.broadinstitute.org/variant/{chrom_noprefix}-{pos}-{ref}-{alt}?dataset=gnomad_r4"
-            dbsnp_url = f"https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={dbsnp_ids[0]}" if dbsnp_ids else NA
-            if (clinvar_vcvs and clinvar_vcvs[0].startswith("VCV")):
+            dbsnp_url = (
+                f"https://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs={dbsnp_ids[0]}"
+                if dbsnp_ids
+                else NA
+            )
+            if clinvar_vcvs and clinvar_vcvs[0].startswith("VCV"):
                 clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_vcvs[0][3:]}/"
             elif clinvar_from_info:
                 clinvar_url = f"https://www.ncbi.nlm.nih.gov/clinvar/variation/{clinvar_from_info}/"
             else:
                 clinvar_url = NA
             yield {
-                'variant': variant,
-                'type': variant_class,
-                'length': var_length,
-                'chr': chrom_noprefix,
-                'pos': pos,
-                'ref': ref,
-                'alt': alt,
-                'cadd_score': cadd_score,
-                'cadd_intr': cadd_intr,
-                'dbsnp_id': dbsnp_ids[0] if dbsnp_ids else NA, # TODO: verify if it's acceptable to omit all but one of these rs ID's
-                'dbsnp_url': dbsnp_url,
-                'ucsc_url': ucsc_url,
-                'ensembl_url': ensembl_url,
-                'clinvar_url': clinvar_url,
-                'gnomad_url': gnomad_url,
-                "clinvar_vcv": clinvar_vcvs[0] if clinvar_vcvs else clinvar_from_info if clinvar_from_info else NA,
-                "splice_ai": max_splice_ai
+                "variant": variant,
+                "type": variant_class,
+                "length": var_length,
+                "chr": chrom_noprefix,
+                "pos": pos,
+                "ref": ref,
+                "alt": alt,
+                "cadd_score": cadd_score,
+                "cadd_intr": cadd_intr,
+                "dbsnp_id": (
+                    dbsnp_ids[0] if dbsnp_ids else NA
+                ),  # TODO: verify if it's acceptable to omit all but one of these rs ID's
+                "dbsnp_url": dbsnp_url,
+                "ucsc_url": ucsc_url,
+                "ensembl_url": ensembl_url,
+                "clinvar_url": clinvar_url,
+                "gnomad_url": gnomad_url,
+                "clinvar_vcv": (
+                    clinvar_vcvs[0]
+                    if clinvar_vcvs
+                    else clinvar_from_info if clinvar_from_info else NA
+                ),
+                "splice_ai": max_splice_ai,
             }

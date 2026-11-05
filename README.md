@@ -181,25 +181,70 @@ PUBLIC_BVL - opens the database for public access, as a demonstration app. For t
 
 # Importing from a VCF file
 
-Use the `import_bvl_vcf` management command to import data directly from a VCF file into the database.
+Use the `import_bvl_vcf` management command to import data directly from VCF files into the database.
+Nuclear variants are read from `--vcf` and mitochondrial variants from
+`--mt-vcf`; one run imports both. With no arguments the development fixtures
+`data/fixtures/vcf/nuclear-tiny.vcf` and `data/fixtures/vcf/mt.vcf` are used.
+These are the canonical nuclear and unannotated mitochondrial fixtures.
+All mock VCFs also live in `data/fixtures/vcf/`. The `mt-annotated.vcf` fixture
+preserves `mt.vcf` and adds synthetic CSQ annotations at chrM:4440, with reordered
+fields and shared nuclear genes/transcripts for header-context edge-case tests;
+these annotations are artificial, not biological assertions.
+Mitochondrial records in `--vcf` (and non-mitochondrial records in `--mt-vcf`)
+are ignored with a warning; to import a combined VCF, pass the same file to both.
+Each table's CallFilter selects the relevant input(s) and produces one row
+iterator. Shared gene, variant and transcript annotation tables combine both
+inputs, retaining each file's own annotation header and deduplicating shared
+records. The importer runs once per table, so `--delete` replaces that table
+once rather than deleting the first file's rows when processing the second.
+Equivalent paths to the same file are read only once per filter. Tables whose
+corresponding input is absent are skipped.
 
-Mitochondrial tables are omitted because these are not part of the currently used VCF reference files.
+Mitochondrial records (`M`, `MT`, `chrM` or `chrMT`) are imported into separate
+metadata and frequency tables. Both the IBVL tabular MT export and standard
+Variome VCF INFO/FORMAT metrics are supported. IDs use `M` consistently.
+The supplied `data/fixtures/vcf/mt.vcf` Mutect2 example is also supported,
+including sites with multiple alternate alleles. VEP `CSQ` annotations are
+optional; without them, gene/transcript annotations and CSQ-derived identifiers
+remain absent. Explicit MT cohort counts and frequencies are retained as supplied.
+Otherwise counts and frequencies are derived per ALT from valid sample
+`FORMAT/AF`: AF >= 0.95 is homoplasmic, 0 < AF < 0.95 is heteroplasmic.
+The denominator (`AN`) is the number of samples with a valid AF for that ALT,
+including AF=0; missing AF values are excluded, not assumed to be reference.
+This replaces diploid `INFO/AN` when deriving sample-based MT frequencies.
+Missing histogram and maximum values are also derived: when the VCF has no `heteroplasmy_histogram`
+or `max_observed_heteroplasmy`, they are derived per ALT allele from the sample
+`FORMAT/AF` heteroplasmy levels of carriers (10 bins of 0.1; the top bin
+includes 1.0). These sample-based values are not subject to gnomAD's
+heteroplasmy or quality filters and should not be treated as equivalently filtered.
+An optional preprocessed gnomAD mitochondrial TSV can be supplied with
+`--mt-gnomad-tsv /path/to/gnomad_mt.tsv`; only variants present in the VCF are
+imported. Its columns are `chromosome`, `position`, `ref`, `alt`, `AN`, `AC_hom`,
+`AC_het`, `AF_hom`, `AF_het` and `max_observed_heteroplasmy`.
+The variant page loads gnomAD frequencies dynamically for both nuclear and
+mitochondrial variants; it does not display the stored mitochondrial TSV values.
+Select an **Example mt** variant in the admin Settings editor to show its link
+on the home page.
 
 ## Quickstart
 
 ```
-python manage.py import_bvl_vcf --vcf /path/to/joint.vcf
+python manage.py import_bvl_vcf --vcf /path/to/joint.vcf --mt-vcf /path/to/mt.vcf
 python manage.py create_indices
 ```
 
-Run `python manage.py import_bvl_vcf --help` for a full list of options.
+Run `python manage.py import_bvl_vcf --help` for a full list of options and an
+explanation of the import summary.
 
 ## Key options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--vcf` | *(required)* | Path to the input VCF file (plain text or `.gz`) |
+| `--vcf` | `data/fixtures/vcf/nuclear-tiny.vcf` | Nuclear VCF file (plain text or `.gz`); `''` skips it |
+| `--mt-vcf` | `data/fixtures/vcf/mt.vcf` | Mitochondrial VCF file (plain text or `.gz`); `''` or `--no-mts` skips it |
 | `--input-tsv-dir` | `data/fixtures` | Path to the dir containing severities.tsv |
+| `--mts` / `--no-mts` | enabled | Import mitochondrial metadata and cohort frequencies |
+| `--mt-gnomad-tsv` | *(none)* | gnomAD mitochondrial frequency TSV to intersect with imported variants |
 | `--na` | `.` | Value used to represent missing/null data |
 | `--out-chr` | enabled | Prefix chromosome names with `chr` |
 | `--out-hyphens` | enabled | Use hyphens in variant IDs (e.g. `1-100-A-G`) if false, uses underscores instead |
@@ -211,6 +256,7 @@ Run `python manage.py import_bvl_vcf --help` for a full list of options.
 | `--hash-compare` | *(none)* | Directory of an existing TSV set to compare output hashes against (requires `--convert-to-tsv`) |
 | `--dry-run` / `-n` | disabled | Parse and validate without writing to the database |
 | `--delete` | disabled | Delete all existing data before importing |
+| `-v` / `-vv` / `-vvv` | `-vv` | Output verbosity: summary only / normal / adds chromosome caching messages and timings |
 | `--no-genes`, `--no-variants`, etc. | *(all enabled)* | Skip specific tables |
 
 ## Comparing output against a reference TSV set
@@ -221,6 +267,7 @@ match a previously known-good set ( this is useful for development of this proje
 ```
 python manage.py import_bvl_vcf \
   --vcf /path/to/joint.vcf \
+  --mt-vcf '' \
   --convert-to-tsv \
   --tsv-output-dir data/vcf_output \
   --hash-compare data/reference_tsvs

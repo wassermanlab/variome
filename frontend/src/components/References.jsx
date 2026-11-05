@@ -7,8 +7,27 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { OpenInNew as LinkIcon } from '@mui/icons-material';
 
+const GENOMIC_REFERENCE = {
+    label: 'Ensembl',
+    urlKey: 'ensembl_url',
+    fallbackUrl: 'https://asia.ensembl.org/Homo_sapiens/Info/Index',
+    ucscFallbackUrl: 'https://asia.ensembl.org/Homo_sapiens/Info/Index',
+};
+const REFERENCES_BY_TYPE = {
+    M: {
+        label: 'MITOMAP',
+        urlKey: 'mitomap_url',
+        fallbackUrl: 'https://www.mitomap.org/',
+        ucscFallbackUrl: 'https://genome.ucsc.edu/',
+    },
+    SNV: GENOMIC_REFERENCE,
+    SV: GENOMIC_REFERENCE,
+    INDEL: GENOMIC_REFERENCE,
+};
 
 export default function References({variant, variantMetadata}) {
+    const reference = REFERENCES_BY_TYPE[variant?.var_type] ?? GENOMIC_REFERENCE;
+    const referenceUrl = variantMetadata?.[reference.urlKey];
     const referencesList = variantMetadata ? [
         {
             ref: 'dbSNP',
@@ -18,22 +37,22 @@ export default function References({variant, variantMetadata}) {
         {
             ref: 'UCSC',
             val: _.isEmpty(variantMetadata.ucsc_url) ? 'Search UCSC': <LinkIcon/>,
-            link: _.isEmpty(variantMetadata.ucsc_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ucsc_url,
+            link: _.isEmpty(variantMetadata.ucsc_url) ? reference.ucscFallbackUrl : variantMetadata.ucsc_url,
         },
         {
-            ref: 'Ensembl',
-            val: _.isEmpty(variantMetadata.ensembl_url) ? '(Search)' : <LinkIcon/>,
-            link: _.isEmpty(variantMetadata.ensembl_url) ?  "https://asia.ensembl.org/Homo_sapiens/Info/Index" : variantMetadata.ensembl_url,
+            ref: reference.label,
+            val: _.isEmpty(referenceUrl) ? '(Search)' : <LinkIcon/>,
+            link: referenceUrl || reference.fallbackUrl,
         },
         {
             ref: 'ClinVar',
-            val: _.isEmpty(variantMetadata.clinvar_vcv) ? "(Search)" : <><LinkIcon/> {_.round(variantMetadata.clinvar_vcv)}</>,
+            val: variantMetadata.clinvar_vcv == null || variantMetadata.clinvar_vcv === "" ? "(Search)" : <><LinkIcon/> {_.round(variantMetadata.clinvar_vcv)}</>,
             link: _.isEmpty(variantMetadata.clinvar_url) ?  "https://www.ncbi.nlm.nih.gov/clinvar/" : variantMetadata.clinvar_url,
         },
         {
             ref: 'gnomAD',
-            val: _.isEmpty(variantMetadata.gnomad_url) ? "(Search)" : <><LinkIcon/> {variantMetadata.variant.variant_id} </>,
-            link: (variantMetadata.gnomad_url === "nan" || typeof variantMetadata.gnomad_url == 'undefined') ?  "https://gnomad.broadinstitute.org/" : variantMetadata.gnomad_url,
+            val: _.isEmpty(variantMetadata.gnomad_url) ? "(Search)" : <><LinkIcon/> {variant?.variant_id} </>,
+            link: (!variantMetadata.gnomad_url || variantMetadata.gnomad_url === "nan") ?  "https://gnomad.broadinstitute.org/" : variantMetadata.gnomad_url,
         }
     ] : [];
     if (_.isArray(referencesList) && _.size(referencesList) > 0){

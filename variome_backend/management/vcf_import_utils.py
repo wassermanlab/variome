@@ -10,7 +10,7 @@ def validate_get(v, index, na="."):
     val = v[index]
 
     if isinstance(val, float) and float(val).is_integer():
-        return str(val).replace('.0', '')
+        return str(val).replace(".0", "")
 
     elif isinstance(val, str):
         if val == "" or val is None:

@@ -6,28 +6,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('library', '0002_genomicgnomadfrequency_hemi_tot_and_more'),
+        ("library", "0002_genomicgnomadfrequency_hemi_tot_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='snv',
-            name='chr',
+            model_name="snv",
+            name="chr",
             field=models.CharField(db_index=True, max_length=3),
         ),
         migrations.AlterField(
-            model_name='snv',
-            name='clinvar_vcv',
-            field=models.DecimalField(blank=True, db_index=True, decimal_places=3, max_digits=15, null=True),
+            model_name="snv",
+            name="clinvar_vcv",
+            field=models.DecimalField(
+                blank=True, db_index=True, decimal_places=3, max_digits=15, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='snv',
-            name='dbsnp_id',
-            field=models.CharField(blank=True, db_index=True, default='', max_length=30),
+            model_name="snv",
+            name="dbsnp_id",
+            field=models.CharField(
+                blank=True, db_index=True, default="", max_length=30
+            ),
         ),
         migrations.AlterField(
-            model_name='snv',
-            name='pos',
+            model_name="snv",
+            name="pos",
             field=models.IntegerField(db_index=True),
         ),
     ]

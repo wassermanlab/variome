@@ -122,14 +122,14 @@ class Command(BaseCommand):
             "--batchsize",
             type=int,
             default=999,
-            help= "Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL"
+            help="Batch size for bulk creates - 999 is limit for SQLite, larger numbers may make things faster with PostgreSQL",
         )
         parser.add_argument(
             "--dedupe-cache-window",
             "-c",
             type=int,
             default=10000000,
-            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used"
+            help="The size of the window to use when preloading variant position ranges to check existing data when --delete is not used",
         )
         parser.add_argument(
             "--delete",
@@ -169,17 +169,20 @@ class Command(BaseCommand):
             help="Print every error in full; by default only the first 10 per error group are shown",
         )
 
+    @transaction.atomic
     def handle(self, **options):
-        transaction.set_autocommit(False)
         log.debug("import_bvl got options: \n %s", pprint.pformat(options))
         start_time = time()
         self.log_all_errors = options["log_all_errors"]
 
         last_step_time = time()
 
+        durations_map = {}
+
         def log_timing(name):
             nonlocal last_step_time
             duration = time() - last_step_time
+            durations_map[name] = duration
             hours = int(duration // 3600)
             minutes = int((duration % 3600) // 60)
             seconds = duration % 60
@@ -217,7 +220,7 @@ class Command(BaseCommand):
         ann_counts = None
         con_counts = None
 
-        options['out_hyphens'] = True
+        options["out_hyphens"] = True
         # too fragile to allow customizing the variant id delimiter right now
         # variant_id is used in joins across TSVs in the output script(s)
         # so it's natural to follow the TSV input instead of using a flag
@@ -305,6 +308,7 @@ class Command(BaseCommand):
         self.log_warnings("Annotation", ann_warnings)
         self.log_warnings("Consequence", con_warnings)
 
+        status = "COMMITTED"
         if options["rollback-on-error"]:
             if (
                 sev_errors
@@ -319,36 +323,35 @@ class Command(BaseCommand):
                 or vts_errors
             ):
                 sys.stderr.write("\nNot committing transaction (errors)\n")
-                transaction.rollback()
-                return
+                transaction.set_rollback(True)
+                status = "ROLLED BACK: operations below were not committed"
 
         # if dry run, rollback transaction
-        if options["dry-run"]:
+        if options["dry-run"] and status == "COMMITTED":
             sys.stderr.write("\nNot committing transaction (dry-run)\n")
-            transaction.rollback()
-        else:
-            transaction.commit()
+            transaction.set_rollback(True)
+            status = "DRY RUN: operations below were not committed"
 
-        def report_counts(model, counts):
-            if counts:
-                (total, success) = counts
-                if total == 0:
-                    percent = 100
-                else:
-                    percent = round(100 * success / total, 5)
-                sys.stdout.write(f"\n{model}: {success} out of {total}: {percent} %")
+        self.stdout.write(f"\nImport summary ({status})")
 
-        report_counts("Severity", sev_counts)
-        report_counts("Gene", gen_counts)
-        report_counts("Variant", var_counts)
-        report_counts("Transcript", tra_counts)
-        report_counts("SNV", snv_counts)
-        report_counts("GVF", gvf_counts)
-        report_counts("GGF", ggf_counts)
-        report_counts("Variant Transcript", vts_counts)
-        report_counts("Annotation", ann_counts)
-        report_counts("Consequence", con_counts)
+        results = [
+            ("Severity", "severities", sev_counts, sev_errors),
+            ("Gene", "genes", gen_counts, gen_errors),
+            ("Variant", "variants", var_counts, var_errors),
+            ("Transcript", "transcripts", tra_counts, tra_errors),
+            ("SNV", "snvs", snv_counts, snv_errors),
+            ("GVF", "gvfs", gvf_counts, gvf_errors),
+            ("GGF", "ggfs", ggf_counts, ggf_errors),
+            ("Variant Transcript", "variant transcripts", vts_counts, vts_errors),
+            ("Annotation", "annotations", ann_counts, ann_errors),
+            ("Consequence", "consequences", con_counts, con_errors),
+        ]
+        counts_map = {
+            name: counts for name, _, counts, _ in results if counts is not None
+        }
+        errors_map = {name: errors for name, _, _, errors in results}
+        durations = {name: durations_map.get(step) for name, step, _, _ in results}
+        for line in bvltools.format_import_counts(counts_map, errors_map, durations):
+            self.stdout.write(line)
 
-        end_time = time()
-        elapsed_time = end_time - start_time
-        sys.stdout.write(f"\n\nElapsed time: {elapsed_time // 3600} hours {(elapsed_time % 3600) // 60} minutes {elapsed_time % 60} seconds\n")
+        self.stdout.write(f"Duration: {bvltools.format_duration(time() - start_time)}")

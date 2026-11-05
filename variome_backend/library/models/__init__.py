@@ -8,3 +8,6 @@ from .variant_consequence import VariantConsequence
 from .snv import SNV
 from .genomic_variome_frequency import GenomicVariomeFrequency
 from .genomic_gnomad_frequency import GenomicGnomadFrequency
+from .mt import MT
+from .mt_variome_frequency import MtVariomeFrequency
+from .mt_gnomad_frequency import MtGnomadFrequency

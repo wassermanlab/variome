@@ -11,7 +11,7 @@ class VariomeSettingsAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    autocomplete_fields = ["example_snv"]
+    autocomplete_fields = ["example_snv", "example_mt"]
 
 
 admin.site.register(VariomeSettings, VariomeSettingsAdmin)

@@ -19,7 +19,7 @@ class GenomicVariomeFrequency(models.Model):
     hemi_tot = models.PositiveIntegerField(null=True)
     hemi_xx = models.PositiveIntegerField(null=True)
     hemi_xy = models.PositiveIntegerField(null=True)
-    
+
     quality = models.IntegerField(null=True)
 
     class Meta:

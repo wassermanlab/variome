@@ -24,8 +24,75 @@ import VariantDetails from "../components/VariantDetails";
 import References from "../components/References";
 import PopFrequencies from "../components/PopFrequencies";
 import Annotations from "../components/Annotations";
+import MitochondrialVariant from "./mitochondrial";
 
 import Api from "../Api";
+
+function NuclearVariant({
+  variant, variantMetadata, bvlFrequencies, gnomadFrequencies,
+  variantAnnotations, pageTitle, varId, gnomadLoading
+}) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column" }}>
+      <Grid container spacing={2} className="flex-container">
+        <Grid item xs={12} md={6} className="flex-item ">
+          <VariantDetails variant={variant} variantMetadata={variantMetadata}
+            bvlFrequencies={bvlFrequencies} />
+        </Grid>
+        <Grid item xs={12} md={6} className="flex-item">
+          <References variant={variant} variantMetadata={variantMetadata} />
+        </Grid>
+        <Grid item xs={12} className="gridItem">
+          <PopFrequencies varId={varId} bvlFrequencies={bvlFrequencies}
+            gnomadFrequencies={gnomadFrequencies} pageTitle={pageTitle}
+            gnomadLoading={gnomadLoading} variantMetadata={variantMetadata} />
+        </Grid>
+        <Annotations varId={varId} variantAnnotations={variantAnnotations} />
+      </Grid>
+    </Box>
+  );
+}
+
+const VARIANT_TEMPLATES = {
+  M: MitochondrialVariant,
+  SNV: NuclearVariant,
+  SV: NuclearVariant,
+  INDEL: NuclearVariant,
+};
+const METADATA_KEYS = {
+  M: "mt",
+  SNV: "snv",
+  SV: "snv",
+  INDEL: "snv",
+};
+const GNOMAD_REQUESTS = {
+  M: {
+    query: `
+      query getMitochondrialVariant($variantId: String!) {
+        mitochondrial_variant(variant_id: $variantId, dataset: gnomad_r3) {
+          ac_hom
+          ac_het
+          an
+          max_heteroplasmy
+        }
+      }
+    `,
+    variantId: (variant, metadata) => `M-${metadata.pos}-${metadata.ref}-${metadata.alt}`,
+    frequencies: data => {
+      const frequencies = data.data?.mitochondrial_variant;
+      return {
+        ac_hom: frequencies?.ac_hom,
+        ac_het: frequencies?.ac_het,
+        an: frequencies?.an,
+        af_hom: frequencies?.an > 0 && frequencies.ac_hom != null
+          ? frequencies.ac_hom / frequencies.an : null,
+        af_het: frequencies?.an > 0 && frequencies.ac_het != null
+          ? frequencies.ac_het / frequencies.an : null,
+        max_hl: frequencies?.max_heteroplasmy,
+      };
+    },
+  },
+};
 
 export default function Variant({pageTitle}) {
   let params = useParams();
@@ -42,6 +109,7 @@ export default function Variant({pageTitle}) {
 
   // Get Variant metadata
   useEffect(() => {
+    let active = true;
     setError(null);
     setVariant(null);
     setVariantMetadata(null);
@@ -51,16 +119,18 @@ export default function Variant({pageTitle}) {
     setLoading(true);
 
     Api.get("variant/" + varId)
-      .then(({ variant, snv, bvlFrequencies, annotations }) => {
+      .then(({ variant, snv, mt, bvlFrequencies, annotations }) => {
+        if (!active) return;
 //        console.log("variant", variant);
         setVariant(variant);
-        setVariantMetadata(snv);
-        //          setGnomadFrequencies(gnomadFrequencies);
+        const metadata = { mt, snv };
+        setVariantMetadata(metadata[METADATA_KEYS[variant.var_type] ?? "snv"]);
         setbvlFrequencies(bvlFrequencies);
         setVariantAnnotations(annotations);
         setLoading(false);
       })
       .catch((r) => {
+        if (!active) return;
         if (r.status == 429) {
           setError(
             "Variant requests are limited on a 24-hour basis. Please try again later"
@@ -74,11 +144,13 @@ export default function Variant({pageTitle}) {
         }
         setLoading(false);
       });
+    return () => { active = false; };
   }, [varId]);
 
   useEffect(() => {
 
     setGnomadLoading(true);
+    let active = true;
     if (variant && variant.variant_id) {
       var QUERY = `
     query getVariant($variantId: String!) {
@@ -105,8 +177,20 @@ export default function Variant({pageTitle}) {
     }
     `;
       }
-      Api.gnomadGraphQLRequest(QUERY, { variantId: variant.variant_id })
+      const request = GNOMAD_REQUESTS[variant.var_type];
+      const query = request?.query ?? QUERY;
+      const variantId = request?.variantId(variant, variantMetadata) ?? variant.variant_id;
+      Api.gnomadGraphQLRequest(query, { variantId })
         .then((data) => {
+          if (!active) return;
+          if (data.errors?.length) {
+            throw new Error(data.errors.map(error => error.message).join("; "));
+          }
+          if (request) {
+            setGnomadFrequencies(request.frequencies(data));
+            setGnomadLoading(false);
+            return;
+          }
           var variant = _.get(data, "data.variant", {});
           console.log("variant", variant);
           var ac_tot =
@@ -123,12 +207,16 @@ export default function Variant({pageTitle}) {
             setGnomadFrequencies({ ac_tot, an_tot, af_tot, hom_tot, hemi_tot });
             setGnomadLoading(false);
         }).catch(e =>{
+            if (!active) return;
             console.error(e.message);
             setGnomadLoading(false);
-            setGnomadFrequencies({ ac_tot:"gnomAD connection error"})
+            setGnomadFrequencies({ ac_tot:"gnomAD connection error", error: "gnomAD connection error" })
         });
     }
-  }, [variant]);
+    return () => { active = false; };
+  }, [variant, variantMetadata]);
+
+  const VariantTemplate = VARIANT_TEMPLATES[variant?.var_type] ?? NuclearVariant;
 
   return (
     <Container maxWidth="xl">
@@ -159,42 +247,16 @@ export default function Variant({pageTitle}) {
           </DialogContent>
         </Dialog>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column" }}>
-          <Grid container spacing={2} className="flex-container">
-            {/* Variant ID Block */}
-            <Grid item xs={12} md={6} className="flex-item ">
-              <VariantDetails
-                variant={variant}
-                variantMetadata={variantMetadata}
-                bvlFrequencies={bvlFrequencies}
-              />
-            </Grid>
-
-            {/* Reference Box */}
-            <Grid item xs={12} md={6} className="flex-item">
-              <References variant={variant} variantMetadata={variantMetadata} />
-            </Grid>
-
-            {/* Pop Frequencies Box */}
-            <Grid item xs={12} className="gridItem">
-              <PopFrequencies
-                varId={varId}
-                bvlFrequencies={bvlFrequencies}
-                gnomadFrequencies={gnomadFrequencies}
-                pageTitle={pageTitle}
-                gnomadLoading={gnomadLoading}
-                variantMetadata={variantMetadata}
-              />
-            </Grid>
-
-            {/* Annotations Box */}
-
-            <Annotations
-              varId={varId}
-              variantAnnotations={variantAnnotations}
-            />
-          </Grid>
-        </Box>
+        <VariantTemplate
+          variant={variant}
+          variantMetadata={variantMetadata}
+          bvlFrequencies={bvlFrequencies}
+          gnomadFrequencies={gnomadFrequencies}
+          variantAnnotations={variantAnnotations}
+          pageTitle={pageTitle}
+          varId={varId}
+          gnomadLoading={gnomadLoading}
+        />
       )}
     </Container>
   );

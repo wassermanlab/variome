@@ -24,10 +24,7 @@ class AlwaysLoggedInMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if (
-            not request.user.is_authenticated
-            and not request.path.startswith("/admin")
-        ):
+        if not request.user.is_authenticated and not request.path.startswith("/admin"):
             try:
                 user = User.objects.get(
                     username="public_demo_user",

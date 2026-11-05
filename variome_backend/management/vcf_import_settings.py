@@ -1,6 +1,7 @@
 """
 Settings dataclass for VCF import filters.
 """
+
 from dataclasses import dataclass
 from typing import Optional
 

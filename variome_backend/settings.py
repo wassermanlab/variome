@@ -217,14 +217,9 @@ WSGI_APPLICATION = "variome_backend.wsgi.application"
 
 if DB:
     DATABASES = {
-      "default": dj_database_url.parse(
-        DB, 
-        conn_max_age=0, 
-        conn_health_checks=True
-      ),
-      "OPTIONS": {
-        "connect_timeout": 0}
-      }
+        "default": dj_database_url.parse(DB, conn_max_age=0, conn_health_checks=True),
+        "OPTIONS": {"connect_timeout": 0},
+    }
 else:
     DATABASES = {
         "default": {
@@ -264,7 +259,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Session timeout configuration (Default, 8 hours)
-SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 8*60*60))
+SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", 8 * 60 * 60))
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True

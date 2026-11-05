@@ -1,12 +1,11 @@
 import json
-from decimal import Decimal, InvalidOperation
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.views.decorators.cache import never_cache
 
-from django.db.models import Q, F
+from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Abs
 
 from datetime import datetime
@@ -16,12 +15,33 @@ from variome_backend.settings import IS_DEVELOPMENT
 from ..models import Variant
 from variome_backend.library_access.models import SearchQueryAction
 
-
 v_pos_limit = 10
 snv_values_to_set = ["snv__pos", "snv__chr", "snv__ref", "snv__alt"]
 
-def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
-    
+
+def normalize_chromosome(chromosome):
+    chromosome = chromosome.upper() if chromosome else None
+    if chromosome and chromosome.startswith("CHR"):
+        chromosome = chromosome[3:]
+    return "M" if chromosome == "MT" else chromosome
+
+
+def search_queryset(mitochondrial=False, extra_fields=()):
+    queryset = Variant.objects.all()
+    if mitochondrial:
+        # Keep the existing search result keys for both variant types.
+        aliases = {
+            f"snv__{field}": F(f"mt__{field}")
+            for field in ("pos", "ref", "alt", *extra_fields)
+        }
+        aliases["snv__chr"] = Value("M", output_field=CharField())
+        queryset = queryset.filter(mt__isnull=False).annotate(**aliases)
+    return queryset
+
+
+def standard_search(in_chr, in_pos, in_ref=None, in_alt=None):
+    in_chr = normalize_chromosome(in_chr)
+    queryset = search_queryset(mitochondrial=in_chr == "M")
     in_pos = int(in_pos)
     v_pos_upper = in_pos + 499
     v_pos_lower = in_pos - 499
@@ -36,37 +56,40 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
     if in_alt:
         position_filter_ref_alt["snv__alt"] = in_alt
 
-    position_results = list(Variant.objects.filter(**position_filter_ref_alt).values(
-        "variant_id", "var_type", "id", *snv_values_to_set
-    )[:v_pos_limit])
+    position_results = list(
+        queryset.filter(**position_filter_ref_alt).values(
+            "variant_id", "var_type", "id", *snv_values_to_set
+        )[:v_pos_limit]
+    )
 
     n_ref_alt_matches = len(position_results)
 
-#    print(position_results)
+    #    print(position_results)
     ids_to_exclude = [v["variant_id"] for v in position_results]
 
     id_not_in_clause = ~Q(variant_id__in=ids_to_exclude)
 
     additional_position_results = list(
-      Variant.objects.filter(
-        snv__chr = in_chr,
-        snv__pos = in_pos,
-    ).filter(id_not_in_clause).values(
-        "variant_id", "var_type", "id", *snv_values_to_set
-    )[:v_pos_limit - n_ref_alt_matches])
+        queryset.filter(
+            snv__chr=in_chr,
+            snv__pos=in_pos,
+        )
+        .filter(id_not_in_clause)
+        .values("variant_id", "var_type", "id", *snv_values_to_set)[
+            : v_pos_limit - n_ref_alt_matches
+        ]
+    )
 
-#    print("additional position")
-#    print(additional_position_results)
+    #    print("additional position")
+    #    print(additional_position_results)
 
     if len(additional_position_results) > 0:
         position_results.extend(additional_position_results)
 
-#    print(position_results)
+    #    print(position_results)
 
     nearby_results = (
-        Variant.objects.filter(
-            snv__chr=in_chr, snv__pos__range=(v_pos_lower, v_pos_upper)
-        )
+        queryset.filter(snv__chr=in_chr, snv__pos__range=(v_pos_lower, v_pos_upper))
         .exclude(snv__pos=in_pos)
         .annotate(bp_distance=Abs(F("snv__pos") - in_pos))
         .order_by("bp_distance")
@@ -77,13 +100,15 @@ def standard_search(in_chr, in_pos, in_ref = None, in_alt = None):
 
     nearby_results = list(nearby_results)
 
-#    print(nearby_results)
-#    print("pos")
-#    print(position_results)
+    #    print(nearby_results)
+    #    print("pos")
+    #    print(position_results)
     return (position_results, nearby_results)
 
 
-def standard_validate(chr, pos, ref = None, alt = None):
+def standard_validate(chr, pos, ref=None, alt=None):
+    original_chr = chr
+    chr = normalize_chromosome(chr)
     out_error = None
 
     try:
@@ -99,11 +124,12 @@ def standard_validate(chr, pos, ref = None, alt = None):
     except:
         return f"Invalid position (must be numeric)"
 
-
     if not chr:
         out_error = "Chromosome is null"
-    elif chr.upper() not in ["M", "X", "Y"] and ( chr_int_cast is None or chr_int_cast < 1 or chr_int_cast > 22):
-        out_error = f"Invalid chromosome: {str(chr)}"
+    elif chr.upper() not in ["M", "X", "Y"] and (
+        chr_int_cast is None or chr_int_cast < 1 or chr_int_cast > 22
+    ):
+        out_error = f"Invalid chromosome: {str(original_chr)}"
     elif not pos:
         out_error = "Position is null"
     elif int(pos_int_cast) < 0:
@@ -142,11 +168,16 @@ def snv_search(request):
     elif "position" in in_result_sets:
         out_error = standard_validate(in_chr, in_pos, in_ref, in_alt)
     if not out_error and "clinvar" in in_result_sets:
-        try:
-            if not Decimal(in_query).is_finite():
+        identifier = in_query.upper()
+        if identifier.startswith("VCV"):
+            identifier, separator, version = identifier[3:].partition(".")
+            # A VCV suffix is an accession version, not a fractional Variation ID.
+            if separator and (not version.isdecimal() or int(version) < 1):
                 out_error = f"Invalid ClinVar ID: {in_query}"
-        except InvalidOperation:
+        if not identifier.isascii() or not identifier.isdecimal():
             out_error = f"Invalid ClinVar ID: {in_query}"
+        elif not out_error:
+            clinvar_vcv = int(identifier)
     if out_error:
         SearchQueryAction.objects.create(
             query=in_query or "",
@@ -161,7 +192,7 @@ def snv_search(request):
         else:
             return Response({"errors": [out_error]}, status=400)
 
-    in_chr = in_chr.upper() if in_chr else None
+    in_chr = normalize_chromosome(in_chr)
     if "position" in in_result_sets and in_chr not in ("X", "Y", "M"):
         in_chr = str(int(in_chr))
     in_ref = in_ref.upper() if in_ref else None
@@ -169,9 +200,8 @@ def snv_search(request):
 
     response_data = {"term": in_query, "results": {}}
 
-
     if "position" in in_result_sets:
-        (position, nearby) = standard_search(in_chr, in_pos, in_ref, in_alt)
+        position, nearby = standard_search(in_chr, in_pos, in_ref, in_alt)
         response_data["results"]["position"] = position
         response_data["results"]["nearby"] = nearby
 
@@ -179,20 +209,34 @@ def snv_search(request):
 
     if "dbsnp" in in_result_sets:
         #        print("Processing dbsnp result set")
-        dbsnp_results = Variant.objects.filter(Q(snv__dbsnp_id=in_query)).values(
-            "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
-        )
-
-        response_data["results"]["dbsnp"] = list(dbsnp_results)
+        response_data["results"]["dbsnp"] = []
+        for mitochondrial in (False, True):
+            dbsnp_results = (
+                search_queryset(mitochondrial, ("dbsnp_id",))
+                .filter(snv__dbsnp_id=in_query)
+                .values(
+                    "variant_id", "var_type", "id", *snv_values_to_set, "snv__dbsnp_id"
+                )
+            )
+            response_data["results"]["dbsnp"].extend(dbsnp_results)
     #        print(f"dbSNP results: {response_data['results']['dbsnp']}")
 
     if "clinvar" in in_result_sets:
         #        print("Processing clinvar result set")
-        clinvar_results = Variant.objects.filter(Q(snv__clinvar_vcv=in_query)).values(
-            "variant_id", "var_type", "id", *snv_values_to_set, "snv__clinvar_vcv"
-        )
-
-        response_data["results"]["clinvar"] = list(clinvar_results)
+        response_data["results"]["clinvar"] = []
+        for mitochondrial in (False, True):
+            clinvar_results = (
+                search_queryset(mitochondrial, ("clinvar_vcv",))
+                .filter(snv__clinvar_vcv=clinvar_vcv)
+                .values(
+                    "variant_id",
+                    "var_type",
+                    "id",
+                    *snv_values_to_set,
+                    "snv__clinvar_vcv",
+                )
+            )
+            response_data["results"]["clinvar"].extend(clinvar_results)
     #        print(f"ClinVar results: {response_data['results']['clinvar']}")
 
     SearchQueryAction.objects.create(

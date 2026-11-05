@@ -154,11 +154,15 @@ const Api = {
       var coordSystemVersion = Constants.assemblyVersions[assemblyVersion];
 
       var posEnd = _.toInteger(pos) + _.size(ref) - 1 ;
+      var ensemblChromosome = chr;
+      if (_.toUpper(chr) === "M" || _.toUpper(chr) === "MT") {
+        ensemblChromosome = "MT";
+      }
       
       if (_.isString(coordSystemVersion) && !_.isEmpty(coordSystemVersion)){
         
           json = await cachedFetch(
-            `${API_URL_BASE}sequence/region/${chr}:${pos}..${posEnd}:1`,
+            `${API_URL_BASE}sequence/region/${ensemblChromosome}:${pos}..${posEnd}:1`,
             {"content-type":"application/json",
               "coord_system_version":coordSystemVersion
             },
