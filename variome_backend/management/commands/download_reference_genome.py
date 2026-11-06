@@ -69,7 +69,7 @@ class Command(BaseCommand):
             )
 
     def create_temporary(self, destination):
-        if destination.exists() or Path(f"{destination}.fai").exists():
+        if Path(f"{destination}.fai").exists():
             raise CommandError(f"Reference or index already exists at {destination}.")
         destination.parent.mkdir(parents=True, exist_ok=True)
         return tempfile.NamedTemporaryFile(
